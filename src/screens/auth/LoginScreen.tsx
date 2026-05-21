@@ -1,31 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Image,
+  KeyboardAvoidingView, Platform, ScrollView, Image, Alert, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
 import { FONTS } from '../../../constants/fonts';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './LoginScreen.styles';
+import { useAuth } from '../../context/AuthContext';
 
 const logo = require('../../../assets/operologo.png');
-
-type Role = 'alumno' | 'manager' | 'operador';
-type TabsRoute = 'StudentTabs' | 'ManagerTabs' | 'MaintenanceTabs';
-
-const roles: { key: Role; label: string; dest: TabsRoute }[] = [
-  { key: 'alumno',   label: 'Alumno',   dest: 'StudentTabs'     },
-  { key: 'manager',  label: 'Manager',  dest: 'ManagerTabs'     },
-  { key: 'operador', label: 'Operador', dest: 'MaintenanceTabs' },
-];
 
 type LoginScreenProps = RootStackScreenProps<'Login'>;
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<Role>('alumno');
-  const selectedRole = roles.find((r) => r.key === role)!;
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { login, user, isAuthenticated } = useAuth();
+
+  /**
+   * Redirigir automáticamente si el usuario ya está autenticado
+   */
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigateByRole(user.role.name);
+    }
+  }, [isAuthenticated, user]);
+
+  /**
+   * Navegar según el rol del usuario
+   */
+  const navigateByRole = (roleName: string) => {
+    switch (roleName) {
+      case 'USER':
+        navigation.replace('StudentTabs');
+        break;
+      case 'MANAGER':
+        navigation.replace('ManagerTabs');
+        break;
+      case 'WORKER':
+        navigation.replace('MaintenanceTabs');
+        break;
+      default:
+        console.warn('[LoginScreen] Rol desconocido:', roleName);
+        Alert.alert('Error', 'Rol de usuario no reconocido');
+    }
+  };
+
+  /**
+   * Manejar el login
+   */
+  const handleLogin = async () => {
+    // Validaciones básicas
+    if (!email.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu email');
+      return;
+    }
+
+    if (!password.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu contraseña');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Llamar al servicio de autenticación
+      await login(email.trim(), password);
+
+      // El useEffect se encargará de la navegación cuando user se actualice
+    } catch (error: any) {
+      console.error('[LoginScreen] Error en login:', error);
+      Alert.alert(
+        'Error de autenticación',
+        error.message || 'No se pudo iniciar sesión. Verifica tus credenciales.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -40,21 +97,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           <Text style={styles.tagline}>Sistema de gestión de incidencias</Text>
         </View>
 
-        <View style={styles.segmented}>
-          {roles.map((r) => (
-            <TouchableOpacity
-              key={r.key}
-              style={[styles.segment, role === r.key && styles.segmentActive]}
-              onPress={() => setRole(r.key)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.segmentText, role === r.key && styles.segmentTextActive]}>
-                {r.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
         <View style={styles.form}>
           <View style={styles.field}>
             <Text style={styles.label}>Email</Text>
@@ -64,6 +106,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               placeholderTextColor={COLORS.outline}
               keyboardType="email-address"
               autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+              editable={!isLoading}
             />
           </View>
 
@@ -80,6 +125,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 placeholder="••••••••"
                 placeholderTextColor={COLORS.outline}
                 secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+                editable={!isLoading}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                 <MaterialIcons
@@ -92,11 +140,16 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           </View>
 
           <TouchableOpacity
-            style={styles.submitBtn}
-            onPress={() => navigation.replace(selectedRole.dest)}
+            style={[styles.submitBtn, isLoading && { opacity: 0.6 }]}
+            onPress={handleLogin}
             activeOpacity={0.85}
+            disabled={isLoading}
           >
-            <Text style={styles.submitText}>Ingresar como {selectedRole.label}</Text>
+            {isLoading ? (
+              <ActivityIndicator color={COLORS.onPrimary} />
+            ) : (
+              <Text style={styles.submitText}>Ingresar</Text>
+            )}
           </TouchableOpacity>
         </View>
 
