@@ -27,24 +27,23 @@
 // Función para detectar si estamos en un emulador Android
 import { Platform } from 'react-native';
 
+// IP local de tu computadora
+const LOCAL_IP = '10.100.40.56';
+
 // Configuración por defecto
 const getBaseURL = (): string => {
-  // En producción, usar la URL real de tu servidor
   if (__DEV__) {
-    // Desarrollo local
+    // Desarrollo: usar IP local
+    // NOTA: Requiere firewall de macOS desactivado para dispositivos físicos
     if (Platform.OS === 'android') {
-      // Emulador Android
+      // Emulador Android usa alias especial
       return 'http://10.0.2.2:8080';
-    } else if (Platform.OS === 'ios') {
-      // Emulador iOS o dispositivo iOS en red local
-      // CAMBIAR ESTA IP SI USAS DISPOSITIVO FÍSICO
-      return 'http://localhost:8080';
     } else {
-      // Web (Expo Web)
-      return 'http://localhost:8080';
+      // iOS simulador/dispositivo y web
+      return `http://${LOCAL_IP}:8080`;
     }
   } else {
-    // Producción - CAMBIAR A TU URL DE PRODUCCIÓN
+    // Producción
     return 'https://tu-backend.railway.app';
   }
 };
