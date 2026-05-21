@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Opero rebrand — B sin serif: B1 vs B2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+  .container { max-width: 920px; margin: 0 auto; }
+  h1 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 24px;
+    color: #f0f6fc;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .lede { color: #8b949e; font-size: 14px; margin-bottom: 32px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+
+  .column h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #8b949e;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .column h2 .tag {
+    color: #f0f6fc;
+    font-weight: 700;
+    margin-left: 6px;
+  }
+  .meta {
+    color: #6e7681;
+    font-size: 11.5px;
+    margin-bottom: 14px;
+    line-height: 1.55;
+  }
+  .meta code { background: #21262d; padding: 1px 6px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #e6edf3; }
+
+  .phone {
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid #30363d;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    background: #FFFFFF;
+    color: #0F1A2E;
+  }
+  .status-bar { background: #FFFFFF; height: 28px; }
+  .topbar {
+    padding: 14px 22px;
+    border-bottom: 1px solid #DDE3EB;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .body { padding: 22px; }
+  .stats {
+    display: flex;
+    border: 1px solid #DDE3EB;
+    border-radius: 4px;
+    background: #F4F7FB;
+    margin-bottom: 22px;
+  }
+  .stat { flex: 1; text-align: center; padding: 16px 8px; }
+  .stat + .stat { border-left: 1px solid #DDE3EB; }
+  .card {
+    border: 1px solid #DDE3EB;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #FFFFFF;
+    display: flex;
+    margin-bottom: 8px;
+  }
+  .accent { width: 3px; }
+  .card-body { flex: 1; padding: 13px 14px; }
+  .card-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .button {
+    margin-top: 22px;
+    background: #1E3A5F;
+    color: #FFFFFF;
+    padding: 14px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 14px;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  .success { background: #0F8C7E; }
+  .success-text { color: #0F8C7E; }
+  .warning { background: #B45309; }
+  .warning-text { color: #B45309; }
+  .danger { background: #B91C1C; }
+  .danger-text { color: #B91C1C; }
+  .dot { width: 6px; height: 6px; border-radius: 1px; }
+
+  /* ===== B1 — All Sans, semibold + letterspacing ===== */
+  .b1 .wordmark {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: #1E3A5F;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .b1 .avatar {
+    width: 28px; height: 28px; border-radius: 3px;
+    background: #EEF2F7;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; color: #1E3A5F;
+  }
+  .b1 .greeting {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: #0F1A2E;
+    letter-spacing: -0.3px;
+    margin-bottom: 2px;
+  }
+  .b1 .sub { font-size: 13px; color: #5A6478; margin-bottom: 22px; }
+  .b1 .stat-num {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 24px;
+    color: #1E3A5F;
+    line-height: 1;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+  .b1 .stat-label {
+    font-size: 10px; color: #5A6478;
+    text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .b1 .section-title {
+    font-size: 11px; font-weight: 700; color: #0F1A2E;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 12px; display: flex; justify-content: space-between;
+  }
+  .b1 .section-title span:last-child { color: #5A6478; font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 12px; }
+  .b1 .card-title { font-size: 13px; font-weight: 600; color: #0F1A2E; margin-bottom: 4px; letter-spacing: -0.1px; }
+  .b1 .card-loc { font-size: 12px; color: #5A6478; flex: 1; }
+  .b1 .card-right { display: flex; align-items: center; gap: 8px; }
+  .b1 .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .b1 .time { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #5A6478; }
+
+  /* ===== B2 — Sans body + Mono dominante en labels/títulos/números ===== */
+  .b2 .wordmark {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 16px;
+    color: #1E3A5F;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .b2 .avatar {
+    width: 28px; height: 28px; border-radius: 3px;
+    background: #EEF2F7;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; color: #1E3A5F;
+  }
+  .b2 .greeting {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: #0F1A2E;
+    letter-spacing: -0.3px;
+    margin-bottom: 2px;
+  }
+  .b2 .sub {
+    font-size: 11px; color: #5A6478; margin-bottom: 22px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.2px;
+  }
+  .b2 .stat-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 26px;
+    color: #1E3A5F;
+    line-height: 1;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+  .b2 .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px; color: #5A6478;
+    text-transform: uppercase; letter-spacing: 1px; font-weight: 500;
+  }
+  .b2 .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600; color: #0F1A2E;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 12px; display: flex; justify-content: space-between;
+  }
+  .b2 .section-title span:last-child {
+    color: #5A6478; font-weight: 500;
+    font-family: 'IBM Plex Sans', sans-serif;
+    text-transform: none; letter-spacing: 0; font-size: 12px;
+  }
+  .b2 .card-title { font-size: 13px; font-weight: 600; color: #0F1A2E; margin-bottom: 4px; letter-spacing: -0.1px; }
+  .b2 .card-loc {
+    font-size: 11px; color: #5A6478; flex: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.1px;
+  }
+  .b2 .card-right { display: flex; align-items: center; gap: 8px; }
+  .b2 .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .b2 .time { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #5A6478; }
+  .b2 .button {
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .b2 .code-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #8593A8;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+
+  .notes {
+    margin-top: 40px;
+    padding: 22px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .notes h3 { margin-bottom: 8px; font-size: 13px; color: #f0f6fc; }
+  .notes ul { margin-top: 6px; padding-left: 20px; }
+  .notes li { color: #8b949e; margin-bottom: 4px; }
+  .notes code { background: #21262d; padding: 1px 6px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #e6edf3; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Opero — sin serif, dos calibraciones</h1>
+  <p class="lede">Misma paleta navy de B. Salimos del territorio editorial: B1 todo sans (más "app de gestión sobria"), B2 con mono dominante (más "consola de operaciones / panel técnico").</p>
+
+  <div class="grid">
+
+    <!-- ============ B1 ============ -->
+    <div class="column">
+      <h2>VARIANTE<span class="tag">B1 — All Sans</span></h2>
+      <p class="meta">
+        Todo en <strong>IBM Plex Sans</strong> · títulos SemiBold con letterspacing apretado · labels en mayúscula tracked · mono solo para <code>tickets</code> y <code>tiempos</code>
+      </p>
+
+      <div class="phone b1">
+        <div class="status-bar"></div>
+        <div class="topbar">
+          <div class="wordmark">Opero</div>
+          <div class="avatar">AM</div>
+        </div>
+        <div class="body">
+          <div class="greeting">Hola, Ana</div>
+          <div class="sub">3 incidencias en seguimiento</div>
+
+          <div class="stats">
+            <div class="stat"><div class="stat-num">14</div><div class="stat-label">Abiertas</div></div>
+            <div class="stat"><div class="stat-num">87%</div><div class="stat-label">Resolución</div></div>
+            <div class="stat"><div class="stat-num">3m</div><div class="stat-label">Promedio</div></div>
+          </div>
+
+          <div class="section-title"><span>Recientes</span><span>Ver todas</span></div>
+
+          <div class="card">
+            <div class="accent warning"></div>
+            <div class="card-body">
+              <div class="card-title">Falla eléctrica Lab. Física</div>
+              <div class="card-meta">
+                <div class="card-loc">Edificio C · Planta 2</div>
+                <div class="card-right">
+                  <span class="badge warning-text"><span class="dot warning"></span>Abierto</span>
+                  <span class="time">2h</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="accent success"></div>
+            <div class="card-body">
+              <div class="card-title">Reposición de luminaria</div>
+              <div class="card-meta">
+                <div class="card-loc">Edificio A · PB</div>
+                <div class="card-right">
+                  <span class="badge success-text"><span class="dot success"></span>Resuelta</span>
+                  <span class="time">Ayer</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="accent danger"></div>
+            <div class="card-body">
+              <div class="card-title">Rotura de tubería principal</div>
+              <div class="card-meta">
+                <div class="card-loc">Edificio Central · Lab 204</div>
+                <div class="card-right">
+                  <span class="badge danger-text"><span class="dot danger"></span>Crítica</span>
+                  <span class="time">45m</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="button">Nueva incidencia</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ B2 ============ -->
+    <div class="column">
+      <h2>VARIANTE<span class="tag">B2 — Mono dominante</span></h2>
+      <p class="meta">
+        <strong>Plex Mono</strong> para labels, números, locations, sub-headers, botón · <strong>Plex Sans</strong> solo para greeting y card-title · feel "consola / panel de operaciones"
+      </p>
+
+      <div class="phone b2">
+        <div class="status-bar"></div>
+        <div class="topbar">
+          <div class="wordmark">Opero</div>
+          <div class="avatar">AM</div>
+        </div>
+        <div class="body">
+          <div class="greeting">Hola, Ana</div>
+          <div class="sub">3 incidencias en seguimiento</div>
+
+          <div class="stats">
+            <div class="stat"><div class="stat-num">14</div><div class="stat-label">Abiertas</div></div>
+            <div class="stat"><div class="stat-num">87%</div><div class="stat-label">Resolución</div></div>
+            <div class="stat"><div class="stat-num">3m</div><div class="stat-label">Promedio</div></div>
+          </div>
+
+          <div class="section-title"><span>RECIENTES</span><span>Ver todas</span></div>
+
+          <div class="card">
+            <div class="accent warning"></div>
+            <div class="card-body">
+              <div class="code-meta">#INC-8821 · 14/05 09:12</div>
+              <div class="card-title">Falla eléctrica Lab. Física</div>
+              <div class="card-meta">
+                <div class="card-loc">Edificio C · Planta 2</div>
+                <div class="card-right">
+                  <span class="badge warning-text"><span class="dot warning"></span>Abierto</span>
+                  <span class="time">2h</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="accent success"></div>
+            <div class="card-body">
+              <div class="code-meta">#INC-8810 · 13/05 17:40</div>
+              <div class="card-title">Reposición de luminaria</div>
+              <div class="card-meta">
+                <div class="card-loc">Edificio A · PB</div>
+                <div class="card-right">
+                  <span class="badge success-text"><span class="dot success"></span>Resuelta</span>
+                  <span class="time">Ayer</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="accent danger"></div>
+            <div class="card-body">
+              <div class="code-meta">#INC-8825 · 14/05 10:30</div>
+              <div class="card-title">Rotura de tubería principal</div>
+              <div class="card-meta">
+                <div class="card-loc">Edificio Central · Lab 204</div>
+                <div class="card-right">
+                  <span class="badge danger-text"><span class="dot danger"></span>Crítica</span>
+                  <span class="time">45m</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="button">Nueva incidencia</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="notes">
+    <h3>Cómo decidir</h3>
+    <ul>
+      <li><strong>B1</strong> es "app de gestión sobria + cero adornos". Va a sentirse más cercana a Linear, Notion o el panel de admin de una herramienta SaaS. Los usuarios la perciben como "limpia y rápida".</li>
+      <li><strong>B2</strong> es "panel de operaciones". Más cerca de Vercel dashboard, Datadog, GitHub Actions. Hay más densidad técnica (códigos de incidencia visibles, mono everywhere), te empuja a pensar "esto lo maneja gente que está en la operación día a día".</li>
+      <li>Las dos comparten paleta exacta: navy <code>#1E3A5F</code>, surfaces blancas, status muteados. Lo único que cambia es la tipografía y cuánto mono entra.</li>
+      <li>Si tu audiencia es Manager + Mantenimiento + Estudiante con un Manager que valora "control", <strong>B2</strong> probablemente comunica mejor el valor.</li>
+      <li>Si tu audiencia es más estudiante-céntrico o el deck quiere transmitir "fácil de usar", <strong>B1</strong> es más amable.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

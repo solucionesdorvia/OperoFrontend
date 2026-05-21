@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Opero · Flow Map</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg:       #0C1521;
+    --surface:  #101C2C;
+    --surface2: #141F2E;
+    --surface3: #192536;
+    --surface4: #1E2C3E;
+    --outline:  #354050;
+    --outlineV: #1E2C3C;
+    --primary:  #BBA978;
+    --primaryC: #332C18;
+    --onPrim:   #181208;
+    --text:     #CDD8EA;
+    --textV:    #78899E;
+    --error:    #B06060;
+    --errorC:   #2C1010;
+    --secondary:#6B94AA;
+    --secondaryC:#172636;
+    --tertiary: #8878C0;
+    --tertiaryC:#241840;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #070E1A;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    overflow: hidden;
+  }
+  ul, li { list-style: none; }
+  h1, h2, h3, h4, h5, h6 { font-weight: inherit; font-size: inherit; }
+  button {
+    border: 0; background: none; color: inherit; font: inherit;
+    cursor: pointer; padding: 0;
+  }
+
+  .ico {
+    width: 1em; height: 1em;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .ico.filled { fill: currentColor; stroke: none; }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar {
+    position: fixed; top: 14px; left: 14px; z-index: 20;
+    background: rgba(16, 28, 44, 0.9);
+    border: 1px solid var(--outlineV);
+    border-radius: 10px;
+    padding: 10px 14px;
+    backdrop-filter: blur(10px);
+    display: flex; align-items: center; gap: 12px;
+    font-size: 13px;
+  }
+  .toolbar .brand {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 700; color: var(--primary);
+    letter-spacing: 3px;
+  }
+  .toolbar .brand .ico { width: 18px; height: 18px; color: var(--primary); }
+  .toolbar .sep { width: 1px; height: 16px; background: var(--outline); }
+  .toolbar .hint { color: var(--textV); font-size: 11px; display: flex; align-items: center; gap: 4px; }
+  .toolbar .btn {
+    background: var(--surface3); border: 1px solid var(--outlineV);
+    color: var(--text); padding: 6px 10px; border-radius: 6px;
+    cursor: pointer; font-size: 11px;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .toolbar .btn:hover { background: var(--surface4); border-color: var(--outline); }
+  .toolbar .btn.primary { background: var(--primary); color: var(--onPrim); border: 0; font-weight: 600; }
+  .toolbar .btn.primary:hover { opacity: 0.9; }
+  .toolbar .btn .ico { width: 13px; height: 13px; }
+
+  /* ---------- Legend ---------- */
+  .legend {
+    position: fixed; bottom: 14px; left: 14px; z-index: 20;
+    background: rgba(16, 28, 44, 0.9);
+    border: 1px solid var(--outlineV);
+    border-radius: 10px;
+    padding: 10px 14px;
+    backdrop-filter: blur(10px);
+    font-size: 11px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .legend .item { display: flex; align-items: center; gap: 8px; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 5px; }
+  .legend .line { width: 16px; height: 2px; border-radius: 2px; }
+  .legend .line.dashed {
+    background: none !important;
+    height: 0; border-top: 2px dashed var(--secondary);
+  }
+
+  /* ---------- Canvas ---------- */
+  .canvas {
+    position: absolute; top: 0; left: 0;
+    width: 10000px; height: 4000px;
+    transform-origin: 0 0;
+    background-image:
+      radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .group {
+    position: absolute;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .group-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 2px;
+    color: var(--primary);
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border: 1px dashed var(--outline);
+    border-radius: 6px;
+    background: rgba(187, 169, 120, 0.06);
+    align-self: flex-start;
+  }
+  .group-row { display: flex; gap: 28px; }
+
+  /* ---------- Phone Frame ---------- */
+  .screen {
+    width: 240px; height: 500px;
+    background: var(--bg);
+    border: 1px solid var(--outlineV);
+    border-radius: 20px;
+    padding: 16px 14px;
+    display: flex; flex-direction: column;
+    position: relative;
+    font-size: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 1;
+  }
+  .screen.dark { background: #050A13; }
+  .screen .label {
+    position: absolute; bottom: -24px; left: 0; right: 0;
+    text-align: center;
+    font-size: 11px; color: var(--textV); font-weight: 500;
+  }
+  .role-badge {
+    position: absolute; top: -10px; left: 12px;
+    font-size: 9px; font-weight: 700;
+    padding: 3px 8px; border-radius: 4px;
+    letter-spacing: 1px;
+    color: var(--textV); background: var(--surface4);
+  }
+  .role-badge.student { color: var(--primary);  background: var(--primaryC);   }
+  .role-badge.manager { color: var(--secondary);background: var(--secondaryC); }
+  .role-badge.maint   { color: var(--tertiary); background: var(--tertiaryC);  }
+
+  .screen .exp {
+    position: absolute; top: -10px; right: 10px;
+    width: 22px; height: 22px; border-radius: 5px;
+    background: var(--surface3); border: 1px solid var(--outlineV);
+    color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    opacity: 0; transition: opacity .15s;
+    z-index: 2;
+  }
+  .screen:hover .exp { opacity: 1; }
+  .screen .exp:hover { background: var(--primary); color: var(--onPrim); border-color: transparent; }
+  .screen .exp .ico { width: 12px; height: 12px; }
+
+  /* ---------- Generic elements ---------- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--outlineV);
+    margin-bottom: 10px;
+  }
+  .brand-row {
+    display: flex; align-items: center; gap: 6px;
+    font-weight: 700; color: var(--primary);
+    font-size: 11px; letter-spacing: 2px;
+  }
+  .brand-row .ico { width: 14px; height: 14px; }
+  .icon-btn {
+    width: 20px; height: 20px; border-radius: 5px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--textV);
+  }
+  .icon-btn .ico { width: 11px; height: 11px; }
+  .icon-btn.solid { background: var(--surface3); color: var(--text); }
+
+  .avatar-sm {
+    width: 20px; height: 20px; border-radius: 5px;
+    background: var(--surface3);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary); font-size: 8px; font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .title-lg { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .subtitle { font-size: 10px; color: var(--textV); margin-bottom: 12px; }
+  .sub { font-size: 9px; color: var(--textV); }
+  .sub .ico { width: 10px; height: 10px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--outlineV);
+    border-radius: 6px;
+    padding: 8px; margin-bottom: 6px;
+    font-size: 9px;
+  }
+  .card .h { font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .card.dense { padding: 6px 8px; }
+  .card.accent { border-left: 3px solid var(--primary); }
+  .card.accent-error { border-left: 3px solid var(--error); }
+  .card.accent-outline { border-left: 3px solid var(--outline); }
+
+  .row { display: flex; gap: 6px; align-items: center; }
+  .row.between { justify-content: space-between; }
+
+  .chip {
+    padding: 3px 8px; border-radius: 4px;
+    background: var(--surface3);
+    border: 1px solid var(--outlineV);
+    font-size: 9px; color: var(--textV);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .chip.active { background: var(--surface4); color: var(--text); font-weight: 600; }
+  .chip .ico { width: 10px; height: 10px; }
+
+  .stats {
+    display: flex; background: var(--surface); border: 1px solid var(--outlineV);
+    border-radius: 6px; margin-bottom: 10px;
+  }
+  .stats .s {
+    flex: 1; text-align: center; padding: 8px 2px;
+    border-right: 1px solid var(--outlineV);
+  }
+  .stats .s:last-child { border-right: 0; }
+  .stats .n { font-size: 13px; font-weight: 700; color: var(--text); }
+  .stats .l { font-size: 8px; color: var(--textV); margin-top: 2px; }
+
+  .btn-primary {
+    background: var(--primary); color: var(--onPrim);
+    padding: 8px; border-radius: 6px; text-align: center;
+    font-size: 10px; font-weight: 600;
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-primary .ico { width: 12px; height: 12px; }
+  .btn-outline {
+    border: 1px solid var(--outlineV);
+    padding: 7px; border-radius: 6px; text-align: center;
+    font-size: 10px; color: var(--text);
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .btn-outline .ico { width: 11px; height: 11px; }
+
+  .fab {
+    position: absolute; right: 14px; bottom: 60px;
+    background: var(--primary); color: var(--onPrim);
+    padding: 6px 10px; border-radius: 6px;
+    font-size: 9px; font-weight: 600;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .fab .ico { width: 11px; height: 11px; }
+
+  /* ---------- Tab bar ---------- */
+  .tabbar {
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid var(--outlineV);
+    display: flex;
+    font-size: 8px; color: var(--textV);
+    position: relative;
+  }
+  .tabbar .t {
+    display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1;
+  }
+  .tabbar .t.active { color: var(--primary); }
+  .tabbar .t .ico { width: 14px; height: 14px; opacity: 0.55; }
+  .tabbar .t.active .ico { opacity: 1; }
+  .tabbar .scan {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    margin-top: -18px;
+  }
+  .tabbar .scan .btn {
+    width: 34px; height: 34px; border-radius: 17px;
+    background: var(--primary); color: var(--onPrim);
+    display: flex; align-items: center; justify-content: center;
+    border: 3px solid var(--surface);
+  }
+  .tabbar .scan .btn .ico { width: 16px; height: 16px; }
+  .tabbar .scan .l { color: var(--primary); font-weight: 600; font-size: 8px; margin-top: 2px; }
+
+  /* ---------- Profile ---------- */
+  .avatar-lg {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: var(--surface3);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary); font-weight: 700; font-size: 14px;
+  }
+  .profile-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .profile-head .info { flex: 1; }
+  .profile-head .n { font-size: 12px; font-weight: 700; color: var(--text); }
+  .profile-head .e { font-size: 9px; color: var(--textV); }
+  .role-tag {
+    background: var(--primaryC); color: var(--primary);
+    font-size: 8px; font-weight: 700; letter-spacing: 1px;
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* ---------- Viewfinder (QR) ---------- */
+  .viewfinder {
+    width: 130px; height: 130px;
+    align-self: center; margin: 14px 0; position: relative;
+  }
+  .viewfinder .corner {
+    position: absolute; width: 24px; height: 24px;
+    border: 2px solid var(--primary);
+  }
+  .viewfinder .corner.tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 4px; }
+  .viewfinder .corner.tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 4px; }
+  .viewfinder .corner.bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 4px; }
+  .viewfinder .corner.br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 4px; }
+  .viewfinder .scanline {
+    position: absolute; top: 50%; left: 10%; right: 10%;
+    height: 1px; background: var(--primary);
+    box-shadow: 0 0 8px var(--primary);
+  }
+  .viewfinder .qr-inner {
+    position: absolute; inset: 25px;
+    opacity: 0.25;
+    color: #fff;
+  }
+
+  /* ---------- Timeline dot ---------- */
+  .tl-row { display: flex; align-items: center; gap: 6px; font-size: 9px; color: var(--textV); margin-top: 4px; }
+  .tl-dot { width: 10px; height: 10px; border-radius: 5px; flex-shrink: 0; }
+  .tl-dot.done   { background: var(--primary); }
+  .tl-dot.active { background: var(--primary); box-shadow: 0 0 6px var(--primary); }
+  .tl-dot.pending{ border: 1px solid var(--outline); background: transparent; }
+
+  /* ---------- Switch (toggle) ---------- */
+  .switch {
+    width: 24px; height: 14px; background: var(--primary);
+    border-radius: 7px; position: relative;
+  }
+  .switch::after {
+    content: ''; position: absolute; right: 2px; top: 2px;
+    width: 10px; height: 10px; background: #fff; border-radius: 5px;
+  }
+  .switch.off { background: var(--surface3); }
+  .switch.off::after { right: auto; left: 2px; }
+
+  /* ---------- Notification components ---------- */
+  .notif-list { display: flex; flex-direction: column; gap: 6px; }
+  .notif-item {
+    display: flex; gap: 8px; align-items: flex-start;
+    background: var(--surface);
+    border: 1px solid var(--outlineV);
+    border-radius: 6px;
+    padding: 8px;
+  }
+  .notif-item.is-unread {
+    background: var(--surface2);
+    border-color: var(--outline);
+  }
+  .notif-icon {
+    width: 26px; height: 26px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .notif-icon .ico { width: 13px; height: 13px; }
+  .notif-icon.is-status   { background: var(--primaryC);   color: var(--primary);   }
+  .notif-icon.is-assigned { background: var(--secondaryC); color: var(--secondary); }
+  .notif-icon.is-resolved { background: var(--primaryC);   color: var(--primary);   }
+  .notif-icon.is-derived  { background: var(--secondaryC); color: var(--secondary); }
+  .notif-body { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .notif-header {
+    display: flex; justify-content: space-between; align-items: center; gap: 6px;
+  }
+  .notif-title {
+    font-size: 9px; font-weight: 600; color: var(--text);
+    flex: 1; line-height: 1.3;
+  }
+  .notif-unread-dot {
+    width: 5px; height: 5px; border-radius: 3px;
+    background: var(--primary);
+    flex-shrink: 0;
+  }
+  .notif-sub { font-size: 9px; color: var(--textV); }
+  .notif-summary-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .notif-summary-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .notif-summary-meta  { font-size: 10px; color: var(--textV); margin-top: 2px; }
+  .notif-filters {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;
+  }
+
+  /* ---------- Map placeholder ---------- */
+  .map-placeholder {
+    height: 50px; background: var(--surface);
+    border: 1px solid var(--outlineV);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+    color: var(--outline); font-size: 10px;
+    margin: 6px 0;
+  }
+  .map-placeholder .ico { width: 14px; height: 14px; }
+
+  .photo-placeholder {
+    height: 50px; background: var(--surface);
+    border: 1px solid var(--outlineV);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--outline);
+    margin: 6px 0;
+  }
+  .photo-placeholder .ico { width: 18px; height: 18px; }
+  .photo-placeholder.tall { height: 70px; }
+
+  /* ---------- Arrows ---------- */
+  svg.arrows {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ---------- Inspector mode ----------
+     Outlines every named component on hover so the user can visually
+     confirm each UI piece is a selectable component. When imported
+     to Figma (html.to.design) each of these also becomes a named layer. */
+  .inspector-on [data-component]:hover {
+    outline: 1px dashed var(--primary) !important;
+    outline-offset: 1px;
+    cursor: pointer;
+  }
+  .inspector-on [data-component]:hover::after {
+    content: attr(data-component);
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 0;
+    background: var(--primary);
+    color: var(--onPrim);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    z-index: 50;
+    pointer-events: none;
+    text-transform: none;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  /* Prevent nested hover highlighting both parent and child */
+  .inspector-on [data-component]:hover [data-component]:hover {
+    outline-color: var(--secondary) !important;
+  }
+
+  .toolbar .btn.toggled {
+    background: var(--primary); color: var(--onPrim); border-color: transparent;
+    font-weight: 600;
+  }
+
+  /* ---------- Export overlay ---------- */
+  .export-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.6);
+    display: none; align-items: center; justify-content: center;
+  }
+  .export-overlay.on { display: flex; }
+  .export-overlay .box {
+    background: var(--surface);
+    border: 1px solid var(--outlineV);
+    border-radius: 10px;
+    padding: 24px 28px;
+    font-size: 13px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--surface4);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ======================================================
+     ICON LIBRARY (all custom SVG, no emojis anywhere)
+====================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Opero logo mark: concentric ring + dot -->
+    <symbol id="logo" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"  fill="none" stroke="currentColor" stroke-width="2.5"/>
+      <circle cx="12" cy="12" r="3"  fill="currentColor"/>
+    </symbol>
+
+    <!-- Generic icons -->
+    <symbol id="i-bell" viewBox="0 0 24 24">
+      <path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 8H4c0-2 2-3 2-8z"/>
+      <path d="M10 20a2 2 0 0 0 4 0"/>
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="7"/>
+      <path d="m20 20-3.5-3.5"/>
+    </symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </symbol>
+    <symbol id="i-location" viewBox="0 0 24 24">
+      <path d="M12 22s8-8 8-13a8 8 0 0 0-16 0c0 5 8 13 8 13z"/>
+      <circle cx="12" cy="9" r="3"/>
+    </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 7v5l3 2"/>
+    </symbol>
+    <symbol id="i-user" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>
+    </symbol>
+    <symbol id="i-users" viewBox="0 0 24 24">
+      <circle cx="9" cy="8" r="3.5"/>
+      <path d="M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5"/>
+      <path d="M15 9a3.5 3.5 0 1 0 0-6"/>
+      <path d="M17 20c0-2 1-3.5 3-4.5"/>
+    </symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24">
+      <path d="M4 20h4l10-10-4-4L4 16v4z"/>
+      <path d="M14 6l4 4"/>
+    </symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24">
+      <rect x="4" y="10" width="16" height="11" rx="2"/>
+      <path d="M8 10V7a4 4 0 1 1 8 0v3"/>
+    </symbol>
+    <symbol id="i-help" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 1-1.5 1.5-1.5 2.5"/>
+      <circle cx="12" cy="17.5" r="0.5" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24">
+      <path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5"/>
+      <path d="M14 8l4 4-4 4"/>
+      <path d="M18 12H9"/>
+    </symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24">
+      <rect x="4" y="5" width="16" height="16" rx="2"/>
+      <path d="M4 10h16M9 3v4M15 3v4"/>
+    </symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24">
+      <path d="M4 12a8 8 0 0 1 13.5-5.5L20 9"/>
+      <path d="M20 4v5h-5"/>
+      <path d="M20 12a8 8 0 0 1-13.5 5.5L4 15"/>
+      <path d="M4 20v-5h5"/>
+    </symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24">
+      <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z"/>
+    </symbol>
+    <symbol id="i-close" viewBox="0 0 24 24">
+      <path d="M6 6l12 12M18 6L6 18"/>
+    </symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24">
+      <path d="M13 2 4 14h7l-1 8 9-12h-7z"/>
+    </symbol>
+    <symbol id="i-building" viewBox="0 0 24 24">
+      <rect x="4" y="3" width="16" height="18" rx="1"/>
+      <path d="M8 7h2M8 11h2M8 15h2M14 7h2M14 11h2M14 15h2M10 21v-4h4v4"/>
+    </symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24">
+      <path d="M4 8a2 2 0 0 1 2-2h2l2-2h4l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/>
+      <circle cx="12" cy="13" r="3.5"/>
+    </symbol>
+    <symbol id="i-tool" viewBox="0 0 24 24">
+      <path d="M14.7 6.3a3.5 3.5 0 0 1 4.6 4.6l-1.5 1.5-3.1-3.1 1.5-1.5z"/>
+      <path d="m13.2 7.8-9.4 9.4a1.5 1.5 0 0 0 0 2.1l1 1a1.5 1.5 0 0 0 2.1 0l9.4-9.4"/>
+    </symbol>
+    <symbol id="i-map" viewBox="0 0 24 24">
+      <path d="M3 6v15l6-3 6 3 6-3V3l-6 3-6-3-6 3z"/>
+      <path d="M9 3v15M15 6v15"/>
+    </symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24">
+      <path d="M12 3 2 20h20L12 3z"/>
+      <path d="M12 10v5"/>
+      <circle cx="12" cy="18" r="0.5" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="m5 12 4.5 4.5L19 7"/>
+    </symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="m8 12 3 3 5-5"/>
+    </symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24">
+      <path d="m9 5 7 7-7 7"/>
+    </symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24">
+      <path d="m5 9 7 7 7-7"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M12 4v16M4 12h16"/>
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 24 24">
+      <path d="M6 4v16l14-8z" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-image" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="18" height="14" rx="2"/>
+      <path d="m3 17 5-5 4 4 3-3 6 6"/>
+      <circle cx="8" cy="10" r="1.5" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24">
+      <rect x="3" y="3"  width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <path d="M14 14h3v3h-3zM20 14h1v1h-1zM14 20h1v1h-1zM17 17h4v4h-4z"/>
+    </symbol>
+    <symbol id="i-scanner" viewBox="0 0 24 24">
+      <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M4 16v3a1 1 0 0 0 1 1h3M20 16v3a1 1 0 0 1-1 1h-3"/>
+      <path d="M3 12h18"/>
+    </symbol>
+    <symbol id="i-home" viewBox="0 0 24 24">
+      <path d="M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1v-9z"/>
+    </symbol>
+    <symbol id="i-assignment" viewBox="0 0 24 24">
+      <rect x="5" y="4" width="14" height="17" rx="1"/>
+      <rect x="9" y="2" width="6" height="4" rx="1" fill="currentColor" stroke="none"/>
+      <path d="M9 11h6M9 14h6M9 17h4"/>
+    </symbol>
+    <symbol id="i-history" viewBox="0 0 24 24">
+      <path d="M3 12a9 9 0 1 0 3-6.7"/>
+      <path d="M3 4v5h5"/>
+      <path d="M12 8v5l3 2"/>
+    </symbol>
+    <symbol id="i-notifs" viewBox="0 0 24 24">
+      <path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 8H4c0-2 2-3 2-8z"/>
+      <path d="M10 20a2 2 0 0 0 4 0"/>
+    </symbol>
+    <symbol id="i-dashboard" viewBox="0 0 24 24">
+      <rect x="3"  y="3"  width="8" height="8" rx="1"/>
+      <rect x="13" y="3"  width="8" height="5" rx="1"/>
+      <rect x="3"  y="13" width="8" height="8" rx="1"/>
+      <rect x="13" y="10" width="8" height="11" rx="1"/>
+    </symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24">
+      <path d="M4 8h14M14 4l4 4-4 4"/>
+      <path d="M20 16H6M10 20l-4-4 4-4"/>
+    </symbol>
+    <symbol id="i-engineer" viewBox="0 0 24 24">
+      <circle cx="12" cy="9" r="4"/>
+      <path d="M5 21c0-4 3-6 7-6s7 2 7 6"/>
+      <path d="M9 6h6"/>
+    </symbol>
+    <symbol id="i-autorenew" viewBox="0 0 24 24">
+      <path d="M4 12a8 8 0 0 1 14-5"/>
+      <path d="M18 3v5h-5"/>
+      <path d="M20 12a8 8 0 0 1-14 5"/>
+      <path d="M6 21v-5h5"/>
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24">
+      <path d="M12 3v12M7 10l5 5 5-5"/>
+      <path d="M4 19h16"/>
+    </symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24">
+      <path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>
+    </symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M9 12h6M12 9v6"/>
+    </symbol>
+    <symbol id="i-mouse" viewBox="0 0 24 24">
+      <rect x="7" y="3" width="10" height="18" rx="5"/>
+      <path d="M12 7v4"/>
+    </symbol>
+    <symbol id="i-electrical" viewBox="0 0 24 24">
+      <path d="m12 2-6 12h5l-1 8 7-12h-5z" fill="currentColor" stroke="none"/>
+    </symbol>
+
+    <!-- Arrow markers for flows -->
+    <marker id="arr-primary" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#BBA978" />
+    </marker>
+    <marker id="arr-secondary" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#6B94AA" />
+    </marker>
+    <marker id="arr-error" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#B06060" />
+    </marker>
+  </defs>
+</svg>
+
+<!-- ======================================================
+     TOOLBAR
+====================================================== -->
+<div class="toolbar">
+  <div class="brand"><svg class="ico"><use href="#logo"/></svg>OPERO · FLOW</div>
+  <span class="sep"></span>
+  <span class="hint"><svg class="ico"><use href="#i-mouse"/></svg> Arrastrá · rueda para zoom</span>
+  <span class="sep"></span>
+  <button class="btn" onclick="resetView()"><svg class="ico"><use href="#i-reset"/></svg>Reset</button>
+  <button class="btn" onclick="fit()"><svg class="ico"><use href="#i-fit"/></svg>Ajustar</button>
+  <button class="btn" id="inspector-btn" onclick="toggleInspector()"><svg class="ico"><use href="#i-search"/></svg>Inspector</button>
+  <span class="sep"></span>
+  <button class="btn primary" onclick="exportAll()"><svg class="ico"><use href="#i-download"/></svg>Exportar todo</button>
+</div>
+
+<!-- ======================================================
+     LEGEND
+====================================================== -->
+<div class="legend">
+  <div class="item"><span class="dot" style="background: var(--primary)"></span> Alumno / Profesor</div>
+  <div class="item"><span class="dot" style="background: var(--secondary)"></span> Gerente de Departamento</div>
+  <div class="item"><span class="dot" style="background: var(--tertiary)"></span> Empleado Mantenimiento</div>
+  <div class="item"><span class="dot" style="background: var(--textV)"></span> Común / Auth</div>
+  <div style="height: 6px"></div>
+  <div class="item"><span class="line" style="background: var(--primary)"></span> Navegación principal</div>
+  <div class="item"><span class="line dashed"></span> Sub-flujo / acción</div>
+  <div class="item"><span class="line" style="background: var(--error)"></span> Logout</div>
+</div>
+
+<!-- ======================================================
+     CANVAS
+====================================================== -->
+<div class="canvas" id="canvas">
+<svg class="arrows" id="arrows"></svg>
+
+<!-- ============= AUTH ============= -->
+<div class="group" style="top: 80px; left: 80px;">
+  <div class="group-title">Auth · Común</div>
+  <div class="group-row">
+
+    <!-- Onboarding -->
+    <div class="screen" id="s-onboarding">
+      <span class="role-badge">AUTH</span>
+      <div class="exp" onclick="exportScreen('s-onboarding', 'onboarding')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="sub">Saltar</div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center;">
+        <div style="width:60px; height:60px; border-radius:14px; background:var(--surface); border:1px solid var(--outlineV); display:flex; align-items:center; justify-content:center; color:var(--primary)">
+          <svg class="ico" style="width:28px;height:28px"><use href="#i-warn"/></svg>
+        </div>
+        <div class="title-lg" style="text-align:center;">Reportá incidencias</div>
+        <div class="subtitle" style="text-align:center;">Registrá fallos en instalaciones con foto y ubicación.</div>
+        <div style="display:flex; gap:4px; margin-top:8px;">
+          <div style="width:14px; height:3px; border-radius:2px; background:var(--primary)"></div>
+          <div style="width:4px; height:3px; border-radius:2px; background:var(--outlineV)"></div>
+          <div style="width:4px; height:3px; border-radius:2px; background:var(--outlineV)"></div>
+        </div>
+      </div>
+      <div class="btn-primary">Siguiente<svg class="ico"><use href="#i-chevron"/></svg></div>
+      <div class="sub" style="text-align:center; margin-top:6px">¿Ya tenés cuenta? <span style="color:var(--primary); font-weight:600">Ingresar</span></div>
+      <span class="label">Onboarding</span>
+    </div>
+
+    <!-- Login -->
+    <div class="screen" id="s-login">
+      <span class="role-badge">AUTH</span>
+      <div class="exp" onclick="exportScreen('s-login', 'login')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px; margin-bottom: 14px;">
+        <svg class="ico" style="width:50px;height:50px;color:#fff"><use href="#logo"/></svg>
+        <div style="font-size:22px; font-weight:800; color:var(--primary); letter-spacing:4px;">OPERO</div>
+        <div class="sub" style="text-align:center;">Sistema de gestión de incidencias</div>
+      </div>
+      <div class="row" style="margin-bottom: 10px; background:var(--surface); padding:3px; border-radius:6px; border:1px solid var(--outlineV); gap:0">
+        <div class="chip active" style="flex:1; text-align:center; border:0; justify-content:center">Alumno</div>
+        <div class="chip" style="flex:1; text-align:center; border:0; justify-content:center">Manager</div>
+        <div class="chip" style="flex:1; text-align:center; border:0; justify-content:center">Operador</div>
+      </div>
+      <div class="sub" style="margin-bottom:3px">Email</div>
+      <div class="card" style="padding:7px; color:var(--textV); margin-bottom:8px">nombre@universidad.edu</div>
+      <div class="sub" style="margin-bottom:3px">Contraseña</div>
+      <div class="card" style="padding:7px; color:var(--textV); margin-bottom:10px">••••••••</div>
+      <div class="btn-primary">Ingresar</div>
+      <div class="sub" style="text-align:center; margin-top:6px">¿No tenés cuenta? <span style="color:var(--primary); font-weight:600">Registrarse</span></div>
+      <span class="label">Login</span>
+    </div>
+
+    <!-- Register -->
+    <div class="screen" id="s-register">
+      <span class="role-badge">AUTH</span>
+      <div class="exp" onclick="exportScreen('s-register', 'register')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="icon-btn"><svg class="ico"><use href="#i-chevron"/></svg></div>
+        <span></span><span></span>
+      </div>
+      <svg class="ico" style="width:30px; height:30px; color:#fff; margin-bottom:8px"><use href="#logo"/></svg>
+      <div class="title-lg">Crear cuenta</div>
+      <div class="subtitle">Accedé al sistema de gestión</div>
+      <div class="sub" style="margin:6px 0 3px">Número de legajo</div>
+      <div class="card" style="padding:7px; color:var(--textV)">Ej. 123456</div>
+      <div class="sub" style="margin:6px 0 3px">Email institucional</div>
+      <div class="card" style="padding:7px; color:var(--textV)">nombre@universidad.edu</div>
+      <div class="sub" style="margin:6px 0 3px">Contraseña</div>
+      <div class="card" style="padding:7px; color:var(--textV); margin-bottom:10px">Mínimo 8 caracteres</div>
+      <div class="btn-primary">Crear cuenta</div>
+      <span class="label">Register</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============= STUDENT ============= -->
+<div class="group" style="top: 680px; left: 80px;">
+  <div class="group-title">Alumno · Profesor</div>
+  <div class="group-row">
+
+    <!-- Home -->
+    <div class="screen" id="s-stu-home">
+      <span class="role-badge student">ALUMNO</span>
+      <div class="exp" onclick="exportScreen('s-stu-home', 'alumno-home')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="row" style="gap:4px"><div class="icon-btn"><svg class="ico"><use href="#i-bell"/></svg></div><div class="avatar-sm">AM</div></div>
+      </div>
+      <div class="title-lg">Hola, Alejandro</div>
+      <div class="subtitle"><b style="color:var(--text)">3</b> activas · <b style="color:var(--text)">12</b> resueltas</div>
+      <div class="row between" style="margin-bottom:6px">
+        <div style="font-size:10px; font-weight:600">Recientes</div>
+        <div class="sub" style="color:var(--primary)">Ver todas</div>
+      </div>
+      <div class="card dense"><div class="h">Falla en proyector</div><div class="sub">Aula B-204 · Hace 15 min</div></div>
+      <div class="card dense"><div class="h">Gotera en techo</div><div class="sub">Lab. Química · Hoy 09:30</div></div>
+      <div class="card dense"><div class="h">Silla dañada</div><div class="sub">Biblioteca · Ayer</div></div>
+      <div class="fab"><svg class="ico"><use href="#i-plus"/></svg>Nuevo reporte</div>
+      <div class="tabbar">
+        <div class="t active"><svg class="ico"><use href="#i-home"/></svg>Inicio</div>
+        <div class="t"><svg class="ico"><use href="#i-assignment"/></svg>Incidencias</div>
+        <div class="scan"><div class="btn"><svg class="ico"><use href="#i-scanner"/></svg></div><div class="l">Escanear</div></div>
+        <div class="t"><svg class="ico"><use href="#i-notifs"/></svg>Avisos</div>
+        <div class="t"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </div>
+      <span class="label">Home (Inicio)</span>
+    </div>
+
+    <!-- My Incidents -->
+    <div class="screen" id="s-stu-incidents">
+      <span class="role-badge student">ALUMNO</span>
+      <div class="exp" onclick="exportScreen('s-stu-incidents', 'alumno-incidencias')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="icon-btn"><svg class="ico"><use href="#i-search"/></svg></div>
+      </div>
+      <div class="subtitle">12 reportes en total</div>
+      <div class="row" style="margin-bottom:6px; flex-wrap:wrap">
+        <div class="chip active">Todas</div><div class="chip">En curso</div><div class="chip">Resueltas</div>
+      </div>
+      <div class="row" style="margin-bottom:8px; flex-wrap:wrap">
+        <div class="chip active"><svg class="ico"><use href="#i-calendar"/></svg>Hoy</div>
+        <div class="chip"><svg class="ico"><use href="#i-calendar"/></svg>Semana</div>
+        <div class="chip"><svg class="ico"><use href="#i-calendar"/></svg>Mes</div>
+      </div>
+      <div class="card dense"><div class="row between"><div class="h">Climatización</div><div class="row" style="color:var(--primary); font-size:8px; gap:3px"><div class="tl-dot done" style="width:5px;height:5px"></div>En proceso</div></div><div class="sub">Edificio Central</div></div>
+      <div class="card dense accent-error"><div class="row between"><div class="h">Filtración Lab. B2</div><div class="row" style="color:var(--error); font-size:8px; gap:3px"><div class="tl-dot" style="width:5px;height:5px;background:var(--error)"></div>Abierto</div></div><div class="sub">Sótano · Alta prioridad</div></div>
+      <div class="card dense"><div class="row between"><div class="h">Luminaria LED</div><div class="row" style="color:var(--secondary); font-size:8px; gap:3px"><div class="tl-dot" style="width:5px;height:5px;background:var(--secondary)"></div>Finalizado</div></div><div class="sub">Biblioteca · Ayer</div></div>
+      <div class="tabbar">
+        <div class="t"><svg class="ico"><use href="#i-home"/></svg>Inicio</div>
+        <div class="t active"><svg class="ico"><use href="#i-assignment"/></svg>Incidencias</div>
+        <div class="scan"><div class="btn"><svg class="ico"><use href="#i-scanner"/></svg></div><div class="l">Escanear</div></div>
+        <div class="t"><svg class="ico"><use href="#i-notifs"/></svg>Avisos</div>
+        <div class="t"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </div>
+      <span class="label">Mis Incidencias</span>
+    </div>
+
+    <!-- Scan QR -->
+    <div class="screen dark" id="s-stu-scan">
+      <span class="role-badge student">ALUMNO</span>
+      <div class="exp" onclick="exportScreen('s-stu-scan', 'alumno-scan-qr')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="row between" style="margin-bottom:6px">
+        <div class="icon-btn" style="background:rgba(255,255,255,0.1); color:#fff"><svg class="ico"><use href="#i-close"/></svg></div>
+        <div style="font-size:10px; color:#fff; font-weight:600">Escanear QR</div>
+        <div class="icon-btn" style="background:rgba(255,255,255,0.1); color:#fff"><svg class="ico"><use href="#i-bolt"/></svg></div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center">
+        <div style="font-size:12px; font-weight:700; color:#fff">Escaneá el QR del aula</div>
+        <div class="sub" style="color:rgba(255,255,255,0.5); line-height:1.4">Ubicá el código dentro del marco</div>
+        <div class="viewfinder">
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+          <div class="scanline"></div>
+          <svg class="ico qr-inner"><use href="#i-qr"/></svg>
+        </div>
+        <div style="background:var(--primary); color:var(--onPrim); padding:6px 14px; border-radius:16px; font-size:10px; font-weight:600; display:flex; align-items:center; gap:5px">
+          <svg class="ico"><use href="#i-qr"/></svg>Simular escaneo
+        </div>
+      </div>
+      <div style="background:var(--surface); padding:8px; border-radius:10px 10px 0 0; margin:0 -14px -16px -14px; padding-bottom:16px">
+        <div class="sub" style="font-weight:600; padding:0 4px 4px; color:var(--text)">Escaneos recientes</div>
+        <div class="row" style="padding:4px; gap:8px"><div class="notif-ic status" style="width:24px;height:24px"><svg class="ico"><use href="#i-qr"/></svg></div><div style="flex:1"><div class="h">Piso 6 · Aula 665 · UADE Labs</div><div class="sub">UADE-6-665 · Hace 2d</div></div></div>
+      </div>
+      <span class="label">Scan QR</span>
+    </div>
+
+    <!-- Create Incident -->
+    <div class="screen" id="s-stu-create">
+      <span class="role-badge student">ALUMNO</span>
+      <div class="exp" onclick="exportScreen('s-stu-create', 'alumno-crear')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="icon-btn"><svg class="ico"><use href="#i-chevron"/></svg></div>
+        <div style="font-size:10px; font-weight:600">Nuevo reporte</div>
+        <span></span>
+      </div>
+      <div class="card" style="border-color:var(--primary); background:var(--primaryC); display:flex; gap:8px; align-items:center;">
+        <div class="notif-ic status"><svg class="ico"><use href="#i-qr"/></svg></div>
+        <div style="flex:1"><div class="h" style="color:var(--primary)">Ubicación cargada por QR</div><div class="sub" style="color:var(--primary); opacity:0.8">UADE-6-665 · Piso 6 · Aula 665</div></div>
+      </div>
+      <div class="sub" style="margin:8px 0 3px">Asunto</div>
+      <div class="card" style="color:var(--textV)">Ej. Fallo eléctrico aula 402</div>
+      <div class="sub" style="margin:6px 0 3px">Ubicación</div>
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center; gap:4px">
+        <div class="row" style="flex:1; gap:4px; color:var(--text)"><svg class="ico" style="color:var(--textV)"><use href="#i-location"/></svg>Piso 6 · Aula 665 · UADE Labs</div>
+        <svg class="ico" style="color:var(--primary); width:12px; height:12px"><use href="#i-scanner"/></svg>
+      </div>
+      <div class="row" style="flex-wrap:wrap; margin: 6px 0; gap:4px"><div class="chip"><svg class="ico"><use href="#i-building"/></svg>UADE Labs</div><div class="chip">Piso 6</div><div class="chip">Aula 665</div></div>
+      <div class="sub" style="margin:6px 0 3px">Departamento</div>
+      <div class="row" style="flex-wrap:wrap"><div class="chip active">Mantenimiento</div><div class="chip">IT</div><div class="chip">Seguridad</div></div>
+      <div class="card" style="margin-top: 8px; border-style:dashed; text-align:center; color:var(--textV); display:flex; align-items:center; justify-content:center; gap:6px">
+        <svg class="ico"><use href="#i-camera"/></svg>Adjuntar imagen
+      </div>
+      <div class="btn-primary">Enviar reporte<svg class="ico"><use href="#i-chevron"/></svg></div>
+      <span class="label">Crear Incidencia</span>
+    </div>
+
+    <!-- Incident Detail -->
+    <div class="screen" id="s-stu-detail">
+      <span class="role-badge student">ALUMNO</span>
+      <div class="exp" onclick="exportScreen('s-stu-detail', 'alumno-detalle')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="icon-btn"><svg class="ico"><use href="#i-chevron"/></svg></div>
+        <span></span>
+        <div class="icon-btn"><svg class="ico"><use href="#i-assignment"/></svg></div>
+      </div>
+      <div class="sub">#INC-8821</div>
+      <div class="title-lg">Rotura de tubería principal</div>
+      <div class="card dense"><div class="row between"><div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-location"/></svg>Ubicación</div><div class="h">Fac. Ingeniería</div></div></div>
+      <div class="card dense"><div class="row between"><div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-clock"/></svg>Reportado</div><div class="h">12 Oct, 08:30</div></div></div>
+      <div class="card dense"><div class="row between"><div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-user"/></svg>Asignado a</div><div class="h">R. Mendez</div></div></div>
+      <div style="font-size:10px; font-weight:600; margin:8px 0 4px">Seguimiento</div>
+      <div class="tl-row"><div class="tl-dot done"></div>Reportado — 08:30</div>
+      <div class="tl-row"><div class="tl-dot done"></div>Asignado — 09:15</div>
+      <div class="tl-row" style="color:var(--primary)"><div class="tl-dot active"></div>En proceso — 45 min</div>
+      <div class="tl-row" style="opacity:0.5"><div class="tl-dot pending"></div>Finalizado</div>
+      <div class="row" style="margin-top:10px; gap:6px">
+        <div class="btn-outline" style="flex:1"><svg class="ico"><use href="#i-chat"/></svg>Mensaje</div>
+        <div class="btn-primary" style="flex:1; margin:0"><svg class="ico"><use href="#i-refresh"/></svg>Actualizar</div>
+      </div>
+      <span class="label">Detalle Incidencia</span>
+    </div>
+
+    <!-- Notifications -->
+    <div class="screen" id="s-stu-notif" data-component="NotificationsScreen">
+      <span class="role-badge student">ALUMNO</span>
+      <div class="exp" onclick="exportScreen('s-stu-notif', 'alumno-notificaciones')"><svg class="ico"><use href="#i-download"/></svg></div>
+
+      <header class="topbar" data-component="TopBar">
+        <div class="brand-row" data-component="Logo"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="avatar-sm" data-component="Avatar">AM</div>
+      </header>
+
+      <section class="notif-summary-row" data-component="Header">
+        <div data-component="HeaderText">
+          <div class="notif-summary-title" data-component="Title">Notificaciones</div>
+          <div class="notif-summary-meta" data-component="Subtitle">2 sin leer · 6 total</div>
+        </div>
+        <button class="chip" data-component="MarkAllButton"><svg class="ico"><use href="#i-check"/></svg>Todas</button>
+      </section>
+
+      <nav class="notif-filters" data-component="FilterChips">
+        <span class="chip active" data-component="FilterChip">Todas</span>
+        <span class="chip"        data-component="FilterChip">No leídas</span>
+        <span class="chip"        data-component="FilterChip">En gestión</span>
+        <span class="chip"        data-component="FilterChip">Resueltos</span>
+      </nav>
+
+      <ul class="notif-list" data-component="NotificationList">
+
+        <li class="notif-item is-unread" data-component="NotificationItem">
+          <div class="notif-icon is-status" data-component="NotificationIcon">
+            <svg class="ico"><use href="#i-autorenew"/></svg>
+          </div>
+          <div class="notif-body" data-component="NotificationBody">
+            <div class="notif-header" data-component="NotificationHeader">
+              <h4 class="notif-title" data-component="NotificationTitle">Tu reporte pasó a "En proceso"</h4>
+              <span class="notif-unread-dot" data-component="UnreadDot"></span>
+            </div>
+            <p class="notif-sub" data-component="NotificationMeta">#INC-8821 · Rotura tubería · Hace 15 min</p>
+          </div>
+        </li>
+
+        <li class="notif-item is-unread" data-component="NotificationItem">
+          <div class="notif-icon is-assigned" data-component="NotificationIcon">
+            <svg class="ico"><use href="#i-engineer"/></svg>
+          </div>
+          <div class="notif-body" data-component="NotificationBody">
+            <div class="notif-header" data-component="NotificationHeader">
+              <h4 class="notif-title" data-component="NotificationTitle">Técnico asignado</h4>
+              <span class="notif-unread-dot" data-component="UnreadDot"></span>
+            </div>
+            <p class="notif-sub" data-component="NotificationMeta">R. Méndez está en camino</p>
+          </div>
+        </li>
+
+        <li class="notif-item" data-component="NotificationItem">
+          <div class="notif-icon is-resolved" data-component="NotificationIcon">
+            <svg class="ico"><use href="#i-check-circle"/></svg>
+          </div>
+          <div class="notif-body" data-component="NotificationBody">
+            <h4 class="notif-title" data-component="NotificationTitle">Tu reporte fue resuelto</h4>
+            <p class="notif-sub" data-component="NotificationMeta">#INC-8775 · Luminaria LED · Ayer</p>
+          </div>
+        </li>
+
+        <li class="notif-item" data-component="NotificationItem">
+          <div class="notif-icon is-derived" data-component="NotificationIcon">
+            <svg class="ico"><use href="#i-swap"/></svg>
+          </div>
+          <div class="notif-body" data-component="NotificationBody">
+            <h4 class="notif-title" data-component="NotificationTitle">Tu reporte fue derivado</h4>
+            <p class="notif-sub" data-component="NotificationMeta">#INC-8712 · Pasó a IT · 11 Abr</p>
+          </div>
+        </li>
+
+      </ul>
+
+      <nav class="tabbar" data-component="TabBar">
+        <div class="t"        data-component="TabItem"><svg class="ico"><use href="#i-home"/></svg>Inicio</div>
+        <div class="t"        data-component="TabItem"><svg class="ico"><use href="#i-assignment"/></svg>Incidencias</div>
+        <div class="scan"     data-component="TabScanFAB">
+          <div class="btn"    data-component="ScanButton"><svg class="ico"><use href="#i-scanner"/></svg></div>
+          <div class="l"      data-component="ScanLabel">Escanear</div>
+        </div>
+        <div class="t active" data-component="TabItem"><svg class="ico"><use href="#i-notifs"/></svg>Avisos</div>
+        <div class="t"        data-component="TabItem"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </nav>
+
+      <span class="label">Notificaciones</span>
+    </div>
+
+    <!-- Profile -->
+    <div class="screen" id="s-stu-profile">
+      <span class="role-badge student">ALUMNO</span>
+      <div class="exp" onclick="exportScreen('s-stu-profile', 'alumno-perfil')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="icon-btn"><svg class="ico"><use href="#i-settings"/></svg></div>
+      </div>
+      <div class="profile-head">
+        <div class="avatar-lg">AM</div>
+        <div class="info"><div class="n">Alejandro Moreno</div><div class="e">a.moreno@opero.edu</div></div>
+      </div>
+      <div class="stats">
+        <div class="s"><div class="n">14</div><div class="l">Reportadas</div></div>
+        <div class="s"><div class="n">11</div><div class="l">Resueltas</div></div>
+        <div class="s"><div class="n">3</div><div class="l">Activas</div></div>
+      </div>
+      <div class="card dense"><div class="row between"><div class="row" style="gap:8px"><svg class="ico" style="color:var(--textV)"><use href="#i-edit"/></svg>Editar perfil</div><svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg></div></div>
+      <div class="card dense"><div class="row between"><div class="row" style="gap:8px"><svg class="ico" style="color:var(--textV)"><use href="#i-bell"/></svg>Notificaciones</div><svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg></div></div>
+      <div class="card dense"><div class="row between"><div class="row" style="gap:8px"><svg class="ico" style="color:var(--textV)"><use href="#i-lock"/></svg>Seguridad</div><svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg></div></div>
+      <div class="card dense"><div class="row between"><div class="row" style="gap:8px"><svg class="ico" style="color:var(--textV)"><use href="#i-help"/></svg>Soporte</div><svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg></div></div>
+      <div style="background:var(--errorC); color:var(--error); text-align:center; padding:8px; border-radius:6px; font-size:10px; font-weight:600; margin-top: 8px; display:flex; align-items:center; justify-content:center; gap:6px">
+        <svg class="ico"><use href="#i-logout"/></svg>Cerrar sesión
+      </div>
+      <div class="tabbar">
+        <div class="t"><svg class="ico"><use href="#i-home"/></svg>Inicio</div>
+        <div class="t"><svg class="ico"><use href="#i-assignment"/></svg>Incidencias</div>
+        <div class="scan"><div class="btn"><svg class="ico"><use href="#i-scanner"/></svg></div><div class="l">Escanear</div></div>
+        <div class="t"><svg class="ico"><use href="#i-notifs"/></svg>Avisos</div>
+        <div class="t active"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </div>
+      <span class="label">Perfil</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============= MANAGER ============= -->
+<div class="group" style="top: 1340px; left: 80px;">
+  <div class="group-title">Gerente de Departamento</div>
+  <div class="group-row">
+
+    <!-- Dashboard -->
+    <div class="screen" id="s-mgr-home">
+      <span class="role-badge manager">MANAGER</span>
+      <div class="exp" onclick="exportScreen('s-mgr-home', 'manager-dashboard')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="row" style="gap:4px"><div class="icon-btn"><svg class="ico"><use href="#i-bell"/></svg></div><div class="avatar-sm">JM</div></div>
+      </div>
+      <div class="title-lg">Panel de control</div>
+      <div class="subtitle">Miércoles, 23 de abril</div>
+      <div class="stats">
+        <div class="s"><div class="n">12</div><div class="l">Nuevas</div></div>
+        <div class="s"><div class="n">8</div><div class="l">En proceso</div></div>
+        <div class="s"><div class="n">45</div><div class="l">Resueltas</div></div>
+      </div>
+      <div class="row between" style="margin-bottom:6px"><div style="font-size:10px; font-weight:600">Pendientes de asignar</div><div class="sub" style="color:var(--primary)">Ver todas</div></div>
+      <div class="card dense accent-error"><div class="h">Falla eléctrica Lab. Física</div><div class="sub">Edificio C · Mantenimiento · 12 min</div></div>
+      <div class="card dense accent"><div class="h">Fuga sanitarios</div><div class="sub">Biblioteca · Plomería · 45 min</div></div>
+      <div class="card dense accent-outline"><div class="h">Reposición luminaria</div><div class="sub">Edificio A · Iluminación · 2h</div></div>
+      <div class="tabbar">
+        <div class="t active"><svg class="ico"><use href="#i-dashboard"/></svg>Inicio</div>
+        <div class="t"><svg class="ico"><use href="#i-assignment"/></svg>Incidencias</div>
+        <div class="t"><svg class="ico"><use href="#i-users"/></svg>Equipo</div>
+        <div class="t"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </div>
+      <span class="label">Dashboard</span>
+    </div>
+
+    <!-- Incidents List -->
+    <div class="screen" id="s-mgr-list">
+      <span class="role-badge manager">MANAGER</span>
+      <div class="exp" onclick="exportScreen('s-mgr-list', 'manager-incidencias')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="icon-btn"><svg class="ico"><use href="#i-search"/></svg></div>
+      </div>
+      <div class="title-lg">Incidencias</div>
+      <div class="subtitle">5 reportes del depto</div>
+      <div class="row" style="flex-wrap:wrap; margin-bottom:8px">
+        <div class="chip active">Todas</div><div class="chip">Abiertas</div><div class="chip">En proceso</div><div class="chip">Finalizadas</div>
+      </div>
+      <div class="card dense accent-error">
+        <div class="row between"><div class="sub">#INC-8821</div><div class="row" style="color:var(--primary); font-size:8px; gap:3px"><div class="tl-dot done" style="width:5px;height:5px"></div>En proceso</div></div>
+        <div class="h">Rotura tubería principal</div>
+        <div class="row between" style="margin-top:4px; padding-top:4px; border-top:1px solid var(--outlineV)">
+          <div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-user"/></svg>R. Mendez</div>
+          <div class="sub">45 min</div>
+        </div>
+      </div>
+      <div class="card dense accent-error">
+        <div class="row between"><div class="sub">#INC-8818</div><div class="row" style="color:var(--error); font-size:8px; gap:3px"><div class="tl-dot" style="width:5px;height:5px;background:var(--error)"></div>Abierto</div></div>
+        <div class="h">Falla eléctrica Lab</div>
+        <div class="row between" style="margin-top:4px; padding-top:4px; border-top:1px solid var(--outlineV)">
+          <div class="row sub" style="gap:4px; font-style:italic"><svg class="ico"><use href="#i-user"/></svg>Sin asignar</div>
+          <div class="sub">1h</div>
+        </div>
+      </div>
+      <div class="card dense accent">
+        <div class="row between"><div class="sub">#INC-8810</div><div class="row" style="color:var(--secondary); font-size:8px; gap:3px"><div class="tl-dot" style="width:5px;height:5px;background:var(--secondary)"></div>Finalizado</div></div>
+        <div class="h">Reposición luminaria</div>
+        <div class="row between" style="margin-top:4px; padding-top:4px; border-top:1px solid var(--outlineV)">
+          <div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-user"/></svg>C. Mendoza</div>
+          <div class="sub">Ayer</div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="t"><svg class="ico"><use href="#i-dashboard"/></svg>Inicio</div>
+        <div class="t active"><svg class="ico"><use href="#i-assignment"/></svg>Incidencias</div>
+        <div class="t"><svg class="ico"><use href="#i-users"/></svg>Equipo</div>
+        <div class="t"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </div>
+      <span class="label">Lista Incidencias</span>
+    </div>
+
+    <!-- Manager Detail -->
+    <div class="screen" id="s-mgr-detail">
+      <span class="role-badge manager">MANAGER</span>
+      <div class="exp" onclick="exportScreen('s-mgr-detail', 'manager-gestionar')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="icon-btn"><svg class="ico"><use href="#i-chevron"/></svg></div>
+        <div style="font-size:10px; font-weight:600">Gestionar incidencia</div>
+        <div class="avatar-sm">JM</div>
+      </div>
+      <div class="row" style="gap:8px"><div class="sub">#INC-8821</div><div class="row" style="color:var(--error); gap:3px; font-size:9px"><div class="tl-dot" style="width:5px; height:5px; background:var(--error)"></div>Crítico</div></div>
+      <div class="title-lg">Rotura tubería ala norte</div>
+      <div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-location"/></svg>Edificio Central · Lab 204</div>
+      <div class="photo-placeholder tall"><svg class="ico"><use href="#i-image"/></svg></div>
+      <div style="font-size:10px; font-weight:600">Prioridad</div>
+      <div class="row" style="margin: 4px 0 8px">
+        <div class="chip" style="flex:1; justify-content:center">Baja</div>
+        <div class="chip" style="flex:1; justify-content:center">Media</div>
+        <div class="chip active" style="flex:1; justify-content:center">Alta</div>
+      </div>
+      <div style="font-size:10px; font-weight:600">Departamento</div>
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center"><span>Sistemas Hidráulicos</span><svg class="ico" style="color:var(--textV)"><use href="#i-chevron-down"/></svg></div>
+      <div style="font-size:10px; font-weight:600; margin-top: 4px">Asignar operario</div>
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center"><span>Sin asignar</span><svg class="ico" style="color:var(--textV)"><use href="#i-chevron-down"/></svg></div>
+      <div class="btn-primary">Guardar cambios</div>
+      <span class="label">Gestionar Incidencia</span>
+    </div>
+
+    <!-- My Team -->
+    <div class="screen" id="s-mgr-team">
+      <span class="role-badge manager">MANAGER</span>
+      <div class="exp" onclick="exportScreen('s-mgr-team', 'manager-equipo')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="row" style="gap:4px"><div class="icon-btn"><svg class="ico"><use href="#i-search"/></svg></div><div class="avatar-sm">JM</div></div>
+      </div>
+      <div class="title-lg">Mi equipo</div>
+      <div class="subtitle">Mantenimiento · 4 miembros</div>
+      <div class="card" style="padding:8px; display:flex; align-items:center; gap:8px; color:var(--textV)">
+        <svg class="ico"><use href="#i-search"/></svg>Buscar por nombre o rol
+      </div>
+      <div class="stats" style="margin-top: 8px">
+        <div class="s"><div class="n">3</div><div class="l">Activos</div></div>
+        <div class="s"><div class="n">6</div><div class="l">Abiertas</div></div>
+        <div class="s"><div class="n">115</div><div class="l">Resueltas</div></div>
+      </div>
+      <div class="card dense" style="display:flex; gap:8px; align-items:center">
+        <div class="avatar-sm" style="width:26px; height:26px">CM</div>
+        <div style="flex:1"><div class="h">Carlos Mendoza</div><div class="sub">Operario senior · 3 en curso</div></div>
+        <svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg>
+      </div>
+      <div class="card dense" style="display:flex; gap:8px; align-items:center">
+        <div class="avatar-sm" style="width:26px; height:26px">ER</div>
+        <div style="flex:1"><div class="h">Elena Rivas</div><div class="sub">Técnica eléctrica · 2 en curso</div></div>
+        <svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg>
+      </div>
+      <div class="card dense" style="display:flex; gap:8px; align-items:center">
+        <div class="avatar-sm" style="width:26px; height:26px">MP</div>
+        <div style="flex:1"><div class="h">Marcos Polo</div><div class="sub">Operario junior · 1 en curso</div></div>
+        <svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg>
+      </div>
+      <div class="tabbar">
+        <div class="t"><svg class="ico"><use href="#i-dashboard"/></svg>Inicio</div>
+        <div class="t"><svg class="ico"><use href="#i-assignment"/></svg>Incidencias</div>
+        <div class="t active"><svg class="ico"><use href="#i-users"/></svg>Equipo</div>
+        <div class="t"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </div>
+      <span class="label">Mi Equipo</span>
+    </div>
+
+    <!-- Department Settings -->
+    <div class="screen" id="s-mgr-dept">
+      <span class="role-badge manager">MANAGER</span>
+      <div class="exp" onclick="exportScreen('s-mgr-dept', 'manager-configurar-depto')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="icon-btn"><svg class="ico"><use href="#i-chevron"/></svg></div>
+        <div style="font-size:10px; font-weight:600">Configurar depto.</div>
+        <span></span>
+      </div>
+      <div class="card" style="display:flex; gap:8px; align-items:center">
+        <div class="notif-ic status" style="width:32px; height:32px"><svg class="ico" style="width:16px;height:16px"><use href="#i-building"/></svg></div>
+        <div><div class="h">Mantenimiento General</div><div class="sub">Código MNT-001 · 6 miembros</div></div>
+      </div>
+      <div style="font-size:10px; font-weight:600; margin: 8px 0 4px">Información general</div>
+      <div class="card" style="padding:6px 8px">Nombre: Mantenimiento General</div>
+      <div class="card" style="padding:6px 8px">Código: MNT-001</div>
+      <div class="card" style="padding:6px 8px">Email: mantenimiento@opero.edu</div>
+      <div style="font-size:10px; font-weight:600; margin: 8px 0 4px">Preferencias</div>
+      <div class="card dense"><div class="row between"><div><div class="h">Asignación automática</div><div class="sub">Repartir por carga</div></div><div class="switch"></div></div></div>
+      <div class="card dense"><div class="row between"><div><div class="h">Alertas críticas</div><div class="sub">Avisar prioridad alta</div></div><div class="switch"></div></div></div>
+      <div class="btn-primary">Guardar configuración</div>
+      <span class="label">Configurar Depto.</span>
+    </div>
+
+    <!-- Manager Profile -->
+    <div class="screen" id="s-mgr-profile">
+      <span class="role-badge manager">MANAGER</span>
+      <div class="exp" onclick="exportScreen('s-mgr-profile', 'manager-perfil')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="icon-btn"><svg class="ico"><use href="#i-settings"/></svg></div>
+      </div>
+      <div class="profile-head">
+        <div class="avatar-lg">JM</div>
+        <div class="info">
+          <div class="row" style="align-items:center; gap:4px"><div class="n">Julián Medina</div><div class="role-tag" style="background:var(--secondaryC); color:var(--secondary)">MANAGER</div></div>
+          <div class="e">j.medina@opero.edu</div>
+          <div class="row sub" style="gap:4px; margin-top:2px"><svg class="ico"><use href="#i-building"/></svg>Mantenimiento General</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="s"><div class="n">12</div><div class="l">Abiertas</div></div>
+        <div class="s"><div class="n">8</div><div class="l">En proceso</div></div>
+        <div class="s"><div class="n">6</div><div class="l">Operarios</div></div>
+      </div>
+      <div class="card dense"><div class="row between"><div class="row" style="gap:8px"><svg class="ico" style="color:var(--textV)"><use href="#i-edit"/></svg>Editar perfil</div><svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg></div></div>
+      <div class="card dense"><div class="row between"><div class="row" style="gap:8px"><svg class="ico" style="color:var(--textV)"><use href="#i-users"/></svg>Mi equipo</div><svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg></div></div>
+      <div class="card dense"><div class="row between"><div class="row" style="gap:8px"><svg class="ico" style="color:var(--textV)"><use href="#i-building"/></svg>Configurar depto.</div><svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg></div></div>
+      <div style="background:var(--errorC); color:var(--error); text-align:center; padding:8px; border-radius:6px; font-size:10px; font-weight:600; margin-top: 8px; display:flex; align-items:center; justify-content:center; gap:6px">
+        <svg class="ico"><use href="#i-logout"/></svg>Cerrar sesión
+      </div>
+      <div class="tabbar">
+        <div class="t"><svg class="ico"><use href="#i-dashboard"/></svg>Inicio</div>
+        <div class="t"><svg class="ico"><use href="#i-assignment"/></svg>Incidencias</div>
+        <div class="t"><svg class="ico"><use href="#i-users"/></svg>Equipo</div>
+        <div class="t active"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </div>
+      <span class="label">Perfil Manager</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============= MAINTENANCE ============= -->
+<div class="group" style="top: 2000px; left: 80px;">
+  <div class="group-title">Empleado de Mantenimiento</div>
+  <div class="group-row">
+
+    <!-- Home -->
+    <div class="screen" id="s-mnt-home">
+      <span class="role-badge maint">OPERARIO</span>
+      <div class="exp" onclick="exportScreen('s-mnt-home', 'mantenimiento-home')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="row" style="gap:4px"><div class="icon-btn"><svg class="ico"><use href="#i-bell"/></svg></div><div class="avatar-sm">CM</div></div>
+      </div>
+      <div class="title-lg">Hola, Carlos</div>
+      <div class="subtitle"><b style="color:var(--text)">4</b> asignadas · <b style="color:var(--text)">12</b> hoy</div>
+      <div class="row between" style="margin-bottom:6px"><div style="font-size:10px; font-weight:600">Tareas asignadas</div><div class="sub" style="color:var(--primary)">Ver historial</div></div>
+      <div class="card dense accent-error">
+        <div class="row between"><div class="row" style="color:var(--error); font-size:8px; gap:3px"><div class="tl-dot" style="width:5px;height:5px;background:var(--error)"></div>Urgente</div><div class="sub">#8902</div></div>
+        <div class="h">Fuga agua Lab. Química 302</div>
+        <div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-location"/></svg>Edificio B · 15 min</div>
+      </div>
+      <div class="card dense accent">
+        <div class="row between"><div class="row" style="color:var(--primary); font-size:8px; gap:3px"><div class="tl-dot done" style="width:5px;height:5px"></div>Media</div><div class="sub">#8895</div></div>
+        <div class="h">Falla luminaria LED</div>
+        <div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-location"/></svg>Biblioteca Norte · 2h</div>
+      </div>
+      <div style="font-size:10px; font-weight:600; margin: 4px 0">Pendientes menores</div>
+      <div class="row">
+        <div class="card dense" style="flex:1; margin:0; display:flex; align-items:center; gap:6px"><svg class="ico" style="color:var(--textV)"><use href="#i-tool"/></svg><div><div class="sub">Reparación</div><div class="h">Puerta A10</div></div></div>
+        <div class="card dense" style="flex:1; margin:0; display:flex; align-items:center; gap:6px"><svg class="ico" style="color:var(--textV)"><use href="#i-electrical"/></svg><div><div class="sub">Eléctrico</div><div class="h">UPS IT</div></div></div>
+      </div>
+      <div class="tabbar">
+        <div class="t active"><svg class="ico"><use href="#i-home"/></svg>Inicio</div>
+        <div class="t"><svg class="ico"><use href="#i-history"/></svg>Historial</div>
+        <div class="t"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </div>
+      <span class="label">Home Mantenimiento</span>
+    </div>
+
+    <!-- Detail -->
+    <div class="screen" id="s-mnt-detail">
+      <span class="role-badge maint">OPERARIO</span>
+      <div class="exp" onclick="exportScreen('s-mnt-detail', 'mantenimiento-detalle')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="icon-btn"><svg class="ico"><use href="#i-chevron"/></svg></div>
+        <span></span><span></span>
+      </div>
+      <div class="row between" style="margin-bottom: 4px">
+        <div class="row" style="color:var(--error); gap:3px; font-size:9px"><div class="tl-dot" style="width:5px; height:5px; background:var(--error)"></div>Prioridad alta</div>
+        <div class="sub">INC-8821</div>
+      </div>
+      <div class="title-lg">Fallo Sistema Climatización</div>
+      <div class="card dense"><div class="row between"><div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-location"/></svg>Ubicación</div><div class="h">Edificio Central, P4</div></div></div>
+      <div class="card dense"><div class="row between"><div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-clock"/></svg>Reportado</div><div class="h">Hace 2h</div></div></div>
+      <div class="card dense"><div class="row between"><div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-tool"/></svg>Tipo</div><div class="h">Correctivo</div></div></div>
+      <div class="map-placeholder"><svg class="ico"><use href="#i-map"/></svg>Ver mapa</div>
+      <div style="font-size:10px; font-weight:600">Descripción</div>
+      <div class="subtitle" style="margin-top: 3px">Sistema presenta vibración inusual y pérdida de presión...</div>
+      <div class="card" style="background:var(--surface3); border-left:3px solid var(--primary); display:flex; gap:8px; align-items:center">
+        <svg class="ico" style="color:var(--primary)"><use href="#i-warn"/></svg>
+        <span class="sub" style="color:var(--text)">EPP obligatorio: casco y guantes</span>
+      </div>
+      <div class="row" style="gap:6px; margin-top:6px">
+        <div class="btn-primary" style="flex:1; margin:0"><svg class="ico"><use href="#i-play"/></svg>Iniciar</div>
+        <div class="btn-outline" style="flex:1"><svg class="ico"><use href="#i-check"/></svg>Finalizar</div>
+      </div>
+      <span class="label">Detalle Tarea</span>
+    </div>
+
+    <!-- History -->
+    <div class="screen" id="s-mnt-history">
+      <span class="role-badge maint">OPERARIO</span>
+      <div class="exp" onclick="exportScreen('s-mnt-history', 'mantenimiento-historial')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="row" style="gap:4px"><div class="icon-btn"><svg class="ico"><use href="#i-search"/></svg></div><div class="avatar-sm">CM</div></div>
+      </div>
+      <div class="title-lg">Historial</div>
+      <div class="subtitle">Tareas finalizadas</div>
+      <div class="row" style="flex-wrap:wrap; margin-bottom:6px">
+        <div class="chip">Hoy</div><div class="chip active">Semana</div><div class="chip">Mes</div>
+      </div>
+      <div class="stats">
+        <div class="s"><div class="n">5</div><div class="l">Finalizadas</div></div>
+        <div class="s"><div class="n">9h</div><div class="l">Total</div></div>
+        <div class="s"><div class="n">1h</div><div class="l">Promedio</div></div>
+      </div>
+      <div class="card dense" style="display:flex; gap:8px">
+        <div class="notif-ic resolved"><svg class="ico"><use href="#i-check"/></svg></div>
+        <div style="flex:1">
+          <div class="row between"><div class="sub">#INC-8792</div><div class="sub">Hoy 11:20</div></div>
+          <div class="h">Cambio luminaria Aula 102</div>
+          <div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-location"/></svg>Edificio A · 32 min</div>
+        </div>
+      </div>
+      <div class="card dense" style="display:flex; gap:8px">
+        <div class="notif-ic resolved"><svg class="ico"><use href="#i-check"/></svg></div>
+        <div style="flex:1">
+          <div class="row between"><div class="sub">#INC-8780</div><div class="sub">Hoy 09:05</div></div>
+          <div class="h">Reparación puerta automática</div>
+          <div class="row sub" style="gap:4px"><svg class="ico"><use href="#i-location"/></svg>Biblioteca · 1h 10 min</div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="t"><svg class="ico"><use href="#i-home"/></svg>Inicio</div>
+        <div class="t active"><svg class="ico"><use href="#i-history"/></svg>Historial</div>
+        <div class="t"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </div>
+      <span class="label">Historial</span>
+    </div>
+
+    <!-- Mnt Profile -->
+    <div class="screen" id="s-mnt-profile">
+      <span class="role-badge maint">OPERARIO</span>
+      <div class="exp" onclick="exportScreen('s-mnt-profile', 'mantenimiento-perfil')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="brand-row"><svg class="ico"><use href="#logo"/></svg>OPERO</div>
+        <div class="icon-btn"><svg class="ico"><use href="#i-settings"/></svg></div>
+      </div>
+      <div class="profile-head">
+        <div class="avatar-lg">CM</div>
+        <div class="info">
+          <div class="row" style="align-items:center; gap:4px"><div class="n">Carlos Mendoza</div><div class="role-tag" style="background:var(--tertiaryC); color:var(--tertiary)">OPERARIO</div></div>
+          <div class="e">c.mendoza@opero.edu</div>
+          <div class="row sub" style="gap:4px; margin-top:2px"><svg class="ico"><use href="#i-building"/></svg>Mantenimiento General</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="s"><div class="n">4</div><div class="l">Asignadas</div></div>
+        <div class="s"><div class="n">12</div><div class="l">Hoy</div></div>
+        <div class="s"><div class="n">184</div><div class="l">Total</div></div>
+      </div>
+      <div class="card dense"><div class="row between"><div class="row" style="gap:8px"><svg class="ico" style="color:var(--textV)"><use href="#i-edit"/></svg>Editar perfil</div><svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg></div></div>
+      <div class="card dense"><div class="row between"><div class="row" style="gap:8px"><svg class="ico" style="color:var(--textV)"><use href="#i-history"/></svg>Ver historial</div><svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg></div></div>
+      <div class="card dense"><div class="row between"><div class="row" style="gap:8px"><svg class="ico" style="color:var(--textV)"><use href="#i-bell"/></svg>Notificaciones</div><svg class="ico" style="color:var(--outline)"><use href="#i-chevron"/></svg></div></div>
+      <div style="background:var(--errorC); color:var(--error); text-align:center; padding:8px; border-radius:6px; font-size:10px; font-weight:600; margin-top: 8px; display:flex; align-items:center; justify-content:center; gap:6px">
+        <svg class="ico"><use href="#i-logout"/></svg>Cerrar sesión
+      </div>
+      <div class="tabbar">
+        <div class="t"><svg class="ico"><use href="#i-home"/></svg>Inicio</div>
+        <div class="t"><svg class="ico"><use href="#i-history"/></svg>Historial</div>
+        <div class="t active"><svg class="ico"><use href="#i-user"/></svg>Perfil</div>
+      </div>
+      <span class="label">Perfil Operario</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============= SHARED ============= -->
+<div class="group" style="top: 2660px; left: 80px;">
+  <div class="group-title">Compartido</div>
+  <div class="group-row">
+
+    <!-- Edit Profile -->
+    <div class="screen" id="s-edit-profile">
+      <span class="role-badge">COMÚN</span>
+      <div class="exp" onclick="exportScreen('s-edit-profile', 'editar-perfil')"><svg class="ico"><use href="#i-download"/></svg></div>
+      <div class="topbar">
+        <div class="icon-btn"><svg class="ico"><use href="#i-chevron"/></svg></div>
+        <div style="font-size:10px; font-weight:600">Editar perfil</div>
+        <span></span>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin: 8px 0">
+        <div class="avatar-lg" style="width:56px; height:56px">AM</div>
+        <div class="chip"><svg class="ico"><use href="#i-camera"/></svg>Cambiar foto</div>
+      </div>
+      <div class="sub" style="margin-top:6px">Nombre y apellido</div>
+      <div class="card" style="color:var(--text); padding:7px">Alejandro Moreno</div>
+      <div class="sub" style="margin-top:6px">Email</div>
+      <div class="card" style="color:var(--text); padding:7px">a.moreno@opero.edu</div>
+      <div class="sub" style="margin-top:6px">Teléfono</div>
+      <div class="card" style="color:var(--text); padding:7px">+54 11 4000 0000</div>
+      <div class="sub" style="margin-top:6px">Legajo</div>
+      <div class="card" style="color:var(--textV); padding:7px; opacity:0.6">123456</div>
+      <div class="sub" style="margin:4px 0 0; font-size:9px">No puede modificarse</div>
+      <div class="btn-primary">Guardar cambios</div>
+      <span class="label">Editar Perfil</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ============= EXPORT OVERLAY ============= -->
+<div class="export-overlay" id="export-overlay">
+  <div class="box">
+    <div class="spinner"></div>
+    <div id="export-msg">Exportando...</div>
+  </div>
+</div>
+
+<script>
+// -------- Pan + Zoom ----------
+const canvas = document.getElementById('canvas');
+let scale = 0.7, tx = 40, ty = 40;
+let dragging = false, dsx = 0, dsy = 0;
+
+function apply() {
+  canvas.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+}
+
+document.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.toolbar') || e.target.closest('.legend') || e.target.closest('.exp') || e.target.closest('.export-overlay')) return;
+  dragging = true;
+  dsx = e.clientX - tx;
+  dsy = e.clientY - ty;
+  document.body.style.cursor = 'grabbing';
+});
+document.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  tx = e.clientX - dsx;
+  ty = e.clientY - dsy;
+  apply();
+});
+document.addEventListener('mouseup', () => {
+  dragging = false;
+  document.body.style.cursor = '';
+});
+document.addEventListener('wheel', (e) => {
+  if (e.target.closest('.toolbar') || e.target.closest('.legend')) return;
+  e.preventDefault();
+  const delta = -e.deltaY * 0.001;
+  const prevScale = scale;
+  scale = Math.max(0.2, Math.min(2.5, scale + delta * scale));
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  tx -= cx * (scale - prevScale) / prevScale;
+  ty -= cy * (scale - prevScale) / prevScale;
+  apply();
+}, { passive: false });
+
+function resetView() { scale = 0.7; tx = 40; ty = 40; apply(); }
+function fit()       { scale = 0.28; tx = 40; ty = 40; apply(); }
+
+apply();
+
+// -------- Inspector mode ----------
+let inspectorOn = false;
+function toggleInspector() {
+  inspectorOn = !inspectorOn;
+  document.body.classList.toggle('inspector-on', inspectorOn);
+  document.getElementById('inspector-btn').classList.toggle('toggled', inspectorOn);
+}
+
+// -------- Flow arrows ----------
+const flows = [
+  ['s-onboarding', 's-login', 'primary'],
+  ['s-login', 's-register', 'secondary'],
+  ['s-register', 's-login', 'secondary'],
+  ['s-login', 's-stu-home', 'primary'],
+  ['s-login', 's-mgr-home', 'primary'],
+  ['s-login', 's-mnt-home', 'primary'],
+
+  ['s-stu-home', 's-stu-incidents', 'primary'],
+  ['s-stu-home', 's-stu-create', 'secondary'],
+  ['s-stu-home', 's-stu-detail', 'secondary'],
+  ['s-stu-home', 's-stu-scan', 'secondary'],
+  ['s-stu-scan', 's-stu-create', 'primary'],
+  ['s-stu-incidents', 's-stu-detail', 'primary'],
+  ['s-stu-notif', 's-stu-detail', 'secondary'],
+  ['s-stu-profile', 's-edit-profile', 'secondary'],
+  ['s-stu-profile', 's-login', 'error'],
+  ['s-stu-detail', 's-stu-create', 'secondary'],
+
+  ['s-mgr-home', 's-mgr-list', 'primary'],
+  ['s-mgr-home', 's-mgr-detail', 'secondary'],
+  ['s-mgr-list', 's-mgr-detail', 'primary'],
+  ['s-mgr-profile', 's-mgr-team', 'secondary'],
+  ['s-mgr-profile', 's-mgr-dept', 'secondary'],
+  ['s-mgr-profile', 's-edit-profile', 'secondary'],
+  ['s-mgr-profile', 's-login', 'error'],
+
+  ['s-mnt-home', 's-mnt-detail', 'primary'],
+  ['s-mnt-home', 's-mnt-history', 'secondary'],
+  ['s-mnt-history', 's-mnt-detail', 'secondary'],
+  ['s-mnt-profile', 's-edit-profile', 'secondary'],
+  ['s-mnt-profile', 's-login', 'error'],
+];
+
+function drawArrows() {
+  const svg = document.getElementById('arrows');
+  [...svg.querySelectorAll('path')].forEach(p => p.remove());
+
+  flows.forEach(([fromId, toId, kind]) => {
+    const fromEl = document.getElementById(fromId);
+    const toEl   = document.getElementById(toId);
+    if (!fromEl || !toEl) return;
+
+    const fromParent = fromEl.offsetParent;
+    const toParent   = toEl.offsetParent;
+    const fx = fromParent.offsetLeft + fromEl.offsetLeft + fromEl.offsetWidth;
+    const fy = fromParent.offsetTop + fromEl.offsetTop + fromEl.offsetHeight / 2;
+    const tX = toParent.offsetLeft + toEl.offsetLeft;
+    const tY = toParent.offsetTop + toEl.offsetTop + toEl.offsetHeight / 2;
+
+    const dx = tX - fx;
+    const mx = fx + dx / 2;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${fx} ${fy} C ${mx} ${fy}, ${mx} ${tY}, ${tX} ${tY}`);
+    const color =
+      kind === 'secondary' ? '#6B94AA' :
+      kind === 'error'     ? '#B06060' : '#BBA978';
+    path.setAttribute('stroke', color);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-width', kind === 'error' ? '1.5' : '2');
+    if (kind === 'secondary') path.setAttribute('stroke-dasharray', '4 3');
+    path.setAttribute('marker-end',
+      kind === 'secondary' ? 'url(#arr-secondary)' :
+      kind === 'error'     ? 'url(#arr-error)' : 'url(#arr-primary)');
+    svg.appendChild(path);
+  });
+}
+
+window.addEventListener('load', drawArrows);
+window.addEventListener('resize', drawArrows);
+
+// -------- Auto-tag components for inspector / Figma import ----------
+// Ensures every repeated UI piece has a data-component attribute so
+// tools like html.to.design give them named layers.
+function autoTag() {
+  const map = [
+    ['.screen',         'Screen',        true ],
+    ['.topbar',         'TopBar',        false],
+    ['.brand-row',      'Logo',          false],
+    ['.tabbar',         'TabBar',        false],
+    ['.tabbar .t',      'TabItem',       false],
+    ['.tabbar .scan',   'TabScanFAB',    false],
+    ['.tabbar .scan .btn', 'ScanButton', false],
+    ['.avatar-sm',      'Avatar',        false],
+    ['.avatar-lg',      'AvatarLarge',   false],
+    ['.icon-btn',       'IconButton',    false],
+    ['.card',           'Card',          false],
+    ['.chip',           'Chip',          false],
+    ['.btn-primary',    'PrimaryButton', false],
+    ['.btn-outline',    'OutlineButton', false],
+    ['.fab',            'FAB',           false],
+    ['.stats',          'StatsBar',      false],
+    ['.stats .s',       'StatItem',      false],
+    ['.title-lg',       'Title',         false],
+    ['.subtitle',       'Subtitle',      false],
+    ['.role-badge',     'RoleBadge',     false],
+    ['.profile-head',   'ProfileHeader', false],
+    ['.viewfinder',     'QRViewfinder',  false],
+    ['.viewfinder .corner', 'QRCorner',  false],
+    ['.viewfinder .scanline', 'QRScanLine', false],
+    ['.map-placeholder', 'MapPlaceholder', false],
+    ['.photo-placeholder', 'PhotoPlaceholder', false],
+    ['.switch',         'ToggleSwitch',  false],
+    ['.tl-row',         'TimelineStep',  false],
+    ['.tl-dot',         'TimelineDot',   false],
+    ['.role-tag',       'RoleTag',       false],
+    ['.exp',            '_ExportHandle', false],
+    ['.label',          'ScreenLabel',   false],
+  ];
+  map.forEach(([sel, name, keepExisting]) => {
+    document.querySelectorAll(sel).forEach(el => {
+      if (keepExisting && el.hasAttribute('data-component')) return;
+      if (!el.hasAttribute('data-component')) {
+        el.setAttribute('data-component', name);
+      }
+    });
+  });
+}
+window.addEventListener('load', autoTag);
+
+// -------- Export ----------
+function showOverlay(msg) {
+  document.getElementById('export-msg').textContent = msg;
+  document.getElementById('export-overlay').classList.add('on');
+}
+function hideOverlay() {
+  document.getElementById('export-overlay').classList.remove('on');
+}
+
+function downloadURI(uri, name) {
+  const a = document.createElement('a');
+  a.href = uri; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+async function exportScreen(id, name) {
+  const el = document.getElementById(id);
+  const prevTransform = canvas.style.transform;
+  canvas.style.transform = 'translate(0,0) scale(1)';
+  showOverlay('Exportando pantalla...');
+  await new Promise(r => setTimeout(r, 80));
+  try {
+    const canvasResult = await html2canvas(el, {
+      backgroundColor: null,
+      scale: 3,
+      logging: false,
+      useCORS: true,
+    });
+    downloadURI(canvasResult.toDataURL('image/png'), `opero-${name}.png`);
+  } catch (err) {
+    console.error(err);
+    alert('Error exportando: ' + err.message);
+  } finally {
+    canvas.style.transform = prevTransform;
+    hideOverlay();
+  }
+}
+
+async function exportAll() {
+  const screens = Array.from(document.querySelectorAll('.screen'));
+  const prevTransform = canvas.style.transform;
+  canvas.style.transform = 'translate(0,0) scale(1)';
+  await new Promise(r => setTimeout(r, 80));
+
+  for (let i = 0; i < screens.length; i++) {
+    const el = screens[i];
+    const label = el.querySelector('.label')?.textContent?.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || `screen-${i}`;
+    showOverlay(`Exportando ${i + 1} / ${screens.length}: ${label}...`);
+    try {
+      const canvasResult = await html2canvas(el, {
+        backgroundColor: null,
+        scale: 3,
+        logging: false,
+        useCORS: true,
+      });
+      downloadURI(canvasResult.toDataURL('image/png'), `opero-${String(i + 1).padStart(2, '0')}-${label}.png`);
+      await new Promise(r => setTimeout(r, 150));
+    } catch (err) {
+      console.error('Error exporting', label, err);
+    }
+  }
+
+  canvas.style.transform = prevTransform;
+  hideOverlay();
+}
+</script>
+
+</body>
+</html>
