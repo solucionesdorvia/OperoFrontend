@@ -19,6 +19,7 @@ import {
 } from '@expo-google-fonts/ibm-plex-mono';
 import AppNavigator from './src/navigation/AppNavigator';
 import { COLORS } from './constants/colors';
+import { AuthProvider } from './src/context/AuthContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -44,8 +45,10 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" backgroundColor={COLORS.bg} />
-      <AppNavigator />
+      <AuthProvider>
+        <StatusBar style="dark" backgroundColor={COLORS.bg} />
+        <AppNavigator />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
