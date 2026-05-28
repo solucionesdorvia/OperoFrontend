@@ -1,6 +1,14 @@
-// URL del backend. Sin valor todavía — el backend Spring Boot está en setup.
-// Cuando esté en aire, reemplazar por la URL de dev/prod correspondiente.
-export const API_URL = '';
+export const BASE_URL = 'http://localhost:8080';
 
-// Timeouts y endpoints reutilizables, listos para cuando se conecte el backend.
-export const API_TIMEOUT_MS = 10_000;
+export const ENDPOINTS = {
+  AUTH: {
+    LOGIN: '/api/auth/login',
+    REGISTER: '/api/auth/register',
+    LOGOUT: '/api/auth/logout',
+    ME: '/api/auth/me',
+  },
+  INCIDENTS: '/api/incidents',
+  DEPARTMENTS: '/api/departments',
+  USERS: '/api/users',
+  USERS_ME: '/api/users/me',
+};
