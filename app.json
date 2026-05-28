@@ -32,6 +32,9 @@
     "plugins": [
       "expo-font",
       "expo-splash-screen"
-    ]
+    ],
+    "extra": {
+      "apiUrl": process.env.EXPO_PUBLIC_API_URL
+    }
   }
 }
