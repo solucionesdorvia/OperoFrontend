@@ -32,6 +32,8 @@ yarn-error.*
 
 # local env files
 .env*.local
+# NO ignorar .env para que se comparta la configuración de Railway
+# .env
 
 # Claude Code per-user settings
 .claude/settings.local.json
