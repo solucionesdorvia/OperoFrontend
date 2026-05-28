@@ -89,41 +89,44 @@ apiClient.interceptors.response.use(
       console.error('[API Error]', error.message);
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 
 export default apiClient;
 
 /**
+ * Extrae el mensaje legible de un AxiosError.
+ * Separado de `getErrorMessage` para mantener la complejidad cognitiva baja.
+ */
+const getAxiosErrorMessage = (error: AxiosError<any>): string => {
+  const data = error.response?.data;
+
+  if (typeof data === 'string') {
+    return data;
+  }
+  if (data?.message) {
+    return data.message;
+  }
+  if (data?.error) {
+    return data.error;
+  }
+  if (error.message === 'Network Error') {
+    return 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+  }
+  if (error.code === 'ECONNABORTED') {
+    return 'La petición tardó demasiado tiempo. Intenta nuevamente.';
+  }
+
+  return error.message;
+};
+
+/**
  * Helper para extraer mensajes de error
  */
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<any>;
-
-    if (axiosError.response?.data) {
-      // Si el backend envía un mensaje de error
-      if (typeof axiosError.response.data === 'string') {
-        return axiosError.response.data;
-      }
-      if (axiosError.response.data.message) {
-        return axiosError.response.data.message;
-      }
-      if (axiosError.response.data.error) {
-        return axiosError.response.data.error;
-      }
-    }
-
-    if (axiosError.message === 'Network Error') {
-      return 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
-    }
-
-    if (axiosError.code === 'ECONNABORTED') {
-      return 'La petición tardó demasiado tiempo. Intenta nuevamente.';
-    }
-
-    return axiosError.message;
+    return getAxiosErrorMessage(error as AxiosError<any>);
   }
 
   if (error instanceof Error) {

@@ -1657,9 +1657,9 @@ function autoTag() {
   ];
   map.forEach(([sel, name, keepExisting]) => {
     document.querySelectorAll(sel).forEach(el => {
-      if (keepExisting && el.hasAttribute('data-component')) return;
-      if (!el.hasAttribute('data-component')) {
-        el.setAttribute('data-component', name);
+      if (keepExisting && 'component' in el.dataset) return;
+      if (!('component' in el.dataset)) {
+        el.dataset.component = name;
       }
     });
   });
