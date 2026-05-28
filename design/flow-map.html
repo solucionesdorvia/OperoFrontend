@@ -884,9 +884,9 @@
       <span class="role-badge student">ALUMNO</span>
       <div class="exp" onclick="exportScreen('s-stu-scan', 'alumno-scan-qr')"><svg class="ico"><use href="#i-download"/></svg></div>
       <div class="row between" style="margin-bottom:6px">
-        <div class="icon-btn" style="background:rgba(255,255,255,0.1); color:#fff"><svg class="ico"><use href="#i-close"/></svg></div>
+        <div class="icon-btn" style="background:#1f2937; color:#fff"><svg class="ico"><use href="#i-close"/></svg></div>
         <div style="font-size:10px; color:#fff; font-weight:600">Escanear QR</div>
-        <div class="icon-btn" style="background:rgba(255,255,255,0.1); color:#fff"><svg class="ico"><use href="#i-bolt"/></svg></div>
+        <div class="icon-btn" style="background:#1f2937; color:#fff"><svg class="ico"><use href="#i-bolt"/></svg></div>
       </div>
       <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center">
         <div style="font-size:12px; font-weight:700; color:#fff">Escaneá el QR del aula</div>
@@ -982,7 +982,7 @@
         <button class="chip" data-component="MarkAllButton"><svg class="ico"><use href="#i-check"/></svg>Todas</button>
       </section>
 
-      <nav class="notif-filters" data-component="FilterChips">
+      <nav class="notif-filters" data-component="FilterChips" aria-label="Filtros de notificaciones">
         <span class="chip active" data-component="FilterChip">Todas</span>
         <span class="chip"        data-component="FilterChip">No leídas</span>
         <span class="chip"        data-component="FilterChip">En gestión</span>
@@ -1039,7 +1039,7 @@
 
       </ul>
 
-      <nav class="tabbar" data-component="TabBar">
+      <nav class="tabbar" data-component="TabBar" aria-label="Navegación principal">
         <div class="t"        data-component="TabItem"><svg class="ico"><use href="#i-home"/></svg>Inicio</div>
         <div class="t"        data-component="TabItem"><svg class="ico"><use href="#i-assignment"/></svg>Incidencias</div>
         <div class="scan"     data-component="TabScanFAB">
@@ -1600,16 +1600,21 @@ function drawArrows() {
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', `M ${fx} ${fy} C ${mx} ${fy}, ${mx} ${tY}, ${tX} ${tY}`);
-    const color =
-      kind === 'secondary' ? '#6B94AA' :
-      kind === 'error'     ? '#B06060' : '#BBA978';
-    path.setAttribute('stroke', color);
+    const STROKE_BY_KIND = {
+      secondary: '#6B94AA',
+      error:     '#B06060',
+      primary:   '#BBA978',
+    };
+    const MARKER_BY_KIND = {
+      secondary: 'url(#arr-secondary)',
+      error:     'url(#arr-error)',
+      primary:   'url(#arr-primary)',
+    };
+    path.setAttribute('stroke', STROKE_BY_KIND[kind] || STROKE_BY_KIND.primary);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke-width', kind === 'error' ? '1.5' : '2');
     if (kind === 'secondary') path.setAttribute('stroke-dasharray', '4 3');
-    path.setAttribute('marker-end',
-      kind === 'secondary' ? 'url(#arr-secondary)' :
-      kind === 'error'     ? 'url(#arr-error)' : 'url(#arr-primary)');
+    path.setAttribute('marker-end', MARKER_BY_KIND[kind] || MARKER_BY_KIND.primary);
     svg.appendChild(path);
   });
 }
@@ -1657,9 +1662,9 @@ function autoTag() {
   ];
   map.forEach(([sel, name, keepExisting]) => {
     document.querySelectorAll(sel).forEach(el => {
-      if (keepExisting && el.hasAttribute('data-component')) return;
-      if (!el.hasAttribute('data-component')) {
-        el.setAttribute('data-component', name);
+      if (keepExisting && 'component' in el.dataset) return;
+      if (!('component' in el.dataset)) {
+        el.dataset.component = name;
       }
     });
   });

@@ -37,6 +37,28 @@ const iconMap: Record<RightIconName, keyof typeof MaterialIcons.glyphMap> = {
   settings: 'settings',
 };
 
+function renderAvatar({
+  showAvatar,
+  onAvatarPress,
+}: {
+  showAvatar?: boolean;
+  onAvatarPress?: () => void;
+}) {
+  if (!showAvatar) return null;
+  if (onAvatarPress) {
+    return (
+      <TouchableOpacity onPress={onAvatarPress} style={styles.avatar} activeOpacity={0.7}>
+        <Text style={styles.avatarText}>AM</Text>
+      </TouchableOpacity>
+    );
+  }
+  return (
+    <View style={styles.avatar}>
+      <Text style={styles.avatarText}>AM</Text>
+    </View>
+  );
+}
+
 export default function TopAppBar({
   title,
   onBack,
@@ -50,11 +72,12 @@ export default function TopAppBar({
   const insets = useSafeAreaInsets();
 
   // Si vino rightActions, usamos esa lista. Si vino el rightIcon legacy, lo convertimos.
-  const actions: TopAppBarAction[] = rightActions
-    ? rightActions
-    : rightIcon
-      ? [{ icon: rightIcon, onPress: onRightPress }]
-      : [];
+  let actions: TopAppBarAction[] = [];
+  if (rightActions) {
+    actions = rightActions;
+  } else if (rightIcon) {
+    actions = [{ icon: rightIcon, onPress: onRightPress }];
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
@@ -83,17 +106,7 @@ export default function TopAppBar({
             <MaterialIcons name={iconMap[action.icon]} size={22} color={COLORS.onSurfaceVariant} />
           </TouchableOpacity>
         ))}
-        {showAvatar ? (
-          onAvatarPress ? (
-            <TouchableOpacity onPress={onAvatarPress} style={styles.avatar} activeOpacity={0.7}>
-              <Text style={styles.avatarText}>AM</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>AM</Text>
-            </View>
-          )
-        ) : null}
+        {renderAvatar({ showAvatar, onAvatarPress })}
       </View>
     </View>
   );

@@ -91,9 +91,9 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
 
       <View style={[styles.bottom, { paddingBottom: insets.bottom + 24 }]}>
         <View style={styles.dots}>
-          {slides.map((_, i) => (
+          {slides.map((slide, i) => (
             <View
-              key={i}
+              key={`dot-${slide.key}`}
               style={[styles.dot, i === index && styles.dotActive]}
             />
           ))}
