@@ -19,8 +19,8 @@ type ManagerIncidentDetailScreenProps = RootStackScreenProps<'ManagerIncidentDet
 export default function ManagerIncidentDetailScreen({ navigation, route }: ManagerIncidentDetailScreenProps) {
   const incident = route?.params?.incident;
   const [priority, setPriority] = useState(2);
-  const [dept, setDept] = useState(1);
-  const [employee, setEmployee] = useState(0);
+  const [dept] = useState(1);
+  const [employee] = useState(0);
 
   return (
     <View style={styles.container}>

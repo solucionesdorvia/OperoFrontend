@@ -132,10 +132,33 @@ function StudentTabBar({ state, navigation }: any) {
   );
 }
 
+// TabBar wrappers definidos a nivel de módulo para evitar recrearlos en cada
+// render de los componentes padre (regla react/no-unstable-nested-components).
+const managerTabs: TabItem[] = [
+  { icon: 'dashboard',  label: 'Inicio'      },
+  { icon: 'assignment', label: 'Incidencias' },
+  { icon: 'groups',     label: 'Equipo'      },
+  { icon: 'person',     label: 'Perfil'      },
+];
+
+const maintenanceTabs: TabItem[] = [
+  { icon: 'home',    label: 'Inicio'    },
+  { icon: 'history', label: 'Historial' },
+  { icon: 'person',  label: 'Perfil'    },
+];
+
+const ManagerTabBarComponent = (props: any) => (
+  <CustomTabBar {...props} items={managerTabs} />
+);
+
+const MaintenanceTabBarComponent = (props: any) => (
+  <CustomTabBar {...props} items={maintenanceTabs} />
+);
+
 function StudentTabs() {
   return (
     <StudentTab.Navigator
-      tabBar={(props) => <StudentTabBar {...props} />}
+      tabBar={StudentTabBar}
       screenOptions={{ headerShown: false }}
     >
       <StudentTab.Screen name="StudentHome"      component={HomeScreen} />
@@ -144,17 +167,10 @@ function StudentTabs() {
   );
 }
 
-const managerTabs: TabItem[] = [
-  { icon: 'dashboard',  label: 'Inicio'      },
-  { icon: 'assignment', label: 'Incidencias' },
-  { icon: 'groups',     label: 'Equipo'      },
-  { icon: 'person',     label: 'Perfil'      },
-];
-
 function ManagerTabs() {
   return (
     <ManagerTab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} items={managerTabs} />}
+      tabBar={ManagerTabBarComponent}
       screenOptions={{ headerShown: false }}
     >
       <ManagerTab.Screen name="ManagerHome"      component={ManagerDashboardScreen} />
@@ -165,16 +181,10 @@ function ManagerTabs() {
   );
 }
 
-const maintenanceTabs: TabItem[] = [
-  { icon: 'home',    label: 'Inicio'    },
-  { icon: 'history', label: 'Historial' },
-  { icon: 'person',  label: 'Perfil'    },
-];
-
 function MaintenanceTabs() {
   return (
     <MaintenanceTab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} items={maintenanceTabs} />}
+      tabBar={MaintenanceTabBarComponent}
       screenOptions={{ headerShown: false }}
     >
       <MaintenanceTab.Screen name="MaintenanceHomeTab"   component={MaintenanceHomeScreen} />

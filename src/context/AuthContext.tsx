@@ -8,7 +8,7 @@
  * - Persistencia de sesión con AsyncStorage
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { authService, UserResponse } from '../services/authService';
 
 /**
@@ -64,16 +64,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   /**
-   * Verificar si hay una sesión guardada al iniciar la app
-   */
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  /**
    * Verificar el estado de autenticación
    */
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       console.log('[AuthContext] Verificando estado de autenticación...');
 
@@ -96,12 +89,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  /**
+   * Verificar si hay una sesión guardada al iniciar la app
+   */
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   /**
    * Login
    */
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       setIsLoading(true);
       console.log('[AuthContext] Iniciando sesión...');
@@ -119,12 +119,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   /**
    * Register
    */
-  const register = async (
+  const register = useCallback(async (
     fullName: string,
     email: string,
     password: string,
@@ -151,12 +151,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   /**
    * Logout
    */
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       setIsLoading(true);
       console.log('[AuthContext] Cerrando sesión...');
@@ -173,12 +173,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   /**
    * Refresh User - Actualizar datos del usuario
    */
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       console.log('[AuthContext] Actualizando datos del usuario...');
 
@@ -190,20 +190,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('[AuthContext] Error al actualizar usuario:', error);
       throw error;
     }
-  };
+  }, []);
 
   /**
-   * Valor del contexto
+   * Valor del contexto — memoizado para evitar re-renders innecesarios
+   * en todos los consumers del contexto.
    */
-  const value: AuthContextData = {
-    user,
-    isAuthenticated: user !== null,
-    isLoading,
-    login,
-    register,
-    logout,
-    refreshUser,
-  };
+  const value: AuthContextData = useMemo(
+    () => ({
+      user,
+      isAuthenticated: user !== null,
+      isLoading,
+      login,
+      register,
+      logout,
+      refreshUser,
+    }),
+    [user, isLoading, login, register, logout, refreshUser],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
