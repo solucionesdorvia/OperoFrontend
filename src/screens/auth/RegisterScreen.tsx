@@ -49,7 +49,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
    */
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigateByRole(user.role.name);
+      navigateByRole(user.roleName);
     }
   }, [isAuthenticated, user]);
 

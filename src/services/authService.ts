@@ -19,14 +19,11 @@ export interface UserResponse {
   id: number;
   fullName: string;
   emailUade: string;
-  role: {
-    id: number;
-    name: string;
-  };
-  department?: {
-    id: number;
-    name: string;
-  };
+  roleId: number;
+  roleName: string;
+  departmentId?: number | null;
+  departmentName?: string | null;
+  createdAt?: string;
 }
 
 export interface AuthResponse {
