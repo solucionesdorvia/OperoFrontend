@@ -32,6 +32,13 @@ const LOCAL_IP = '10.100.40.56';
 
 // Configuración por defecto
 const getBaseURL = (): string => {
+  // En cualquier entorno (web, Expo Go con extra), priorizar la env var pública
+  // En Railway/producción: EXPO_PUBLIC_API_URL=https://operonuevo-production.up.railway.app
+  const envUrl =
+    (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_API_URL) ||
+    undefined;
+  if (envUrl) return envUrl;
+
   if (__DEV__) {
     // Desarrollo: usar IP local
     // NOTA: Requiere firewall de macOS desactivado para dispositivos físicos
@@ -43,8 +50,8 @@ const getBaseURL = (): string => {
       return `http://${LOCAL_IP}:8080`;
     }
   } else {
-    // Producción
-    return 'https://tu-backend.railway.app';
+    // Producción (fallback si no se setea EXPO_PUBLIC_API_URL)
+    return 'https://operonuevo-production.up.railway.app';
   }
 };
 
