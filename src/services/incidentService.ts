@@ -107,4 +107,27 @@ export const incidentService = {
       throw new Error(getErrorMessage(error));
     }
   },
+
+  async updateDepartment(id: number, departmentId: number): Promise<IncidentResponse> {
+    try {
+      const response = await api.put<IncidentResponse>(
+        `${ENDPOINTS.INCIDENTS}/${id}/department`,
+        { departmentId }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
+  },
+
+  async acceptIncident(id: number): Promise<IncidentResponse> {
+    try {
+      const response = await api.put<IncidentResponse>(
+        `${ENDPOINTS.INCIDENTS}/${id}/accept`
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
+  },
 };

@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView,
+  View, Text, TouchableOpacity, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../../../constants/colors';
-import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
 import type {
   MaintenanceTabScreenProps,
@@ -12,6 +12,8 @@ import type {
   MaintenanceTabParamList,
 } from '../../types/navigation';
 import { styles } from './MaintenanceProfileScreen.styles';
+import { useAuth } from '../../context/AuthContext';
+import { incidentService } from '../../services/incidentService';
 
 type MenuItem = {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -31,6 +33,64 @@ const menu: MenuItem[] = [
 type MaintenanceProfileScreenProps = MaintenanceTabScreenProps<'MaintenanceProfile'>;
 
 export default function MaintenanceProfileScreen({ navigation }: MaintenanceProfileScreenProps) {
+  const { logout, user } = useAuth();
+
+  const [stats, setStats] = useState({ asignadas: 0, hoy: 0, total: 0 });
+  const [loading, setLoading] = useState(true);
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      const incidents = await incidentService.getAll();
+      const mine = incidents.filter(inc => inc.assignedWorker?.id === user?.id);
+
+      const today = new Date();
+      const completedToday = mine.filter(inc => {
+        if (inc.status !== 'FINALIZADO') return false;
+        const updated = new Date(inc.updatedAt);
+        return updated.toDateString() === today.toDateString();
+      });
+
+      setStats({
+        asignadas: mine.filter(inc => inc.status !== 'FINALIZADO').length,
+        hoy: completedToday.length,
+        total: mine.filter(inc => inc.status === 'FINALIZADO').length,
+      });
+    } catch (error) {
+      console.error('[MaintenanceProfileScreen] Error al cargar stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadStats();
+    }, [])
+  );
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigation.replace('Login');
+    } catch (error) {
+      console.error('[MaintenanceProfileScreen] Error al cerrar sesión:', error);
+    }
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
     <View style={styles.container}>
       <TopAppBar showLogo rightIcon="settings" />
@@ -38,39 +98,45 @@ export default function MaintenanceProfileScreen({ navigation }: MaintenanceProf
 
         <View style={styles.profile}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarInitials}>CM</Text>
+            <Text style={styles.avatarInitials}>{getInitials(user?.fullName)}</Text>
           </View>
           <View style={styles.profileInfo}>
             <View style={styles.nameRow}>
-              <Text style={styles.name}>Carlos Mendoza</Text>
+              <Text style={styles.name}>{user?.fullName || 'Usuario'}</Text>
               <View style={styles.role}>
                 <Text style={styles.roleText}>Operario</Text>
               </View>
             </View>
-            <Text style={styles.email}>c.mendoza@opero.edu</Text>
+            <Text style={styles.email}>{user?.emailUade || ''}</Text>
             <Text style={styles.dept}>
               <MaterialIcons name="domain" size={12} color={COLORS.onSurfaceVariant} />
-              {'  '}Mantenimiento General
+              {'  '}Mantenimiento
             </Text>
           </View>
         </View>
 
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>4</Text>
-            <Text style={styles.statLabel}>Asignadas</Text>
+        {loading ? (
+          <View style={{ padding: 24, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>12</Text>
-            <Text style={styles.statLabel}>Hoy</Text>
+        ) : (
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statNum}>{stats.asignadas}</Text>
+              <Text style={styles.statLabel}>Asignadas</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.stat}>
+              <Text style={styles.statNum}>{stats.hoy}</Text>
+              <Text style={styles.statLabel}>Hoy</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.stat}>
+              <Text style={styles.statNum}>{stats.total}</Text>
+              <Text style={styles.statLabel}>Total</Text>
+            </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>184</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
-        </View>
+        )}
 
         <View style={styles.menu}>
           {menu.map((item, i) => (
@@ -94,7 +160,7 @@ export default function MaintenanceProfileScreen({ navigation }: MaintenanceProf
 
         <TouchableOpacity
           style={styles.logoutBtn}
-          onPress={() => navigation.replace('Login')}
+          onPress={handleLogout}
           activeOpacity={0.7}
         >
           <MaterialIcons name="logout" size={16} color={COLORS.error} />

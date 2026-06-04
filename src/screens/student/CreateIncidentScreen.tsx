@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
@@ -9,8 +9,10 @@ import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './CreateIncidentScreen.styles';
-
-const departments = ['Mantenimiento', 'IT', 'Seguridad', 'Limpieza'];
+import { incidentService } from '../../services/incidentService';
+import { departmentService, DepartmentResponse } from '../../services/departmentService';
+import ErrorDialog from '../../components/ErrorDialog';
+import { useErrorDialog } from '../../hooks/useErrorDialog';
 
 type Prefill = {
   code?: string;
@@ -27,13 +29,79 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
   const prefill: Prefill | undefined = route?.params?.prefill;
   const isEdit = route?.params?.mode === 'edit';
 
-  const [title,    setTitle]    = useState('');
+  const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
+
+  const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
+  const [loadingDepts, setLoadingDepts] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [title, setTitle] = useState('');
   const [location, setLocation] = useState(prefill?.location ?? '');
   const [description, setDescription] = useState('');
-  const initialDept = prefill?.department
-    ? Math.max(0, departments.indexOf(prefill.department))
-    : 0;
-  const [dept, setDept] = useState(initialDept);
+  const [selectedDept, setSelectedDept] = useState(0);
+
+  useEffect(() => {
+    loadDepartments();
+  }, []);
+
+  const loadDepartments = async () => {
+    try {
+      setLoadingDepts(true);
+      const data = await departmentService.getAll();
+      setDepartments(data);
+
+      // Si hay prefill con departamento, seleccionarlo
+      if (prefill?.department) {
+        const index = data.findIndex(d => d.name === prefill.department);
+        if (index !== -1) setSelectedDept(index);
+      }
+    } catch (error: any) {
+      console.error('[CreateIncidentScreen] Error al cargar departamentos:', error);
+      showError('Error', 'No se pudieron cargar los departamentos');
+    } finally {
+      setLoadingDepts(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    // Validaciones
+    if (!title.trim()) {
+      showError('Error', 'Por favor ingresa un título');
+      return;
+    }
+
+    if (!description.trim()) {
+      showError('Error', 'Por favor ingresa una descripción');
+      return;
+    }
+
+    if (departments.length === 0) {
+      showError('Error', 'No hay departamentos disponibles');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const newIncident = await incidentService.create({
+        title: title.trim(),
+        description: description.trim(),
+        departmentId: departments[selectedDept].id,
+      });
+
+      showSuccess('Éxito', 'Incidencia creada correctamente');
+
+      // Esperar un momento para que el usuario vea el mensaje
+      setTimeout(() => {
+        navigation.navigate('IncidentDetail', { incident: newIncident as any });
+      }, 1500);
+    } catch (error: any) {
+      console.error('[CreateIncidentScreen] Error al crear incidencia:', error);
+      showError('Error', error.message || 'No se pudo crear la incidencia');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -118,17 +186,21 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
 
         <View style={styles.field}>
           <Text style={styles.label}>Departamento</Text>
-          <View style={styles.deptGrid}>
-            {departments.map((d, i) => (
-              <TouchableOpacity
-                key={d}
-                style={[styles.deptBtn, dept === i && styles.deptBtnActive]}
-                onPress={() => setDept(i)}
-              >
-                <Text style={[styles.deptText, dept === i && styles.deptTextActive]}>{d}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {loadingDepts ? (
+            <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 16 }} />
+          ) : (
+            <View style={styles.deptGrid}>
+              {departments.map((d, i) => (
+                <TouchableOpacity
+                  key={d.id}
+                  style={[styles.deptBtn, selectedDept === i && styles.deptBtnActive]}
+                  onPress={() => setSelectedDept(i)}
+                >
+                  <Text style={[styles.deptText, selectedDept === i && styles.deptTextActive]}>{d.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         <View style={styles.field}>
@@ -153,14 +225,30 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
 
       <View style={styles.bottomBar}>
         <TouchableOpacity
-          style={styles.submitBtn}
+          style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
           activeOpacity={0.85}
-          onPress={() => navigation.goBack()}
+          onPress={handleSubmit}
+          disabled={submitting || loadingDepts}
         >
-          <Text style={styles.submitText}>{isEdit ? 'Guardar cambios' : 'Enviar reporte'}</Text>
-          <MaterialIcons name="arrow-forward" size={18} color={COLORS.onPrimary} />
+          {submitting ? (
+            <ActivityIndicator color={COLORS.onPrimary} />
+          ) : (
+            <>
+              <Text style={styles.submitText}>{isEdit ? 'Guardar cambios' : 'Enviar reporte'}</Text>
+              <MaterialIcons name="arrow-forward" size={18} color={COLORS.onPrimary} />
+            </>
+          )}
         </TouchableOpacity>
       </View>
+
+      <ErrorDialog
+        visible={dialogState.visible}
+        type={dialogState.type}
+        title={dialogState.title}
+        message={dialogState.message}
+        buttons={dialogState.buttons}
+        onDismiss={hideDialog}
+      />
     </KeyboardAvoidingView>
   );
 }

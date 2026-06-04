@@ -8,6 +8,7 @@ import { COLORS } from '../../../constants/colors';
 import { FONTS } from '../../../constants/fonts';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './OnboardingScreen.styles';
+import { onboardingService } from '../../services/onboardingService';
 
 const logo = require('../../../assets/operologo.png');
 const { width } = Dimensions.get('window');
@@ -22,7 +23,7 @@ type Slide = {
 const slides: Slide[] = [
   {
     key: '1',
-    icon: 'report-problem',
+    icon: 'bolt',
     title: 'Reporta incidencias',
     desc: 'Registra fallos y problemas en instalaciones de forma rápida, con foto, ubicación y descripción.',
   },
@@ -47,10 +48,17 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList>(null);
 
-  const goNext = () => {
+  const goNext = async () => {
     if (index < slides.length - 1) {
       listRef.current?.scrollToIndex({ index: index + 1 });
     } else {
+      // Marcar onboarding como completado ANTES de navegar
+      try {
+        await onboardingService.markAsCompleted();
+      } catch (error) {
+        console.error('[OnboardingScreen] Error al marcar como completado:', error);
+        // NO bloquear navegación aunque falle el guardado
+      }
       navigation.replace('Login');
     }
   };
@@ -62,7 +70,17 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
           <Image source={logo} style={styles.logo} />
           <Text style={styles.wordmark}>Opero</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.replace('Login')} hitSlop={12}>
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              await onboardingService.markAsCompleted();
+            } catch (error) {
+              console.error('[OnboardingScreen] Error al saltar onboarding:', error);
+            }
+            navigation.replace('Login');
+          }}
+          hitSlop={12}
+        >
           <Text style={styles.skip}>Saltar</Text>
         </TouchableOpacity>
       </View>
@@ -106,7 +124,17 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
           <MaterialIcons name="arrow-forward" size={18} color={COLORS.onPrimary} />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.replace('Login')} style={styles.loginLink}>
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              await onboardingService.markAsCompleted();
+            } catch (error) {
+              console.error('[OnboardingScreen] Error en login directo:', error);
+            }
+            navigation.replace('Login');
+          }}
+          style={styles.loginLink}
+        >
           <Text style={styles.loginText}>
             ¿Ya tenés cuenta? <Text style={styles.loginAccent}>Ingresar</Text>
           </Text>

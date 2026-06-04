@@ -1,26 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch,
-  KeyboardAvoidingView, Platform,
+  View, Text, TextInput, TouchableOpacity, ScrollView, Switch,
+  KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
-import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './DepartmentSettingsScreen.styles';
+import { departmentService } from '../../services/departmentService';
+import { userService } from '../../services/userService';
+import ErrorDialog from '../../components/ErrorDialog';
+import { useErrorDialog } from '../../hooks/useErrorDialog';
 
 type DepartmentSettingsScreenProps = RootStackScreenProps<'DepartmentSettings'>;
 
 export default function DepartmentSettingsScreen({ navigation }: DepartmentSettingsScreenProps) {
-  const [name, setName]         = useState('Mantenimiento General');
-  const [code, setCode]         = useState('MNT-001');
-  const [email, setEmail]       = useState('mantenimiento@opero.edu');
-  const [description, setDescription] = useState(
-    'Departamento responsable de infraestructura, instalaciones y sistemas eléctricos de la universidad.',
-  );
-  const [autoAssign, setAutoAssign]   = useState(true);
-  const [notifCritical, setNotifCritical] = useState(true);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [workers, setWorkers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [autoAssign, setAutoAssign] = useState(false);
+  const [notifCritical, setNotifCritical] = useState(false);
+  const { dialogState, hideDialog, showError } = useErrorDialog();
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [deptsData, usersData] = await Promise.all([
+        departmentService.getAll(),
+        userService.getAll(),
+      ]);
+
+      setDepartments(deptsData);
+      const workersOnly = usersData.filter(u => u.roleName === 'WORKER');
+      setWorkers(workersOnly);
+    } catch (error: any) {
+      console.error('[DepartmentSettingsScreen] Error al cargar datos:', error);
+      showError('Error', error.message || 'No se pudieron cargar los datos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <TopAppBar title="Configurar departamento" onBack={() => navigation.goBack()} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -35,58 +73,20 @@ export default function DepartmentSettingsScreen({ navigation }: DepartmentSetti
             <MaterialIcons name="domain" size={24} color={COLORS.primary} />
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={styles.heroTitle}>{name}</Text>
-            <Text style={styles.heroSub}>Código {code} · 6 miembros</Text>
+            <Text style={styles.heroTitle}>Departamentos</Text>
+            <Text style={styles.heroSub}>{departments.length} departamentos · {workers.length} operarios</Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Información general</Text>
+          <Text style={styles.sectionTitle}>Departamentos registrados</Text>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Nombre del departamento</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholderTextColor={COLORS.outline}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Código interno</Text>
-            <TextInput
-              style={styles.input}
-              value={code}
-              onChangeText={setCode}
-              placeholderTextColor={COLORS.outline}
-              autoCapitalize="characters"
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Email de contacto</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor={COLORS.outline}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Descripción</Text>
-            <TextInput
-              style={[styles.input, styles.textarea]}
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              textAlignVertical="top"
-              placeholderTextColor={COLORS.outline}
-            />
-          </View>
+          {departments.map((dept, idx) => (
+            <View key={dept.id} style={{ paddingVertical: 12, borderBottomWidth: idx < departments.length - 1 ? 1 : 0, borderBottomColor: COLORS.surfaceVariant }}>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.text }}>{dept.name}</Text>
+              <Text style={{ fontSize: 14, color: COLORS.textMuted, marginTop: 4 }}>ID: {dept.id}</Text>
+            </View>
+          ))}
         </View>
 
         <View style={styles.section}>
@@ -130,6 +130,15 @@ export default function DepartmentSettingsScreen({ navigation }: DepartmentSetti
           <Text style={styles.saveText}>Guardar configuración</Text>
         </TouchableOpacity>
       </View>
+
+      <ErrorDialog
+        visible={dialogState.visible}
+        type={dialogState.type}
+        title={dialogState.title}
+        message={dialogState.message}
+        buttons={dialogState.buttons}
+        onDismiss={hideDialog}
+      />
     </KeyboardAvoidingView>
   );
 }

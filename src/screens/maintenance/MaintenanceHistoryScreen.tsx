@@ -1,31 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../../../constants/colors';
-import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
 import type { MaintenanceTabScreenProps } from '../../types/navigation';
 import { styles } from './MaintenanceHistoryScreen.styles';
-
-type HistoryItem = {
-  id: string;
-  code: string;
-  title: string;
-  location: string;
-  date: string;
-  duration: string;
-};
-
-const history: HistoryItem[] = [
-  { id: '1', code: '#INC-8792', title: 'Cambio de luminaria LED Aula 102',     location: 'Edificio A · Planta 1',   date: 'Hoy, 11:20',     duration: '32 min' },
-  { id: '2', code: '#INC-8780', title: 'Reparación puerta automática',         location: 'Biblioteca Central',       date: 'Hoy, 09:05',     duration: '1h 10 min' },
-  { id: '3', code: '#INC-8771', title: 'Desbloqueo sanitario general',        location: 'Pabellón C',                date: 'Ayer, 16:40',    duration: '45 min' },
-  { id: '4', code: '#INC-8750', title: 'Mantenimiento preventivo chiller 04', location: 'Azotea Bloque C',           date: 'Ayer, 10:30',    duration: '2h 30 min' },
-  { id: '5', code: '#INC-8733', title: 'Reparación fuga tubería',             location: 'Laboratorio Química',       date: '12 Abr, 14:00',  duration: '3h' },
-];
+import { useAuth } from '../../context/AuthContext';
+import { incidentService, IncidentResponse } from '../../services/incidentService';
+import ErrorDialog from '../../components/ErrorDialog';
+import { useErrorDialog } from '../../hooks/useErrorDialog';
 
 const periods = ['Hoy', 'Semana', 'Mes', 'Todo'];
 
@@ -34,7 +21,99 @@ type MaintenanceHistoryScreenProps = MaintenanceTabScreenProps<'MaintenanceHisto
 export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHistoryScreenProps) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = 60 + insets.bottom;
+  const { user } = useAuth();
+
+  const [allHistory, setAllHistory] = useState<IncidentResponse[]>([]);
+  const [filtered, setFiltered] = useState<IncidentResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [period, setPeriod] = useState(1);
+  const { dialogState, hideDialog, showError } = useErrorDialog();
+
+  const loadHistory = async (isRefresh = false) => {
+    try {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+
+      const incidents = await incidentService.getAll();
+      const myCompleted = incidents
+        .filter(inc => inc.assignedWorker?.id === user?.id && inc.status === 'FINALIZADO')
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+      setAllHistory(myCompleted);
+      applyFilter(myCompleted, period);
+    } catch (error: any) {
+      console.error('[MaintenanceHistoryScreen] Error al cargar historial:', error);
+      showError('Error', error.message || 'No se pudo cargar el historial');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const applyFilter = (history: IncidentResponse[], filterIdx: number) => {
+    const now = new Date();
+    let result = [...history];
+
+    if (filterIdx === 0) { // Hoy
+      result = result.filter(inc => {
+        const updated = new Date(inc.updatedAt);
+        return updated.toDateString() === now.toDateString();
+      });
+    } else if (filterIdx === 1) { // Semana
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      result = result.filter(inc => new Date(inc.updatedAt) >= weekAgo);
+    } else if (filterIdx === 2) { // Mes
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      result = result.filter(inc => new Date(inc.updatedAt) >= monthAgo);
+    }
+    // filterIdx === 3: Todo (sin filtrar)
+
+    setFiltered(result);
+  };
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadHistory();
+    }, [])
+  );
+
+  useEffect(() => {
+    applyFilter(allHistory, period);
+  }, [period]);
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+
+    if (date.toDateString() === now.toDateString()) {
+      return `Hoy, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+      return `Ayer, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${date.getDate()} ${months[date.getMonth()]}, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <TopAppBar showLogo rightIcon="search" showAvatar />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -42,6 +121,9 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: tabBarHeight + 40 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => loadHistory(true)} />
+        }
       >
 
         <View style={styles.header}>
@@ -65,54 +147,67 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
 
         <View style={styles.statsRow}>
           <View style={styles.stat}>
-            <Text style={styles.statNum}>{history.length}</Text>
+            <Text style={styles.statNum}>{filtered.length}</Text>
             <Text style={styles.statLabel}>Finalizadas</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
-            <Text style={styles.statNum}>9h 17m</Text>
-            <Text style={styles.statLabel}>Tiempo total</Text>
+            <Text style={styles.statNum}>{allHistory.length}</Text>
+            <Text style={styles.statLabel}>Total</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
-            <Text style={styles.statNum}>1h 51m</Text>
-            <Text style={styles.statLabel}>Promedio</Text>
+            <Text style={styles.statNum}>{periods[period]}</Text>
+            <Text style={styles.statLabel}>Período</Text>
           </View>
         </View>
 
-        <View style={styles.list}>
-          {history.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.card}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('MaintenanceDetail', { task: item })}
-            >
-              <View style={styles.iconWrap}>
-                <MaterialIcons name="check-circle" size={18} color={COLORS.primary} />
-              </View>
-              <View style={styles.cardBody}>
-                <View style={styles.cardTop}>
-                  <Text style={styles.code}>{item.code}</Text>
-                  <Text style={styles.date}>{item.date}</Text>
+        {filtered.length === 0 ? (
+          <View style={{ padding: 24, alignItems: 'center' }}>
+            <Text style={{ color: COLORS.textMuted, fontSize: 15 }}>
+              No hay tareas finalizadas en este período
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.list}>
+            {filtered.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.card}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('MaintenanceDetail', { task: item as any })}
+              >
+                <View style={styles.iconWrap}>
+                  <MaterialIcons name="check-circle" size={18} color={COLORS.primary} />
                 </View>
-                <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-                <View style={styles.meta}>
-                  <View style={styles.metaItem}>
-                    <MaterialIcons name="location-on" size={12} color={COLORS.onSurfaceVariant} />
-                    <Text style={styles.metaText} numberOfLines={1}>{item.location}</Text>
+                <View style={styles.cardBody}>
+                  <View style={styles.cardTop}>
+                    <Text style={styles.code}>#INC-{item.id}</Text>
+                    <Text style={styles.date}>{formatDate(item.updatedAt)}</Text>
                   </View>
-                  <View style={styles.metaItem}>
-                    <MaterialIcons name="schedule" size={12} color={COLORS.onSurfaceVariant} />
-                    <Text style={styles.metaText}>{item.duration}</Text>
+                  <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+                  <View style={styles.meta}>
+                    <View style={styles.metaItem}>
+                      <MaterialIcons name="location-on" size={12} color={COLORS.onSurfaceVariant} />
+                      <Text style={styles.metaText} numberOfLines={1}>{item.department.name}</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
       </ScrollView>
+
+      <ErrorDialog
+        visible={dialogState.visible}
+        type={dialogState.type}
+        title={dialogState.title}
+        message={dialogState.message}
+        buttons={dialogState.buttons}
+        onDismiss={hideDialog}
+      />
     </View>
   );
 }

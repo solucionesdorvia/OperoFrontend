@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Image, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
 import { FONTS } from '../../../constants/fonts';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './LoginScreen.styles';
 import { useAuth } from '../../context/AuthContext';
+import ErrorDialog from '../../components/ErrorDialog';
+import { useErrorDialog } from '../../hooks/useErrorDialog';
 
 const logo = require('../../../assets/operologo.png');
 
@@ -21,6 +24,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const { login, user, isAuthenticated } = useAuth();
+  const { dialogState, hideDialog, showError } = useErrorDialog();
 
   /**
    * Redirigir automáticamente si el usuario ya está autenticado
@@ -47,7 +51,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         break;
       default:
         console.warn('[LoginScreen] Rol desconocido:', roleName);
-        Alert.alert('Error', 'Rol de usuario no reconocido');
+        showError('Error', 'Rol de usuario no reconocido');
     }
   };
 
@@ -57,12 +61,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const handleLogin = async () => {
     // Validaciones básicas
     if (!email.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu email');
+      showError('Error', 'Por favor ingresa tu email');
       return;
     }
 
     if (!password.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu contraseña');
+      showError('Error', 'Por favor ingresa tu contraseña');
       return;
     }
 
@@ -75,7 +79,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       // El useEffect se encargará de la navegación cuando user se actualice
     } catch (error: any) {
       console.error('[LoginScreen] Error en login:', error);
-      Alert.alert(
+      showError(
         'Error de autenticación',
         error.message || 'No se pudo iniciar sesión. Verifica tus credenciales.'
       );
@@ -160,7 +164,29 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           </TouchableOpacity>
         </View>
 
+        {/* BOTÓN TEMPORAL PARA RESETEAR TODO */}
+        <TouchableOpacity
+          onPress={async () => {
+            await AsyncStorage.clear();
+            alert('AsyncStorage borrado. Cerrá y abrí la app de nuevo.');
+          }}
+          style={{ padding: 12, backgroundColor: 'red', margin: 16, borderRadius: 8 }}
+        >
+          <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
+            🔴 RESETEAR TODO (TEMPORAL)
+          </Text>
+        </TouchableOpacity>
+
       </ScrollView>
+
+      <ErrorDialog
+        visible={dialogState.visible}
+        type={dialogState.type}
+        title={dialogState.title}
+        message={dialogState.message}
+        buttons={dialogState.buttons}
+        onDismiss={hideDialog}
+      />
     </KeyboardAvoidingView>
   );
 }

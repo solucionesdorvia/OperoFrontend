@@ -2,9 +2,10 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useInitialRoute } from '../hooks/useInitialRoute';
 
 import { COLORS } from '../../constants/colors';
 import { FONTS } from '../../constants/fonts';
@@ -201,10 +202,21 @@ function MaintenanceTabs() {
 }
 
 export default function AppNavigator() {
+  const { routeName, isReady } = useInitialRoute();
+
+  // Mostrar loader mientras se determina ruta inicial
+  if (!isReady) {
+    return (
+      <View style={{ flex: 1, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Onboarding"
+        initialRouteName={routeName}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: COLORS.background },

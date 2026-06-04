@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Image, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
@@ -11,6 +11,8 @@ import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './RegisterScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { departmentService, DepartmentResponse } from '../../services';
+import ErrorDialog from '../../components/ErrorDialog';
+import { useErrorDialog } from '../../hooks/useErrorDialog';
 
 const logo = require('../../../assets/operologo.png');
 
@@ -36,6 +38,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false);
 
   const { register, isAuthenticated, user } = useAuth();
+  const { dialogState, hideDialog, showError, showWarning } = useErrorDialog();
 
   /**
    * Cargar departamentos al montar el componente
@@ -68,7 +71,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       }
     } catch (error: any) {
       console.error('[RegisterScreen] Error al cargar departamentos:', error);
-      Alert.alert('Advertencia', 'No se pudieron cargar los departamentos');
+      showWarning('Advertencia', 'No se pudieron cargar los departamentos');
     } finally {
       setIsDepartmentsLoading(false);
     }
@@ -99,28 +102,28 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const handleRegister = async () => {
     // Validaciones
     if (!fullName.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu nombre completo');
+      showError('Error', 'Por favor ingresa tu nombre completo');
       return;
     }
 
     if (!email.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu email');
+      showError('Error', 'Por favor ingresa tu email');
       return;
     }
 
     if (!password.trim()) {
-      Alert.alert('Error', 'Por favor ingresa una contraseña');
+      showError('Error', 'Por favor ingresa una contraseña');
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres');
+      showError('Error', 'La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
     // Para MANAGER y WORKER, el departamento es requerido
     if ((selectedRole === 2 || selectedRole === 3) && !selectedDepartment) {
-      Alert.alert('Error', 'Por favor selecciona un departamento');
+      showError('Error', 'Por favor selecciona un departamento');
       return;
     }
 
@@ -138,7 +141,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       // El useEffect se encargará de la navegación
     } catch (error: any) {
       console.error('[RegisterScreen] Error en registro:', error);
-      Alert.alert(
+      showError(
         'Error de registro',
         error.message || 'No se pudo crear la cuenta. Intenta nuevamente.'
       );
@@ -295,6 +298,15 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         </View>
 
       </ScrollView>
+
+      <ErrorDialog
+        visible={dialogState.visible}
+        type={dialogState.type}
+        title={dialogState.title}
+        message={dialogState.message}
+        buttons={dialogState.buttons}
+        onDismiss={hideDialog}
+      />
     </KeyboardAvoidingView>
   );
 }

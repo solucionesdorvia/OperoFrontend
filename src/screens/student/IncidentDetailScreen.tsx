@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable, Alert,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
@@ -9,31 +9,84 @@ import TopAppBar from '../../components/TopAppBar';
 import StatusBadge from '../../components/StatusBadge';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './IncidentDetailScreen.styles';
+import ErrorDialog from '../../components/ErrorDialog';
+import { useErrorDialog } from '../../hooks/useErrorDialog';
+import { incidentService } from '../../services/incidentService';
 
-const timeline = [
-  { step: 'Reportado',  time: '12 Oct, 08:30 · j.garcia',  done: true,  current: false },
-  { step: 'Asignado',   time: '12 Oct, 09:15 · Hidráulica', done: true,  current: false },
-  { step: 'En proceso', time: 'Hace 45 min · R. Mendez',    done: false, current: true  },
-  { step: 'Finalizado', time: 'Pendiente',                   done: false, current: false },
-];
+const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PENDIENTE'> = {
+  'ABIERTO': 'ABIERTO',
+  'EN_PROCESO': 'EN PROCESO',
+  'FINALIZADO': 'FINALIZADO',
+  'PENDIENTE': 'PENDIENTE',
+};
 
 type IncidentDetailScreenProps = RootStackScreenProps<'IncidentDetail'>;
 
 export default function IncidentDetailScreen({ navigation, route }: IncidentDetailScreenProps) {
   const incident = route?.params?.incident;
   const [menuOpen, setMenuOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { dialogState, hideDialog, showConfirmation, showError } = useErrorDialog();
 
   const handleDelete = () => {
     setMenuOpen(false);
-    Alert.alert(
+    showConfirmation(
       'Eliminar incidencia',
       '¿Seguro que querés eliminar este reporte? Esta acción no se puede deshacer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: () => navigation.goBack() },
-      ],
+      async () => {
+        try {
+          setDeleting(true);
+          await incidentService.delete(incident.id);
+          navigation.goBack();
+        } catch (error: any) {
+          console.error('[IncidentDetailScreen] Error al eliminar:', error);
+          showError('Error', error.message || 'No se pudo eliminar la incidencia');
+        } finally {
+          setDeleting(false);
+        }
+      }
     );
   };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${date.getDate()} ${months[date.getMonth()]}, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  };
+
+  const buildTimeline = () => {
+    const steps = [
+      {
+        step: 'Reportado',
+        time: incident?.createdAt ? `${formatDate(incident.createdAt)} · ${incident.user.fullName}` : '',
+        done: true,
+        current: false,
+      },
+      {
+        step: 'Asignado',
+        time: incident?.assignedWorker
+          ? `${incident.department.name} · ${incident.assignedWorker.fullName}`
+          : 'Pendiente',
+        done: !!incident?.assignedWorker,
+        current: incident?.status === 'ABIERTO' && !!incident?.assignedWorker,
+      },
+      {
+        step: 'En proceso',
+        time: incident?.status === 'EN_PROCESO' ? 'En curso' : 'Pendiente',
+        done: incident?.status === 'EN_PROCESO' || incident?.status === 'FINALIZADO',
+        current: incident?.status === 'EN_PROCESO',
+      },
+      {
+        step: 'Finalizado',
+        time: incident?.status === 'FINALIZADO' ? formatDate(incident.updatedAt) : 'Pendiente',
+        done: incident?.status === 'FINALIZADO',
+        current: false,
+      },
+    ];
+    return steps;
+  };
+
+  const timeline = buildTimeline();
 
   const handleEdit = () => {
     setMenuOpen(false);
@@ -72,45 +125,37 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
 
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <Text style={styles.id}>#INC-8821</Text>
-            <StatusBadge status="EN PROCESO" />
+            <Text style={styles.id}>#INC-{incident?.id || '0000'}</Text>
+            <StatusBadge status={STATUS_MAP[incident?.status || 'ABIERTO'] || 'ABIERTO'} />
           </View>
-          <Text style={styles.title}>{incident?.title ?? 'Rotura de tubería principal'}</Text>
+          <Text style={styles.title}>{incident?.title || 'Sin título'}</Text>
         </View>
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
             <MaterialIcons name="location-on" size={15} color={COLORS.onSurfaceVariant} />
-            <Text style={styles.infoLabel}>Ubicación</Text>
-            <Text style={styles.infoValue}>{incident?.location ?? 'Facultad de Ingeniería'}</Text>
+            <Text style={styles.infoLabel}>Departamento</Text>
+            <Text style={styles.infoValue}>{incident?.department?.name || 'Sin asignar'}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <MaterialIcons name="access-time" size={15} color={COLORS.onSurfaceVariant} />
             <Text style={styles.infoLabel}>Reportado</Text>
-            <Text style={styles.infoValue}>12 Oct, 08:30</Text>
+            <Text style={styles.infoValue}>{incident?.createdAt ? formatDate(incident.createdAt) : '-'}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <MaterialIcons name="person-outline" size={15} color={COLORS.onSurfaceVariant} />
             <Text style={styles.infoLabel}>Asignado a</Text>
-            <Text style={styles.infoValue}>R. Mendez</Text>
+            <Text style={styles.infoValue}>{incident?.assignedWorker?.fullName || 'Sin asignar'}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Descripción</Text>
           <Text style={styles.desc}>
-            Fuga de agua detectada en el pasillo central del segundo piso. Riesgo eléctrico por cercanía a paneles de control.
+            {incident?.description || 'Sin descripción'}
           </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Evidencia</Text>
-          <View style={styles.photoPlaceholder}>
-            <MaterialIcons name="image" size={22} color={COLORS.outline} />
-            <Text style={styles.photoLabel}>Captura_01.jpg</Text>
-          </View>
         </View>
 
         <View style={styles.section}>
@@ -149,6 +194,15 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
         </View>
 
       </ScrollView>
+
+      <ErrorDialog
+        visible={dialogState.visible}
+        type={dialogState.type}
+        title={dialogState.title}
+        message={dialogState.message}
+        buttons={dialogState.buttons}
+        onDismiss={hideDialog}
+      />
     </View>
   );
 }

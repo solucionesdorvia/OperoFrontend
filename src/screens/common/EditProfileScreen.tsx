@@ -1,22 +1,57 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView,
+  View, Text, TextInput, TouchableOpacity,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
-import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './EditProfileScreen.styles';
+import { useAuth } from '../../context/AuthContext';
+import { userService } from '../../services/userService';
+import ErrorDialog from '../../components/ErrorDialog';
+import { useErrorDialog } from '../../hooks/useErrorDialog';
 
 type EditProfileScreenProps = RootStackScreenProps<'EditProfile'>;
 
 export default function EditProfileScreen({ navigation }: EditProfileScreenProps) {
-  const [name, setName]   = useState('Alejandro Moreno');
-  const [email, setEmail] = useState('a.moreno@opero.edu');
-  const [phone, setPhone] = useState('+54 11 4000 0000');
-  const [legajo, setLegajo] = useState('123456');
+  const { user, updateUser } = useAuth();
+
+  const [name, setName] = useState(user?.fullName || '');
+  const [saving, setSaving] = useState(false);
+  const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
+
+  const getInitials = (fullName?: string) => {
+    if (!fullName) return 'U';
+    const parts = fullName.split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return fullName.substring(0, 2).toUpperCase();
+  };
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      showError('Error', 'Por favor ingresa un nombre');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const updated = await userService.updateMe({ fullName: name.trim() });
+      updateUser(updated);
+      showSuccess('Éxito', 'Perfil actualizado correctamente');
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1500);
+    } catch (error: any) {
+      console.error('[EditProfileScreen] Error al actualizar:', error);
+      showError('Error', error.message || 'No se pudo actualizar el perfil');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -28,7 +63,7 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
 
         <View style={styles.avatarSection}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarInitials}>AM</Text>
+            <Text style={styles.avatarInitials}>{getInitials(user?.fullName)}</Text>
           </View>
           <TouchableOpacity style={styles.changePhoto} activeOpacity={0.7}>
             <MaterialIcons name="photo-camera" size={15} color={COLORS.onSurface} />
@@ -49,49 +84,50 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
         <View style={styles.field}>
           <Text style={styles.label}>Email</Text>
           <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor={COLORS.outline}
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Teléfono</Text>
-          <TextInput
-            style={styles.input}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            placeholderTextColor={COLORS.outline}
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Legajo</Text>
-          <TextInput
             style={[styles.input, { opacity: 0.6 }]}
-            value={legajo}
-            onChangeText={setLegajo}
+            value={user?.emailUade || ''}
             editable={false}
             placeholderTextColor={COLORS.outline}
           />
-          <Text style={styles.hint}>El legajo no puede modificarse.</Text>
+          <Text style={styles.hint}>El email no puede modificarse.</Text>
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>ID de usuario</Text>
+          <TextInput
+            style={[styles.input, { opacity: 0.6 }]}
+            value={String(user?.id || '')}
+            editable={false}
+            placeholderTextColor={COLORS.outline}
+          />
+          <Text style={styles.hint}>El ID es único y no puede modificarse.</Text>
         </View>
 
       </ScrollView>
 
       <View style={styles.bottomBar}>
         <TouchableOpacity
-          style={styles.saveBtn}
+          style={[styles.saveBtn, saving && { opacity: 0.6 }]}
           activeOpacity={0.85}
-          onPress={() => navigation.goBack()}
+          onPress={handleSave}
+          disabled={saving}
         >
-          <Text style={styles.saveText}>Guardar cambios</Text>
+          {saving ? (
+            <ActivityIndicator color={COLORS.onPrimary} />
+          ) : (
+            <Text style={styles.saveText}>Guardar cambios</Text>
+          )}
         </TouchableOpacity>
       </View>
+
+      <ErrorDialog
+        visible={dialogState.visible}
+        type={dialogState.type}
+        title={dialogState.title}
+        message={dialogState.message}
+        buttons={dialogState.buttons}
+        onDismiss={hideDialog}
+      />
     </KeyboardAvoidingView>
   );
 }

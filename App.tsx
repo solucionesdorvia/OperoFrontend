@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -23,6 +23,8 @@ import { AuthProvider } from './src/context/AuthContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+const MIN_SPLASH_DURATION = 2500; // 2.5 segundos
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     IBMPlexSans_300Light,
@@ -37,11 +39,37 @@ export default function App() {
     IBMPlexMono_700Bold,
   });
 
+  const startTimeRef = useRef(Date.now());
+  const [isAppReady, setIsAppReady] = useState(false);
+
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+    const hideSplash = async () => {
+      if (!fontsLoaded) return;
+
+      const elapsedTime = Date.now() - startTimeRef.current;
+      const remainingTime = MIN_SPLASH_DURATION - elapsedTime;
+
+      if (remainingTime > 0) {
+        // Esperar el tiempo restante
+        console.log(`[App] Splash: esperando ${remainingTime}ms adicionales`);
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      } else {
+        console.log(`[App] Splash: fuentes tardaron ${elapsedTime}ms (>= mínimo)`);
+      }
+
+      try {
+        await SplashScreen.hideAsync();
+      } catch (error) {
+        console.error('[App] Error al ocultar splash:', error);
+      }
+      setIsAppReady(true);
+    };
+
+    hideSplash().catch(console.error);
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) return null;
+  // NO renderizar hasta que splash esté listo
+  if (!isAppReady) return null;
 
   return (
     <SafeAreaProvider>
