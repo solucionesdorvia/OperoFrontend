@@ -147,6 +147,12 @@ const maintenanceTabs: TabItem[] = [
   { icon: 'person',  label: 'Perfil'    },
 ];
 
+// Lambdas a nivel de modulo: React Navigation las invoca como (props) => ReactNode,
+// asi que devuelven JSX que React renderiza como componente. Pasar StudentTabBar
+// directo lo invocaba como funcion plana, rompiendo Rules of Hooks (error #321
+// al ejecutar useSafeAreaInsets dentro).
+const StudentTabBarRenderer = (props: any) => <StudentTabBar {...props} />;
+
 const ManagerTabBarComponent = (props: any) => (
   <CustomTabBar {...props} items={managerTabs} />
 );
@@ -158,7 +164,7 @@ const MaintenanceTabBarComponent = (props: any) => (
 function StudentTabs() {
   return (
     <StudentTab.Navigator
-      tabBar={StudentTabBar}
+      tabBar={StudentTabBarRenderer}
       screenOptions={{ headerShown: false }}
     >
       <StudentTab.Screen name="StudentHome"      component={HomeScreen} />
