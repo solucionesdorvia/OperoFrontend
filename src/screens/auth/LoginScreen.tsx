@@ -27,7 +27,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
    */
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigateByRole(user.role.name);
+      navigateByRole(user.roleName);
     }
   }, [isAuthenticated, user]);
 

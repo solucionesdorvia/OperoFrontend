@@ -117,7 +117,7 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
           <Text style={styles.sectionTitle}>Seguimiento</Text>
           <View style={styles.timeline}>
             {timeline.map((item, i) => (
-              <View key={i} style={styles.timelineItem}>
+              <View key={item.step} style={styles.timelineItem}>
                 <View style={styles.timelineLeft}>
                   <View style={[
                     styles.timelineDot,
