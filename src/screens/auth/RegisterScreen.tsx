@@ -51,7 +51,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
     if (isAuthenticated && user) {
       navigateByRole(user.role.name);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, navigation]);
 
   /**
    * Cargar lista de departamentos
