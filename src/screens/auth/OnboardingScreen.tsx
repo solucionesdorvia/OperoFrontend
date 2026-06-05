@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, Pressable, StyleSheet, Image, FlatList, Dimensions,
+  View, Text, TouchableOpacity, Pressable, StyleSheet, Image, FlatList, Dimensions, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -11,7 +11,6 @@ import { styles } from './OnboardingScreen.styles';
 import { onboardingService } from '../../services/onboardingService';
 
 const logo = require('../../../assets/operologo.png');
-const { width } = Dimensions.get('window');
 
 type Slide = {
   key: string;
@@ -45,8 +44,13 @@ type OnboardingScreenProps = RootStackScreenProps<'Onboarding'>;
 
 export default function OnboardingScreen({ navigation }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList>(null);
+
+  // Calcular altura disponible para el slide: altura total - topBar - bottom - padding
+  // topBar ≈ 60px, bottom ≈ 200px, padding top/bottom ≈ 40px
+  const slideHeight = height - insets.top - insets.bottom - 300;
 
   const goNext = async () => {
     console.log('[OnboardingScreen] goNext llamado, index actual:', index);
@@ -106,7 +110,7 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
             setIndex(newIndex);
           }}
           renderItem={({ item }) => (
-            <View style={[styles.slide, { width }]}>
+            <View style={[styles.slide, { width, height: slideHeight }]}>
               <View style={styles.iconWrap}>
                 <MaterialIcons name={item.icon} size={52} color={COLORS.primary} />
               </View>

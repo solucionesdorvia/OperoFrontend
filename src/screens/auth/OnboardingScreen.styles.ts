@@ -18,7 +18,7 @@ export const styles = StyleSheet.create({
   skip: { fontSize: 13, color: COLORS.onSurfaceVariant, fontFamily: FONTS.family.bodyMedium },
 
   slide: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: 32, gap: 18,
   },
   iconWrap: {
