@@ -24,10 +24,13 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
+    if (diffMins < 1) return 'Hace menos de 1 min';
     if (diffMins < 60) return `Hace ${diffMins} min`;
     if (diffHours < 24) return `Hace ${diffHours}h`;
-    return `Hace ${Math.floor(diffHours / 24)} días`;
+    if (diffDays === 1) return 'Ayer';
+    return `Hace ${diffDays} días`;
   };
 
   const handleAccept = async () => {
@@ -99,7 +102,7 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
           <View style={styles.infoRow}>
             <MaterialIcons name="location-on" size={15} color={COLORS.onSurfaceVariant} />
             <Text style={styles.infoLabel}>Departamento</Text>
-            <Text style={styles.infoValue}>{task?.department?.name || 'Sin asignar'}</Text>
+            <Text style={styles.infoValue}>{task?.departmentName || 'Sin asignar'}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
@@ -111,7 +114,7 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
           <View style={styles.infoRow}>
             <MaterialIcons name="person-outline" size={15} color={COLORS.onSurfaceVariant} />
             <Text style={styles.infoLabel}>Reportante</Text>
-            <Text style={styles.infoValue}>{task?.user?.fullName || 'Desconocido'}</Text>
+            <Text style={styles.infoValue}>{task?.reporterName || 'Desconocido'}</Text>
           </View>
         </View>
 
