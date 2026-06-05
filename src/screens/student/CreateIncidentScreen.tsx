@@ -93,6 +93,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
         title: title.trim(),
         description: description.trim(),
         departmentId: selectedDepartment.id,
+        locationDescription: location.trim() || undefined,
       });
 
       showSuccess('Éxito', 'Incidencia creada correctamente');

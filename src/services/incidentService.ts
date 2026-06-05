@@ -5,6 +5,8 @@ export interface IncidentRequest {
   title: string;
   description: string;
   departmentId: number;
+  locationDescription?: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
 export interface UpdateIncidentRequest {
