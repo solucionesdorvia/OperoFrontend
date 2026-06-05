@@ -135,7 +135,7 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
           <View style={styles.infoRow}>
             <MaterialIcons name="location-on" size={15} color={COLORS.onSurfaceVariant} />
             <Text style={styles.infoLabel}>Departamento</Text>
-            <Text style={styles.infoValue}>{incident?.department?.name || 'Sin asignar'}</Text>
+            <Text style={styles.infoValue}>{incident?.departmentName || 'Sin asignar'}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
@@ -147,7 +147,7 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
           <View style={styles.infoRow}>
             <MaterialIcons name="person-outline" size={15} color={COLORS.onSurfaceVariant} />
             <Text style={styles.infoLabel}>Asignado a</Text>
-            <Text style={styles.infoValue}>{incident?.assignedWorker?.fullName || 'Sin asignar'}</Text>
+            <Text style={styles.infoValue}>{incident?.workerName || 'Sin asignar'}</Text>
           </View>
         </View>
 
