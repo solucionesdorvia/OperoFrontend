@@ -189,7 +189,7 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
                   <View style={styles.meta}>
                     <View style={styles.metaItem}>
                       <MaterialIcons name="location-on" size={12} color={COLORS.onSurfaceVariant} />
-                      <Text style={styles.metaText} numberOfLines={1}>{item.department.name}</Text>
+                      <Text style={styles.metaText} numberOfLines={1}>{item.departmentName}</Text>
                     </View>
                   </View>
                 </View>

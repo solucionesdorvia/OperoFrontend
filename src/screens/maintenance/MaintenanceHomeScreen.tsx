@@ -159,7 +159,7 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
                       <View style={styles.taskMeta}>
                         <View style={styles.metaItem}>
                           <MaterialIcons name="location-on" size={13} color={COLORS.onSurfaceVariant} />
-                          <Text style={styles.metaText}>{task.department.name}</Text>
+                          <Text style={styles.metaText}>{task.departmentName}</Text>
                         </View>
                         <View style={styles.metaItem}>
                           <MaterialIcons name="schedule" size={13} color={COLORS.onSurfaceVariant} />
