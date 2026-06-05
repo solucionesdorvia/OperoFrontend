@@ -26,7 +26,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const MIN_SPLASH_DURATION = 2500; // 2.5 segundos
 
-const splashLogo = require('./assets/splash-icon.png');
+const splashLogo = require('./assets/icon.png');
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -84,7 +84,7 @@ export default function App() {
   if (!isAppReady) {
     return (
       <Animated.View style={[styles.splashContainer, { opacity: fadeAnim }]}>
-        <Image source={splashLogo} style={styles.splashLogo} />
+        <Image source={splashLogo} style={styles.splashLogo} resizeMode="contain" />
         <Text style={styles.splashText}>Opero</Text>
       </Animated.View>
     );
