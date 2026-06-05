@@ -164,19 +164,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           </TouchableOpacity>
         </View>
 
-        {/* BOTÓN TEMPORAL PARA RESETEAR TODO */}
-        <TouchableOpacity
-          onPress={async () => {
-            await AsyncStorage.clear();
-            alert('AsyncStorage borrado. Cerrá y abrí la app de nuevo.');
-          }}
-          style={{ padding: 12, backgroundColor: 'red', margin: 16, borderRadius: 8 }}
-        >
-          <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>
-            🔴 RESETEAR TODO (TEMPORAL)
-          </Text>
-        </TouchableOpacity>
-
       </ScrollView>
 
       <ErrorDialog
