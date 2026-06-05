@@ -51,9 +51,11 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
   const goNext = async () => {
     console.log('[OnboardingScreen] goNext llamado, index actual:', index);
     if (index < slides.length - 1) {
-      console.log('[OnboardingScreen] Scrolling to index:', index + 1);
-      listRef.current?.scrollToIndex({ index: index + 1 });
-      setIndex(index + 1);
+      const nextIndex = index + 1;
+      console.log('[OnboardingScreen] Scrolling to index:', nextIndex);
+      // Usar scrollToOffset en lugar de scrollToIndex para mejor compatibilidad web
+      listRef.current?.scrollToOffset({ offset: nextIndex * width, animated: true });
+      setIndex(nextIndex);
     } else {
       // Marcar onboarding como completado ANTES de navegar
       console.log('[OnboardingScreen] Último slide, marcando como completado');

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { View, Image, Text, StyleSheet, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -25,6 +26,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const MIN_SPLASH_DURATION = 2500; // 2.5 segundos
 
+const splashLogo = require('./assets/splash-icon.png');
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     IBMPlexSans_300Light,
@@ -41,6 +44,7 @@ export default function App() {
 
   const startTimeRef = useRef(Date.now());
   const [isAppReady, setIsAppReady] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const hideSplash = async () => {
@@ -63,23 +67,28 @@ export default function App() {
         console.error('[App] Error al ocultar splash:', error);
       }
 
-      // Ocultar splash HTML personalizado (web)
-      if (typeof document !== 'undefined') {
-        const splashElement = document.getElementById('splash-screen');
-        if (splashElement) {
-          splashElement.classList.add('hidden');
-          setTimeout(() => splashElement.remove(), 300);
-        }
-      }
-
-      setIsAppReady(true);
+      // Fade out del splash React
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsAppReady(true);
+      });
     };
 
     hideSplash().catch(console.error);
   }, [fontsLoaded]);
 
-  // NO renderizar hasta que splash esté listo
-  if (!isAppReady) return null;
+  // Mostrar splash mientras carga
+  if (!isAppReady) {
+    return (
+      <Animated.View style={[styles.splashContainer, { opacity: fadeAnim }]}>
+        <Image source={splashLogo} style={styles.splashLogo} />
+        <Text style={styles.splashText}>Opero</Text>
+      </Animated.View>
+    );
+  }
 
   return (
     <SafeAreaProvider>
@@ -90,3 +99,24 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  splashContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  splashLogo: {
+    width: 120,
+    height: 120,
+    marginBottom: 24,
+  },
+  splashText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1976D2',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+});
