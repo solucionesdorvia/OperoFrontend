@@ -37,7 +37,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     try {
       setLoading(true);
       const incidents = await incidentService.getAll();
-      const userIncidents = incidents.filter(inc => inc.user.id === user?.id);
+      const userIncidents = incidents.filter(inc => inc.reporterId === user?.id);
 
       setStats({
         reported: userIncidents.length,

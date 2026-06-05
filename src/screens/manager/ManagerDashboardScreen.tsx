@@ -32,7 +32,7 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
 
       // Pendientes de asignar: sin worker asignado
       const unassigned = data
-        .filter(inc => !inc.assignedWorker)
+        .filter(inc => !inc.workerId)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 3);
 
@@ -153,11 +153,11 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
                       <View style={styles.cardMeta}>
                         <View style={styles.metaItem}>
                           <MaterialIcons name="person-outline" size={12} color={COLORS.onSurfaceVariant} />
-                          <Text style={styles.metaText}>{inc.user.fullName}</Text>
+                          <Text style={styles.metaText}>{inc.reporterName}</Text>
                         </View>
                         <View style={styles.metaItem}>
                           <MaterialIcons name="build" size={12} color={COLORS.onSurfaceVariant} />
-                          <Text style={styles.metaText}>{inc.department.name}</Text>
+                          <Text style={styles.metaText}>{inc.departmentName}</Text>
                         </View>
                       </View>
                     </View>

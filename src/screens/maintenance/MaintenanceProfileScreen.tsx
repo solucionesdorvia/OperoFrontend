@@ -42,7 +42,7 @@ export default function MaintenanceProfileScreen({ navigation }: MaintenanceProf
     try {
       setLoading(true);
       const incidents = await incidentService.getAll();
-      const mine = incidents.filter(inc => inc.assignedWorker?.id === user?.id);
+      const mine = incidents.filter(inc => inc.workerId === user?.id);
 
       const today = new Date();
       const completedToday = mine.filter(inc => {

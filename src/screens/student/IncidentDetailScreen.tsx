@@ -58,17 +58,17 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
     const steps = [
       {
         step: 'Reportado',
-        time: incident?.createdAt ? `${formatDate(incident.createdAt)} · ${incident.user.fullName}` : '',
+        time: incident?.createdAt ? `${formatDate(incident.createdAt)} · ${incident.reporterName}` : '',
         done: true,
         current: false,
       },
       {
         step: 'Asignado',
-        time: incident?.assignedWorker
-          ? `${incident.department.name} · ${incident.assignedWorker.fullName}`
+        time: incident?.workerName
+          ? `${incident.departmentName} · ${incident.workerName}`
           : 'Pendiente',
-        done: !!incident?.assignedWorker,
-        current: incident?.status === 'ABIERTO' && !!incident?.assignedWorker,
+        done: !!incident?.workerName,
+        current: incident?.status === 'ABIERTO' && !!incident?.workerName,
       },
       {
         step: 'En proceso',

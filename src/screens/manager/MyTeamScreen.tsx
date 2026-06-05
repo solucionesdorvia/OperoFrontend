@@ -69,7 +69,7 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
   };
 
   const getWorkerStats = (workerId: number) => {
-    const assigned = incidents.filter(inc => inc.assignedWorker?.id === workerId);
+    const assigned = incidents.filter(inc => inc.workerId === workerId);
     const active = assigned.filter(inc => inc.status !== 'FINALIZADO').length;
     const done = assigned.filter(inc => inc.status === 'FINALIZADO').length;
     return { active, done };

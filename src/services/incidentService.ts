@@ -18,24 +18,19 @@ export interface IncidentResponse {
   id: number;
   title: string;
   description: string;
+  locationDescription?: string;
+  photoUrl?: string;
   status: string;
   priority: string;
   createdAt: string;
   updatedAt: string;
-  user: {
-    id: number;
-    fullName: string;
-    emailUade: string;
-  };
-  department: {
-    id: number;
-    name: string;
-  };
-  assignedWorker?: {
-    id: number;
-    fullName: string;
-    emailUade: string;
-  };
+  reporterId: number;
+  reporterName: string;
+  reporterEmail: string;
+  workerId?: number;
+  workerName?: string;
+  departmentId: number;
+  departmentName: string;
 }
 
 export const incidentService = {

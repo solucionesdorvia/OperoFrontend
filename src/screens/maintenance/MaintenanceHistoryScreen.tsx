@@ -37,7 +37,7 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
 
       const incidents = await incidentService.getAll();
       const myCompleted = incidents
-        .filter(inc => inc.assignedWorker?.id === user?.id && inc.status === 'FINALIZADO')
+        .filter(inc => inc.workerId === user?.id && inc.status === 'FINALIZADO')
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
       setAllHistory(myCompleted);

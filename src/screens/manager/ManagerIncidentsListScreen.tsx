@@ -167,18 +167,18 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
                     <View style={styles.meta}>
                       <View style={styles.metaItem}>
                         <MaterialIcons name="location-on" size={12} color={COLORS.onSurfaceVariant} />
-                        <Text style={styles.metaText} numberOfLines={1}>{inc.department.name}</Text>
+                        <Text style={styles.metaText} numberOfLines={1}>{inc.departmentName}</Text>
                       </View>
                     </View>
                     <View style={styles.footer}>
                       <View style={styles.metaItem}>
                         <MaterialIcons
-                          name={inc.assignedWorker ? 'person' : 'person-off'}
+                          name={inc.workerName ? 'person' : 'person-off'}
                           size={13}
-                          color={inc.assignedWorker ? COLORS.primary : COLORS.onSurfaceVariant}
+                          color={inc.workerName ? COLORS.primary : COLORS.onSurfaceVariant}
                         />
-                        <Text style={[styles.assignee, !inc.assignedWorker && { color: COLORS.onSurfaceVariant, fontStyle: 'italic' }]}>
-                          {inc.assignedWorker?.fullName ?? 'Sin asignar'}
+                        <Text style={[styles.assignee, !inc.workerName && { color: COLORS.onSurfaceVariant, fontStyle: 'italic' }]}>
+                          {inc.workerName ?? 'Sin asignar'}
                         </Text>
                       </View>
                       <Text style={styles.time}>{getRelativeTime(inc.createdAt)}</Text>

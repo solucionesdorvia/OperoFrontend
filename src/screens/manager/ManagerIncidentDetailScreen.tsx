@@ -29,8 +29,8 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
 
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
   const [workers, setWorkers] = useState<UserResponse[]>([]);
-  const [selectedDeptId, setSelectedDeptId] = useState<number | null>(incident?.department?.id || null);
-  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(incident?.assignedWorker?.id || null);
+  const [selectedDeptId, setSelectedDeptId] = useState<number | null>(incident?.departmentId || null);
+  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(incident?.workerId || null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showDeptModal, setShowDeptModal] = useState(false);
@@ -66,12 +66,12 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
       setSaving(true);
 
       // Actualizar departamento si cambió
-      if (selectedDeptId && selectedDeptId !== incident?.department?.id) {
+      if (selectedDeptId && selectedDeptId !== incident?.departmentId) {
         await incidentService.updateDepartment(incident.id, selectedDeptId);
       }
 
       // Asignar worker si cambió
-      if (selectedWorkerId && selectedWorkerId !== incident?.assignedWorker?.id) {
+      if (selectedWorkerId && selectedWorkerId !== incident?.workerId) {
         await incidentService.assignWorker(incident.id, selectedWorkerId);
       }
 

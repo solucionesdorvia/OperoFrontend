@@ -49,7 +49,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
 
       const data = await incidentService.getAll();
       const userIncidents = data
-        .filter(inc => inc.user.id === user?.id)
+        .filter(inc => inc.reporterId === user?.id)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setAllIncidents(userIncidents);
@@ -195,8 +195,8 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
         ) : (
           <View style={[styles.list, { paddingBottom: tabBarHeight + 60 }]}>
             {filteredIncidents.map((inc) => {
-              const statusSubtext = inc.assignedWorker
-                ? `Técnico: ${inc.assignedWorker.fullName}`
+              const statusSubtext = inc.workerName
+                ? `Técnico: ${inc.workerName}`
                 : inc.status === 'FINALIZADO'
                 ? 'Cerrada'
                 : null;
@@ -211,7 +211,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
                   <View style={styles.cardTop}>
                     <View style={styles.cardInfo}>
                       <Text style={styles.cardTitle} numberOfLines={2}>{inc.title}</Text>
-                      <Text style={styles.cardLocation}>{inc.department.name}</Text>
+                      <Text style={styles.cardLocation}>{inc.departmentName}</Text>
                     </View>
                     <StatusBadge status={STATUS_MAP[inc.status] || 'ABIERTO'} />
                   </View>

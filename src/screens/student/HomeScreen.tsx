@@ -44,7 +44,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       const data = await incidentService.getAll();
       // Filtrar solo las del usuario actual y tomar las 4 más recientes
       const userIncidents = data
-        .filter(inc => inc.user.id === user?.id)
+        .filter(inc => inc.reporterId === user?.id)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 4);
 
@@ -136,7 +136,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                   <IncidentCard
                     key={inc.id}
                     title={inc.title}
-                    location={inc.department.name}
+                    location={inc.departmentName}
                     status={STATUS_MAP[inc.status] || 'ABIERTO'}
                     time={getRelativeTime(inc.createdAt)}
                     dimmed={inc.status === 'FINALIZADO'}

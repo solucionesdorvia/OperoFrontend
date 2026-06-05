@@ -35,7 +35,7 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
       else setLoading(true);
 
       const incidents = await incidentService.getAll();
-      const assigned = incidents.filter(inc => inc.assignedWorker?.id === user?.id);
+      const assigned = incidents.filter(inc => inc.workerId === user?.id);
 
       const sorted = assigned
         .filter(inc => inc.status !== 'FINALIZADO')
