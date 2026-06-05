@@ -103,20 +103,21 @@ export default function App() {
 const styles = StyleSheet.create({
   splashContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   splashLogo: {
-    width: 120,
-    height: 120,
-    marginBottom: 24,
+    width: 96,
+    height: 96,
+    tintColor: COLORS.text,
+    marginBottom: 12,
   },
   splashText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#1976D2',
-    letterSpacing: 2,
+    fontSize: 28,
+    fontFamily: 'IBMPlexMono_700Bold',
+    color: COLORS.primary,
+    letterSpacing: 4,
     textTransform: 'uppercase',
   },
 });
