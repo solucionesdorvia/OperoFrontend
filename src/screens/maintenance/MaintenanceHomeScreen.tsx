@@ -14,9 +14,9 @@ import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 
 const priorityConfig = {
-  ALTA: { color: COLORS.error,   label: 'Urgente' },
-  MEDIA:   { color: COLORS.primary, label: 'Media'   },
-  BAJA: { color: COLORS.outline, label: 'Baja' },
+  HIGH: { color: COLORS.error,   label: 'Urgente' },
+  MEDIUM: { color: COLORS.primary, label: 'Media'   },
+  LOW: { color: COLORS.outline, label: 'Baja' },
 };
 
 type MaintenanceHomeScreenProps = MaintenanceTabScreenProps<'MaintenanceHomeTab'>;
@@ -137,7 +137,7 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
           ) : (
             <View style={styles.list}>
               {myTasks.map((task) => {
-                const priority = (task.priority || 'MEDIA') as 'ALTA' | 'MEDIA' | 'BAJA';
+                const priority = (task.priority || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW';
                 const cfg = priorityConfig[priority];
                 return (
                   <TouchableOpacity

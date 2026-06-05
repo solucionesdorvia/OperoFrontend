@@ -12,7 +12,7 @@ import { incidentService, IncidentResponse } from '../../services/incidentServic
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 
-const priorityColor = { ALTA: COLORS.error, MEDIA: COLORS.primary, BAJA: COLORS.outline };
+const priorityColor = { HIGH: COLORS.error, MEDIUM: COLORS.primary, LOW: COLORS.outline };
 
 type ManagerDashboardScreenProps = ManagerTabScreenProps<'ManagerHome'>;
 
@@ -136,7 +136,7 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
           ) : (
             <View style={styles.list}>
               {incidents.map((inc) => {
-                const priority = (inc.priority || 'MEDIA') as 'ALTA' | 'MEDIA' | 'BAJA';
+                const priority = (inc.priority || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW';
                 return (
                   <TouchableOpacity
                     key={inc.id}

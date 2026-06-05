@@ -76,8 +76,8 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
     );
   };
 
-  const priority = task?.priority || 'MEDIA';
-  const priorityLabels: Record<string, string> = { ALTA: 'Prioridad alta', MEDIA: 'Prioridad media', BAJA: 'Prioridad baja' };
+  const priority = task?.priority || 'MEDIUM';
+  const priorityLabels: Record<string, string> = { HIGH: 'Prioridad alta', MEDIUM: 'Prioridad media', LOW: 'Prioridad baja' };
 
   return (
     <View style={styles.container}>

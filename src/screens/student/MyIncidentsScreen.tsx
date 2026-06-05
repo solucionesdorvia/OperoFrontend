@@ -216,7 +216,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
                     <StatusBadge status={STATUS_MAP[inc.status] || 'ABIERTO'} />
                   </View>
                   <View style={styles.cardMeta}>
-                    {inc.priority === 'ALTA' && (
+                    {inc.priority === 'HIGH' && (
                       <View style={styles.priorityTag}>
                         <Text style={styles.priorityText}>Prioridad alta</Text>
                       </View>

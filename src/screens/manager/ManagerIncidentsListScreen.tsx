@@ -23,7 +23,7 @@ const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PEND
   'PENDIENTE': 'PENDIENTE',
 };
 
-const priorityColor = { ALTA: COLORS.error, MEDIA: COLORS.primary, BAJA: COLORS.outline };
+const priorityColor = { HIGH: COLORS.error, MEDIUM: COLORS.primary, LOW: COLORS.outline };
 
 type ManagerIncidentsListScreenProps = ManagerTabScreenProps<'ManagerIncidents'>;
 
@@ -149,7 +149,7 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
         ) : (
           <View style={styles.list}>
             {filteredIncidents.map((inc) => {
-              const priority = (inc.priority || 'MEDIA') as 'ALTA' | 'MEDIA' | 'BAJA';
+              const priority = (inc.priority || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW';
               return (
                 <TouchableOpacity
                   key={inc.id}
