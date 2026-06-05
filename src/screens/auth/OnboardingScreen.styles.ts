@@ -9,6 +9,9 @@ export const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 24, paddingBottom: 8,
   },
+  flatListWrapper: {
+    flex: 1,
+  },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logo: { width: 28, height: 28, tintColor: COLORS.text },
   wordmark: { fontSize: 16, fontFamily: FONTS.family.monoBold, color: COLORS.primary, textTransform: 'uppercase', letterSpacing: FONTS.tracking.wide },

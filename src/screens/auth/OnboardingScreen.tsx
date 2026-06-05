@@ -92,28 +92,29 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        ref={listRef}
-        data={slides}
-        keyExtractor={(item) => item.key}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1 }}
-        onMomentumScrollEnd={(e) => {
-          const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
-          setIndex(newIndex);
-        }}
-        renderItem={({ item }) => (
-          <View style={[styles.slide, { width }]}>
-            <View style={styles.iconWrap}>
-              <MaterialIcons name={item.icon} size={52} color={COLORS.primary} />
+      <View style={styles.flatListWrapper}>
+        <FlatList
+          ref={listRef}
+          data={slides}
+          keyExtractor={(item) => item.key}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(e) => {
+            const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
+            setIndex(newIndex);
+          }}
+          renderItem={({ item }) => (
+            <View style={[styles.slide, { width }]}>
+              <View style={styles.iconWrap}>
+                <MaterialIcons name={item.icon} size={52} color={COLORS.primary} />
+              </View>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.desc}>{item.desc}</Text>
             </View>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.desc}>{item.desc}</Text>
-          </View>
-        )}
-      />
+          )}
+        />
+      </View>
 
       <View style={[styles.bottom, { paddingBottom: insets.bottom + 24 }]}>
         <View style={styles.dots}>

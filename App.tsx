@@ -26,7 +26,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const MIN_SPLASH_DURATION = 2500; // 2.5 segundos
 
-const splashLogo = require('./assets/icon.png');
+const splashLogo = require('./assets/operologo.png');
 
 export default function App() {
   const [fontsLoaded] = useFonts({
