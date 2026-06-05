@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Image, FlatList, Dimensions,
+  View, Text, TouchableOpacity, Pressable, StyleSheet, Image, FlatList, Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -49,16 +49,21 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
   const listRef = useRef<FlatList>(null);
 
   const goNext = async () => {
+    console.log('[OnboardingScreen] goNext llamado, index actual:', index);
     if (index < slides.length - 1) {
+      console.log('[OnboardingScreen] Scrolling to index:', index + 1);
       listRef.current?.scrollToIndex({ index: index + 1 });
+      setIndex(index + 1);
     } else {
       // Marcar onboarding como completado ANTES de navegar
+      console.log('[OnboardingScreen] Último slide, marcando como completado');
       try {
         await onboardingService.markAsCompleted();
       } catch (error) {
         console.error('[OnboardingScreen] Error al marcar como completado:', error);
         // NO bloquear navegación aunque falle el guardado
       }
+      console.log('[OnboardingScreen] Navegando a Login');
       navigation.replace('Login');
     }
   };
@@ -117,12 +122,20 @@ export default function OnboardingScreen({ navigation }: OnboardingScreenProps) 
           ))}
         </View>
 
-        <TouchableOpacity style={styles.primaryBtn} onPress={goNext} activeOpacity={0.85}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.primaryBtn,
+            pressed && { opacity: 0.85 }
+          ]}
+          onPress={goNext}
+          accessible={true}
+          accessibilityRole="button"
+        >
           <Text style={styles.primaryText}>
             {index === slides.length - 1 ? 'Empezar' : 'Siguiente'}
           </Text>
           <MaterialIcons name="arrow-forward" size={18} color={COLORS.onPrimary} />
-        </TouchableOpacity>
+        </Pressable>
 
         <TouchableOpacity
           onPress={async () => {

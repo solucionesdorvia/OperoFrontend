@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
 import { FONTS } from '../../constants/fonts';
 import { styles } from './TopAppBar.styles';
+import { useAuth } from '../context/AuthContext';
 
 const logo = require('../../assets/operologo.png');
 
@@ -37,24 +38,37 @@ const iconMap: Record<RightIconName, keyof typeof MaterialIcons.glyphMap> = {
   settings: 'settings',
 };
 
+function getInitials(fullName: string | undefined): string {
+  if (!fullName) return '??';
+  const names = fullName.trim().split(' ');
+  if (names.length === 1) {
+    return names[0].substring(0, 2).toUpperCase();
+  }
+  return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+}
+
 function renderAvatar({
   showAvatar,
   onAvatarPress,
+  userFullName,
 }: {
   showAvatar?: boolean;
   onAvatarPress?: () => void;
+  userFullName?: string;
 }) {
   if (!showAvatar) return null;
+  const initials = getInitials(userFullName);
+
   if (onAvatarPress) {
     return (
       <TouchableOpacity onPress={onAvatarPress} style={styles.avatar} activeOpacity={0.7}>
-        <Text style={styles.avatarText}>AM</Text>
+        <Text style={styles.avatarText}>{initials}</Text>
       </TouchableOpacity>
     );
   }
   return (
     <View style={styles.avatar}>
-      <Text style={styles.avatarText}>AM</Text>
+      <Text style={styles.avatarText}>{initials}</Text>
     </View>
   );
 }
@@ -70,6 +84,7 @@ export default function TopAppBar({
   showLogo,
 }: TopAppBarProps) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
 
   // Si vino rightActions, usamos esa lista. Si vino el rightIcon legacy, lo convertimos.
   let actions: TopAppBarAction[] = [];
@@ -106,7 +121,7 @@ export default function TopAppBar({
             <MaterialIcons name={iconMap[action.icon]} size={22} color={COLORS.onSurfaceVariant} />
           </TouchableOpacity>
         ))}
-        {renderAvatar({ showAvatar, onAvatarPress })}
+        {renderAvatar({ showAvatar, onAvatarPress, userFullName: user?.fullName })}
       </View>
     </View>
   );

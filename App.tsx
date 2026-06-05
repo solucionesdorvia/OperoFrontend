@@ -62,6 +62,16 @@ export default function App() {
       } catch (error) {
         console.error('[App] Error al ocultar splash:', error);
       }
+
+      // Ocultar splash HTML personalizado (web)
+      if (typeof document !== 'undefined') {
+        const splashElement = document.getElementById('splash-screen');
+        if (splashElement) {
+          splashElement.classList.add('hidden');
+          setTimeout(() => splashElement.remove(), 300);
+        }
+      }
+
       setIsAppReady(true);
     };
 
