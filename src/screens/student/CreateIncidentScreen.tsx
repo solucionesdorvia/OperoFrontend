@@ -80,13 +80,19 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       return;
     }
 
+    const selectedDepartment = departments[selectedDept];
+    if (!selectedDepartment || !selectedDepartment.id) {
+      showError('Error', 'Por favor selecciona un departamento válido');
+      return;
+    }
+
     try {
       setSubmitting(true);
 
       const newIncident = await incidentService.create({
         title: title.trim(),
         description: description.trim(),
-        departmentId: departments[selectedDept].id,
+        departmentId: selectedDepartment.id,
       });
 
       showSuccess('Éxito', 'Incidencia creada correctamente');
