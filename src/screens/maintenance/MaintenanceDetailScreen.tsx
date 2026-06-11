@@ -33,28 +33,26 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
     return `Hace ${diffDays} días`;
   };
 
-  const handleAccept = async () => {
-    if (task?.status === 'ABIERTO') {
-      showConfirmation(
-        'Aceptar tarea',
-        '¿Querés aceptar esta incidencia y comenzar a trabajar en ella?',
-        async () => {
-          try {
-            setProcessing(true);
-            await incidentService.acceptIncident(task.id);
-            showSuccess('Éxito', 'Incidencia aceptada correctamente');
-            setTimeout(() => {
-              navigation.goBack();
-            }, 1500);
-          } catch (error: any) {
-            console.error('[MaintenanceDetailScreen] Error al aceptar:', error);
-            showError('Error', error.message || 'No se pudo aceptar la incidencia');
-          } finally {
-            setProcessing(false);
-          }
+  const handleStartWork = async () => {
+    showConfirmation(
+      'Comenzar trabajo',
+      '¿Querés comenzar a trabajar en esta incidencia?',
+      async () => {
+        try {
+          setProcessing(true);
+          await incidentService.updateStatus(task.id, 'IN_PROCESS');
+          showSuccess('Éxito', 'Trabajo iniciado correctamente');
+          setTimeout(() => {
+            navigation.goBack();
+          }, 1500);
+        } catch (error: any) {
+          console.error('[MaintenanceDetailScreen] Error al iniciar trabajo:', error);
+          showError('Error', error.message || 'No se pudo iniciar el trabajo');
+        } finally {
+          setProcessing(false);
         }
-      );
-    }
+      }
+    );
   };
 
   const handleFinish = async () => {
@@ -64,7 +62,7 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
       async () => {
         try {
           setProcessing(true);
-          await incidentService.updateStatus(task.id, 'FINALIZADO');
+          await incidentService.updateStatus(task.id, 'FINISHED');
           showSuccess('Éxito', 'Incidencia finalizada correctamente');
           setTimeout(() => {
             navigation.goBack();
@@ -128,11 +126,11 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        {task?.status === 'ABIERTO' ? (
+        {task?.status === 'ASSIGNED' ? (
           <TouchableOpacity
             style={[styles.startBtn, processing && { opacity: 0.6 }]}
             activeOpacity={0.85}
-            onPress={handleAccept}
+            onPress={handleStartWork}
             disabled={processing}
           >
             {processing ? (
@@ -140,11 +138,11 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
             ) : (
               <>
                 <MaterialIcons name="play-arrow" size={20} color={COLORS.onPrimary} />
-                <Text style={styles.startBtnText}>Aceptar tarea</Text>
+                <Text style={styles.startBtnText}>Comenzar trabajo</Text>
               </>
             )}
           </TouchableOpacity>
-        ) : task?.status === 'EN_PROCESO' ? (
+        ) : task?.status === 'IN_PROCESS' ? (
           <TouchableOpacity
             style={[styles.finishBtn, processing && { opacity: 0.6 }]}
             activeOpacity={0.85}
@@ -160,9 +158,13 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
               </>
             )}
           </TouchableOpacity>
-        ) : (
+        ) : task?.status === 'FINISHED' ? (
           <View style={{ padding: 16, alignItems: 'center' }}>
             <Text style={{ color: COLORS.textMuted, fontSize: 15 }}>Tarea finalizada</Text>
+          </View>
+        ) : (
+          <View style={{ padding: 16, alignItems: 'center' }}>
+            <Text style={{ color: COLORS.textMuted, fontSize: 15 }}>Tarea pendiente de asignación</Text>
           </View>
         )}
       </View>
