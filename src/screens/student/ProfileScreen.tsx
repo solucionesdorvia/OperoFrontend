@@ -41,8 +41,8 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
       setStats({
         reported: userIncidents.length,
-        resolved: userIncidents.filter(inc => inc.status === 'FINALIZADO').length,
-        active: userIncidents.filter(inc => inc.status !== 'FINALIZADO').length,
+        resolved: userIncidents.filter(inc => inc.status === 'FINISHED').length,
+        active: userIncidents.filter(inc => inc.status !== 'FINISHED').length,
       });
     } catch (error) {
       console.error('[ProfileScreen] Error al cargar stats:', error);

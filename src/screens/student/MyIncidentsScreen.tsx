@@ -198,7 +198,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
             {filteredIncidents.map((inc) => {
               const statusSubtext = inc.workerName
                 ? `Técnico: ${inc.workerName}`
-                : inc.status === 'FINALIZADO'
+                : inc.status === 'FINISHED'
                 ? 'Cerrada'
                 : null;
 

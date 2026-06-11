@@ -46,15 +46,15 @@ export default function MaintenanceProfileScreen({ navigation }: MaintenanceProf
 
       const today = new Date();
       const completedToday = mine.filter(inc => {
-        if (inc.status !== 'FINALIZADO') return false;
+        if (inc.status !== 'FINISHED') return false;
         const updated = new Date(inc.updatedAt);
         return updated.toDateString() === today.toDateString();
       });
 
       setStats({
-        asignadas: mine.filter(inc => inc.status !== 'FINALIZADO').length,
+        asignadas: mine.filter(inc => inc.status !== 'FINISHED').length,
         hoy: completedToday.length,
-        total: mine.filter(inc => inc.status === 'FINALIZADO').length,
+        total: mine.filter(inc => inc.status === 'FINISHED').length,
       });
     } catch (error) {
       console.error('[MaintenanceProfileScreen] Error al cargar stats:', error);

@@ -19,10 +19,11 @@ import { useErrorDialog } from '../../hooks/useErrorDialog';
 type HomeScreenProps = StudentTabScreenProps<'StudentHome'>;
 
 const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PENDIENTE'> = {
-  'ABIERTO': 'ABIERTO',
-  'EN_PROCESO': 'EN PROCESO',
-  'FINALIZADO': 'FINALIZADO',
-  'PENDIENTE': 'PENDIENTE',
+  'PENDING': 'PENDIENTE',
+  'PENDING_ASSIGNMENT': 'PENDIENTE',
+  'ASSIGNED': 'ABIERTO',
+  'IN_PROCESS': 'EN PROCESO',
+  'FINISHED': 'FINALIZADO',
 };
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
@@ -83,8 +84,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const firstName = user?.fullName?.split(' ')[0] || 'Usuario';
-  const activeCount = incidents.filter(i => i.status !== 'FINALIZADO').length;
-  const resolvedCount = incidents.filter(i => i.status === 'FINALIZADO').length;
+  const activeCount = incidents.filter(i => i.status !== 'FINISHED').length;
+  const resolvedCount = incidents.filter(i => i.status === 'FINISHED').length;
 
   return (
     <View style={styles.container}>
@@ -137,9 +138,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                     key={inc.id}
                     title={inc.title}
                     location={inc.departmentName}
-                    status={STATUS_MAP[inc.status] || 'ABIERTO'}
+                    status={STATUS_MAP[inc.status] || 'PENDIENTE'}
                     time={getRelativeTime(inc.createdAt)}
-                    dimmed={inc.status === 'FINALIZADO'}
+                    dimmed={inc.status === 'FINISHED'}
                     onPress={() => navigation.navigate('IncidentDetail', { incident: inc as any })}
                   />
                 ))}
