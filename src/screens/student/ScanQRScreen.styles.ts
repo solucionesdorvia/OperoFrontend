@@ -10,8 +10,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingBottom: 8,
   },
   closeBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: COLORS.surfaceHigh,
+    width: 40, height: 40, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
   },
   headerTitle: { fontSize: 15, fontFamily: FONTS.family.bodySemiBold, color: COLORS.text },

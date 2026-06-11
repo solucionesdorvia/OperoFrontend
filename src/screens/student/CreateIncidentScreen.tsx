@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image, Alert,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image, ActionSheetIOS,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -71,10 +71,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert(
-          'Permiso denegado',
-          'Necesitamos acceso a tus fotos para adjuntar imágenes.'
-        );
+        showError('Permiso denegado', 'Necesitamos acceso a tus fotos para adjuntar imágenes.');
         return;
       }
 
@@ -100,10 +97,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert(
-          'Permiso denegado',
-          'Necesitamos acceso a tu cámara para tomar fotos.'
-        );
+        showError('Permiso denegado', 'Necesitamos acceso a tu cámara para tomar fotos.');
         return;
       }
 
@@ -122,16 +116,30 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
     }
   };
 
-  const handleAttachFile = () => {
-    Alert.alert(
-      'Adjuntar',
-      'Selecciona una opción',
-      [
-        { text: 'Tomar foto', onPress: handleTakePhoto },
-        { text: 'Elegir de galería', onPress: handlePickImage },
-        { text: 'Cancelar', style: 'cancel' },
-      ]
-    );
+  const handleAttachFile = async () => {
+    console.log('[CreateIncidentScreen] handleAttachFile llamado, Platform:', Platform.OS);
+
+    if (Platform.OS === 'ios') {
+      console.log('[CreateIncidentScreen] Mostrando ActionSheet para iOS');
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancelar', 'Tomar foto', 'Elegir de galería'],
+          cancelButtonIndex: 0,
+        },
+        async (buttonIndex) => {
+          console.log('[CreateIncidentScreen] Opción seleccionada:', buttonIndex);
+          if (buttonIndex === 1) {
+            await handleTakePhoto();
+          } else if (buttonIndex === 2) {
+            await handlePickImage();
+          }
+        }
+      );
+    } else {
+      // En Android, permitir ambas opciones
+      console.log('[CreateIncidentScreen] Android - llamando handlePickImage directamente');
+      await handlePickImage();
+    }
   };
 
   const handleRemoveImage = (index: number) => {

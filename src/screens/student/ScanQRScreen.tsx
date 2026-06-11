@@ -157,14 +157,14 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.closeBtn}
+          style={[styles.closeBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
           hitSlop={12}
         >
           <MaterialIcons name="close" size={22} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>Escanear QR</Text>
+        <Text style={[styles.headerTitle, { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }]}>Escanear QR</Text>
         <TouchableOpacity
-          style={styles.closeBtn}
+          style={[styles.closeBtn, { backgroundColor: flashEnabled ? COLORS.primary : 'rgba(0,0,0,0.6)' }]}
           hitSlop={12}
           onPress={() => setFlashEnabled(!flashEnabled)}
         >
@@ -191,38 +191,6 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
           <Animated.View style={[styles.scanLine, { transform: [{ translateY }] }]} />
         </View>
 
-        <TouchableOpacity
-          style={styles.simulateBtn}
-          activeOpacity={0.85}
-          onPress={() => simulateScan('UADE-6-665', 'Piso 6 · Aula 665 · UADE Labs')}
-        >
-          <MaterialIcons name="qr-code-2" size={18} color={COLORS.onPrimary} />
-          <Text style={styles.simulateText}>Simular escaneo</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={[styles.bottomSheet, { paddingBottom: insets.bottom + 16 }]}>
-        <View style={styles.handle} />
-        <Text style={styles.sheetTitle}>Escaneos recientes</Text>
-        <View style={styles.sheetList}>
-          {recentScans.map((s) => (
-            <TouchableOpacity
-              key={s.code}
-              style={styles.sheetItem}
-              activeOpacity={0.7}
-              onPress={() => simulateScan(s.code, s.location)}
-            >
-              <View style={styles.sheetIcon}>
-                <MaterialIcons name="qr-code" size={16} color={COLORS.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.sheetLocation}>{s.location}</Text>
-                <Text style={styles.sheetCode}>{s.code} · {s.time}</Text>
-              </View>
-              <MaterialIcons name="chevron-right" size={18} color={COLORS.outline} />
-            </TouchableOpacity>
-          ))}
-        </View>
       </View>
     </View>
   );
