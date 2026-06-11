@@ -31,7 +31,16 @@ export default {
     },
     plugins: [
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "expo-camera",
+      "expo-barcode-scanner",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "La aplicación necesita acceso a tus fotos para adjuntar imágenes a las incidencias.",
+          "cameraPermission": "La aplicación necesita acceso a tu cámara para tomar fotos de las incidencias."
+        }
+      ]
     ],
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL

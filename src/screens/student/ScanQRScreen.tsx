@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Animated, Easing,
+  View, Text, TouchableOpacity, StyleSheet, Animated, Easing, Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CameraView, Camera } from 'expo-camera';
 import { COLORS } from '../../../constants/colors';
 import { FONTS } from '../../../constants/fonts';
 import type { RootStackScreenProps } from '../../types/navigation';
@@ -19,8 +20,13 @@ type ScanQRScreenProps = RootStackScreenProps<'ScanQR'>;
 export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
   const insets = useSafeAreaInsets();
   const scanLine = useRef(new Animated.Value(0)).current;
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [scanned, setScanned] = useState(false);
+  const [flashEnabled, setFlashEnabled] = useState(false);
 
   useEffect(() => {
+    requestCameraPermission();
+
     Animated.loop(
       Animated.sequence([
         Animated.timing(scanLine, {
@@ -38,6 +44,66 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
       ]),
     ).start();
   }, [scanLine]);
+
+  const requestCameraPermission = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    setHasPermission(status === 'granted');
+
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permiso de cámara requerido',
+        'Necesitamos acceso a tu cámara para escanear códigos QR.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    }
+  };
+
+  const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
+    if (scanned) return;
+
+    setScanned(true);
+    console.log('[ScanQRScreen] QR escaneado:', data);
+
+    // Parsear el contenido del QR
+    // Formato esperado: "UADE-6-665" o un JSON con más datos
+    try {
+      let qrData: any = {};
+
+      if (data.startsWith('{')) {
+        qrData = JSON.parse(data);
+      } else {
+        // Formato simple UADE-piso-aula
+        const parts = data.split('-');
+        if (parts.length === 3) {
+          qrData = {
+            code: data,
+            building: parts[0],
+            floor: parts[1],
+            room: parts[2],
+            location: `Piso ${parts[1]} · Aula ${parts[2]}`,
+            department: 'Mantenimiento',
+          };
+        } else {
+          qrData = {
+            code: data,
+            location: data,
+          };
+        }
+      }
+
+      navigation.replace('CreateIncident', {
+        prefill: qrData,
+      });
+    } catch (error) {
+      console.error('[ScanQRScreen] Error al parsear QR:', error);
+      navigation.replace('CreateIncident', {
+        prefill: {
+          code: data,
+          location: data,
+        },
+      });
+    }
+  };
 
   const simulateScan = (code: string, location: string) => {
     navigation.replace('CreateIncident', {
@@ -57,25 +123,62 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
     outputRange: [0, 200],
   });
 
+  if (hasPermission === null) {
+    return (
+      <View style={styles.container}>
+        <Text>Solicitando permiso de cámara...</Text>
+      </View>
+    );
+  }
+
+  if (hasPermission === false) {
+    return (
+      <View style={styles.container}>
+        <Text>No se concedió permiso para usar la cámara</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.simulateBtn}>
+          <Text style={styles.simulateText}>Volver</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
+      <CameraView
+        style={StyleSheet.absoluteFillObject}
+        facing="back"
+        enableTorch={flashEnabled}
+        barcodeScannerSettings={{
+          barcodeTypes: ['qr'],
+        }}
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+      />
+
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.closeBtn}
           hitSlop={12}
         >
-          <MaterialIcons name="close" size={22} color={COLORS.text} />
+          <MaterialIcons name="close" size={22} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Escanear QR</Text>
-        <TouchableOpacity style={styles.closeBtn} hitSlop={12}>
-          <MaterialIcons name="flash-on" size={20} color={COLORS.text} />
+        <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>Escanear QR</Text>
+        <TouchableOpacity
+          style={styles.closeBtn}
+          hitSlop={12}
+          onPress={() => setFlashEnabled(!flashEnabled)}
+        >
+          <MaterialIcons
+            name={flashEnabled ? 'flash-on' : 'flash-off'}
+            size={20}
+            color="#FFFFFF"
+          />
         </TouchableOpacity>
       </View>
 
       <View style={styles.center}>
-        <Text style={styles.title}>Escaneá el QR del aula</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: '#FFFFFF' }]}>Escaneá el QR del aula</Text>
+        <Text style={[styles.subtitle, { color: '#FFFFFF' }]}>
           Ubicá el código dentro del marco para cargar{'\n'}
           automáticamente la ubicación del reporte.
         </Text>
@@ -86,7 +189,6 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
           <View style={[styles.corner, styles.cornerBL]} />
           <View style={[styles.corner, styles.cornerBR]} />
           <Animated.View style={[styles.scanLine, { transform: [{ translateY }] }]} />
-          <MaterialIcons name="qr-code-scanner" size={56} color={COLORS.outlineStrong} />
         </View>
 
         <TouchableOpacity

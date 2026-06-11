@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image, Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { COLORS } from '../../../constants/colors';
 import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
@@ -39,6 +41,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
   const [location, setLocation] = useState(prefill?.location ?? '');
   const [description, setDescription] = useState('');
   const [selectedDept, setSelectedDept] = useState(0);
+  const [attachedImages, setAttachedImages] = useState<string[]>([]);
 
   useEffect(() => {
     loadDepartments();
@@ -61,6 +64,80 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
     } finally {
       setLoadingDepts(false);
     }
+  };
+
+  const handlePickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permiso denegado',
+          'Necesitamos acceso a tus fotos para adjuntar imágenes.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsMultipleSelection: true,
+        quality: 0.8,
+        allowsEditing: false,
+      });
+
+      if (!result.canceled && result.assets) {
+        const newImages = result.assets.map(asset => asset.uri);
+        setAttachedImages([...attachedImages, ...newImages]);
+      }
+    } catch (error) {
+      console.error('[CreateIncidentScreen] Error al seleccionar imagen:', error);
+      showError('Error', 'No se pudo seleccionar la imagen');
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permiso denegado',
+          'Necesitamos acceso a tu cámara para tomar fotos.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        quality: 0.8,
+        allowsEditing: false,
+      });
+
+      if (!result.canceled && result.assets) {
+        const newImage = result.assets[0].uri;
+        setAttachedImages([...attachedImages, newImage]);
+      }
+    } catch (error) {
+      console.error('[CreateIncidentScreen] Error al tomar foto:', error);
+      showError('Error', 'No se pudo tomar la foto');
+    }
+  };
+
+  const handleAttachFile = () => {
+    Alert.alert(
+      'Adjuntar',
+      'Selecciona una opción',
+      [
+        { text: 'Tomar foto', onPress: handleTakePhoto },
+        { text: 'Elegir de galería', onPress: handlePickImage },
+        { text: 'Cancelar', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleRemoveImage = (index: number) => {
+    const newImages = [...attachedImages];
+    newImages.splice(index, 1);
+    setAttachedImages(newImages);
   };
 
   const handleSubmit = async () => {
@@ -223,10 +300,30 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
           />
         </View>
 
-        <TouchableOpacity style={styles.photoBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.photoBtn} activeOpacity={0.7} onPress={handleAttachFile}>
           <MaterialIcons name="add-a-photo" size={18} color={COLORS.onSurfaceVariant} />
           <Text style={styles.photoBtnText}>Adjuntar imagen</Text>
         </TouchableOpacity>
+
+        {attachedImages.length > 0 && (
+          <View style={styles.imagesContainer}>
+            <Text style={styles.label}>Imágenes adjuntas ({attachedImages.length})</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScroll}>
+              {attachedImages.map((imageUri, index) => (
+                <View key={index} style={styles.imageWrapper}>
+                  <Image source={{ uri: imageUri }} style={styles.attachedImage} />
+                  <TouchableOpacity
+                    style={styles.removeImageBtn}
+                    onPress={() => handleRemoveImage(index)}
+                    hitSlop={8}
+                  >
+                    <MaterialIcons name="close" size={16} color={COLORS.onPrimary} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
       </ScrollView>
 

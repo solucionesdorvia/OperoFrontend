@@ -64,6 +64,16 @@ export const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   photoBtnText: { fontSize: 13, color: COLORS.onSurfaceVariant },
+  imagesContainer: { gap: 8 },
+  imagesScroll: { flexDirection: 'row' },
+  imageWrapper: { position: 'relative', marginRight: 12 },
+  attachedImage: { width: 100, height: 100, borderRadius: 8 },
+  removeImageBtn: {
+    position: 'absolute', top: 4, right: 4,
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: COLORS.error,
+    alignItems: 'center', justifyContent: 'center',
+  },
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     padding: 20, paddingBottom: 36,
