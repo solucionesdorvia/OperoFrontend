@@ -79,7 +79,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: true,
         quality: 0.8,
         allowsEditing: false,
