@@ -70,10 +70,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('[AuthContext] Verificando estado de autenticación...');
 
+      const token = await authService.getToken();
+      console.log('[AuthContext] Token encontrado:', token ? 'SÍ' : 'NO');
+
       const isAuth = await authService.isAuthenticated();
 
       if (isAuth) {
         // Hay un token guardado, verificar si es válido
+        console.log('[AuthContext] Llamando a /me para verificar token...');
         const userData = await authService.me();
         setUser(userData);
         console.log('[AuthContext] Usuario autenticado:', userData.emailUade);

@@ -175,38 +175,23 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
     try {
       setSubmitting(true);
 
-      // Si hay imagen adjunta, subirla primero
-      let photoUrl: string | undefined = undefined;
-      if (attachedImages.length > 0) {
-        console.log('[CreateIncidentScreen] Subiendo imagen:', attachedImages[0]);
-        try {
-          photoUrl = await fileService.uploadImage(attachedImages[0]);
-          console.log('[CreateIncidentScreen] Imagen subida, URL:', photoUrl);
-        } catch (uploadError: any) {
-          console.error('[CreateIncidentScreen] Error al subir imagen:', uploadError);
-          showError('Error', 'No se pudo subir la imagen: ' + uploadError.message);
-          return;
-        }
-      }
-
       const incidentData = {
         title: title.trim(),
         description: description.trim(),
         departmentId: selectedDepartment.id,
         locationDescription: location.trim() || undefined,
-        photoUrl: photoUrl,
       };
 
       console.log('[CreateIncidentScreen] Creando incidente con datos:', incidentData);
 
-      const newIncident = await incidentService.create(incidentData);
+      await incidentService.create(incidentData);
 
       showSuccess('Éxito', 'Incidencia creada correctamente');
 
-      // Esperar un momento para que el usuario vea el mensaje
+      // Ir al inicio y refrescar
       setTimeout(() => {
-        navigation.navigate('IncidentDetail', { incident: newIncident as any });
-      }, 1500);
+        navigation.navigate('StudentTabs', { screen: 'StudentHome' });
+      }, 1000);
     } catch (error: any) {
       console.error('[CreateIncidentScreen] Error al crear incidencia:', error);
       showError('Error', error.message || 'No se pudo crear la incidencia');
@@ -328,7 +313,8 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
           />
         </View>
 
-        <TouchableOpacity style={styles.photoBtn} activeOpacity={0.7} onPress={handleAttachFile}>
+        {/* Adjuntar imagen deshabilitado temporalmente */}
+        {/* <TouchableOpacity style={styles.photoBtn} activeOpacity={0.7} onPress={handleAttachFile}>
           <MaterialIcons name="add-a-photo" size={18} color={COLORS.onSurfaceVariant} />
           <Text style={styles.photoBtnText}>Adjuntar imagen</Text>
         </TouchableOpacity>
@@ -351,7 +337,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
               ))}
             </ScrollView>
           </View>
-        )}
+        )} */}
 
       </ScrollView>
 

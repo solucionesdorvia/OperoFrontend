@@ -6,6 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
 import TopAppBar from '../../components/TopAppBar';
 import StatusBadge from '../../components/StatusBadge';
+import IncidentPhoto from '../../components/IncidentPhoto';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './ManagerIncidentDetailScreen.styles';
 import { incidentService } from '../../services/incidentService';
@@ -133,6 +134,8 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
             {incident?.description || 'Sin descripción'}
           </Text>
         </View>
+
+        <IncidentPhoto photoUrl={incident?.photoUrl} />
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Departamento</Text>

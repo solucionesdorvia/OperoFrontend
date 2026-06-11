@@ -7,6 +7,7 @@ import { COLORS } from '../../../constants/colors';
 import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
 import StatusBadge from '../../components/StatusBadge';
+import IncidentPhoto from '../../components/IncidentPhoto';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './IncidentDetailScreen.styles';
 import ErrorDialog from '../../components/ErrorDialog';
@@ -173,6 +174,8 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
             {incident?.description || 'Sin descripción'}
           </Text>
         </View>
+
+        <IncidentPhoto photoUrl={incident?.photoUrl} />
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Seguimiento</Text>

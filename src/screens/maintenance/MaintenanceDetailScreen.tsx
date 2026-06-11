@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image,
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
 import TopAppBar from '../../components/TopAppBar';
+import IncidentPhoto from '../../components/IncidentPhoto';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './MaintenanceDetailScreen.styles';
 import { incidentService } from '../../services/incidentService';
@@ -123,16 +124,7 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
           </Text>
         </View>
 
-        {task?.photoUrl && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Foto adjunta</Text>
-            <Image
-              source={{ uri: task.photoUrl }}
-              style={{ width: '100%', height: 200, borderRadius: 12, marginTop: 8 }}
-              resizeMode="cover"
-            />
-          </View>
-        )}
+        <IncidentPhoto photoUrl={task?.photoUrl} />
 
       </ScrollView>
 

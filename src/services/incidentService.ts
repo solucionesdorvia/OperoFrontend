@@ -6,6 +6,7 @@ export interface IncidentRequest {
   description: string;
   departmentId: number;
   locationDescription?: string;
+  photoUrl?: string;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
