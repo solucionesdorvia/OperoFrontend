@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
+import { getRelativeTime } from '../../utils/dateUtils';
 
 const periods = ['Hoy', 'Semana', 'Mes', 'Todo'];
 

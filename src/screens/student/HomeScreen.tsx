@@ -15,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
+import { getRelativeTime } from '../../utils/dateUtils';
 
 type HomeScreenProps = StudentTabScreenProps<'StudentHome'>;
 
@@ -69,19 +70,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }, [])
   );
 
-  const getRelativeTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return `Hace ${diffMins} min`;
-    if (diffHours < 24) return `Hace ${diffHours}h`;
-    if (diffDays === 1) return 'Ayer';
-    return `Hace ${diffDays} días`;
-  };
 
   const firstName = user?.fullName?.split(' ')[0] || 'Usuario';
   const activeCount = incidents.filter(i => i.status !== 'FINISHED').length;
