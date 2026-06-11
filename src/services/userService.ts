@@ -43,4 +43,13 @@ export const userService = {
       throw new Error(getErrorMessage(error));
     }
   },
+
+  async getByDepartment(departmentId: number): Promise<UserResponse[]> {
+    try {
+      const response = await api.get<UserResponse[]>(`${ENDPOINTS.USERS}?departmentId=${departmentId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
+  },
 };

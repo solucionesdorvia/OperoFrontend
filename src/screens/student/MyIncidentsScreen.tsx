@@ -20,10 +20,11 @@ const filters = ['Todas', 'En curso', 'Resueltas', 'Pendientes'];
 const dateRanges = ['Cualquier fecha', 'Hoy', 'Semana', 'Mes'];
 
 const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PENDIENTE'> = {
-  'ABIERTO': 'ABIERTO',
-  'EN_PROCESO': 'EN PROCESO',
-  'FINALIZADO': 'FINALIZADO',
-  'PENDIENTE': 'PENDIENTE',
+  'PENDING': 'PENDIENTE',
+  'PENDING_ASSIGNMENT': 'PENDIENTE',
+  'ASSIGNED': 'ABIERTO',
+  'IN_PROCESS': 'EN PROCESO',
+  'FINISHED': 'FINALIZADO',
 };
 
 type MyIncidentsScreenProps = StudentTabScreenProps<'StudentIncidents'>;
@@ -68,11 +69,11 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
 
     // Filtro por estado
     if (statusFilter === 1) { // En curso
-      filtered = filtered.filter(inc => inc.status === 'EN_PROCESO' || inc.status === 'ABIERTO');
+      filtered = filtered.filter(inc => inc.status === 'IN_PROCESS' || inc.status === 'ASSIGNED');
     } else if (statusFilter === 2) { // Resueltas
-      filtered = filtered.filter(inc => inc.status === 'FINALIZADO');
+      filtered = filtered.filter(inc => inc.status === 'FINISHED');
     } else if (statusFilter === 3) { // Pendientes
-      filtered = filtered.filter(inc => inc.status === 'PENDIENTE');
+      filtered = filtered.filter(inc => inc.status === 'PENDING' || inc.status === 'PENDING_ASSIGNMENT');
     }
 
     // Filtro por fecha

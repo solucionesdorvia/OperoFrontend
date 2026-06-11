@@ -17,10 +17,11 @@ import { useErrorDialog } from '../../hooks/useErrorDialog';
 const filters = ['Todas', 'Abiertas', 'En proceso', 'Finalizadas'] as const;
 
 const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PENDIENTE'> = {
-  'ABIERTO': 'ABIERTO',
-  'EN_PROCESO': 'EN PROCESO',
-  'FINALIZADO': 'FINALIZADO',
-  'PENDIENTE': 'PENDIENTE',
+  'PENDING': 'PENDIENTE',
+  'PENDING_ASSIGNMENT': 'PENDIENTE',
+  'ASSIGNED': 'ABIERTO',
+  'IN_PROCESS': 'EN PROCESO',
+  'FINISHED': 'FINALIZADO',
 };
 
 const priorityColor = { HIGH: COLORS.error, MEDIUM: COLORS.primary, LOW: COLORS.outline };
@@ -61,11 +62,11 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
     let filtered = [...incidents];
 
     if (filterIdx === 1) { // Abiertas
-      filtered = filtered.filter(inc => inc.status === 'ABIERTO');
+      filtered = filtered.filter(inc => inc.status === 'ASSIGNED');
     } else if (filterIdx === 2) { // En proceso
-      filtered = filtered.filter(inc => inc.status === 'EN_PROCESO');
+      filtered = filtered.filter(inc => inc.status === 'IN_PROCESS');
     } else if (filterIdx === 3) { // Finalizadas
-      filtered = filtered.filter(inc => inc.status === 'FINALIZADO');
+      filtered = filtered.filter(inc => inc.status === 'FINISHED');
     }
 
     setFilteredIncidents(filtered);

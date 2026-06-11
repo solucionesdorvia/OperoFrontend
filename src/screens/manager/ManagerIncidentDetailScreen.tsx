@@ -16,10 +16,11 @@ import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 
 const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PENDIENTE'> = {
-  'ABIERTO': 'ABIERTO',
-  'EN_PROCESO': 'EN PROCESO',
-  'FINALIZADO': 'FINALIZADO',
-  'PENDIENTE': 'PENDIENTE',
+  'PENDING': 'PENDIENTE',
+  'PENDING_ASSIGNMENT': 'PENDIENTE',
+  'ASSIGNED': 'ABIERTO',
+  'IN_PROCESS': 'EN PROCESO',
+  'FINISHED': 'FINALIZADO',
 };
 
 type ManagerIncidentDetailScreenProps = RootStackScreenProps<'ManagerIncidentDetail'>;
@@ -44,15 +45,23 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
   const loadData = async () => {
     try {
       setLoading(true);
-      const [deptsData, usersData] = await Promise.all([
+      // Primero obtener el perfil del manager para saber su departamento
+      const [deptsData, myProfile] = await Promise.all([
         departmentService.getAll(),
-        userService.getAll(),
+        userService.getMe(),
       ]);
 
       setDepartments(deptsData);
-      // Filtrar solo workers (WORKER role)
-      const workersOnly = usersData.filter(u => u.roleName === 'WORKER');
-      setWorkers(workersOnly);
+
+      // Obtener usuarios del departamento del manager
+      if (myProfile.departmentId) {
+        const usersData = await userService.getByDepartment(myProfile.departmentId);
+        // Filtrar solo workers (WORKER role)
+        const workersOnly = usersData.filter(u => u.roleName === 'WORKER');
+        setWorkers(workersOnly);
+      } else {
+        setWorkers([]);
+      }
     } catch (error: any) {
       console.error('[ManagerIncidentDetailScreen] Error al cargar datos:', error);
       showError('Error', error.message || 'No se pudieron cargar los datos');

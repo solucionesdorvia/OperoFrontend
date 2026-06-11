@@ -14,18 +14,21 @@ import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { incidentService } from '../../services/incidentService';
 
 const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PENDIENTE'> = {
-  'ABIERTO': 'ABIERTO',
-  'EN_PROCESO': 'EN PROCESO',
-  'FINALIZADO': 'FINALIZADO',
-  'PENDIENTE': 'PENDIENTE',
+  'PENDING': 'PENDIENTE',
+  'PENDING_ASSIGNMENT': 'PENDIENTE',
+  'ASSIGNED': 'ABIERTO',
+  'IN_PROCESS': 'EN PROCESO',
+  'FINISHED': 'FINALIZADO',
 };
 
 type IncidentDetailScreenProps = RootStackScreenProps<'IncidentDetail'>;
 
 export default function IncidentDetailScreen({ navigation, route }: IncidentDetailScreenProps) {
-  const incident = route?.params?.incident;
+  const initialIncident = route?.params?.incident;
+  const [incident, setIncident] = useState(initialIncident);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { dialogState, hideDialog, showConfirmation, showError } = useErrorDialog();
 
   const handleDelete = () => {
@@ -68,18 +71,18 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
           ? `${incident.departmentName} · ${incident.workerName}`
           : 'Pendiente',
         done: !!incident?.workerName,
-        current: incident?.status === 'ABIERTO' && !!incident?.workerName,
+        current: incident?.status === 'ASSIGNED' && !!incident?.workerName,
       },
       {
         step: 'En proceso',
-        time: incident?.status === 'EN_PROCESO' ? 'En curso' : 'Pendiente',
-        done: incident?.status === 'EN_PROCESO' || incident?.status === 'FINALIZADO',
-        current: incident?.status === 'EN_PROCESO',
+        time: incident?.status === 'IN_PROCESS' ? 'En curso' : 'Pendiente',
+        done: incident?.status === 'IN_PROCESS' || incident?.status === 'FINISHED',
+        current: incident?.status === 'IN_PROCESS',
       },
       {
         step: 'Finalizado',
-        time: incident?.status === 'FINALIZADO' ? formatDate(incident.updatedAt) : 'Pendiente',
-        done: incident?.status === 'FINALIZADO',
+        time: incident?.status === 'FINISHED' ? formatDate(incident.updatedAt) : 'Pendiente',
+        done: incident?.status === 'FINISHED',
         current: false,
       },
     ];
@@ -91,6 +94,19 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
   const handleEdit = () => {
     setMenuOpen(false);
     navigation.navigate('CreateIncident', { incident, mode: 'edit' });
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      const updatedIncident = await incidentService.getById(incident.id);
+      setIncident(updatedIncident);
+    } catch (error: any) {
+      console.error('[IncidentDetailScreen] Error al actualizar:', error);
+      showError('Error', error.message || 'No se pudo actualizar la incidencia');
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
@@ -187,9 +203,19 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
             <MaterialIcons name="chat-bubble-outline" size={16} color={COLORS.onSurface} />
             <Text style={styles.btnSecondaryText}>Mensaje</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.btnPrimary}>
-            <MaterialIcons name="refresh" size={16} color={COLORS.onPrimary} />
-            <Text style={styles.btnPrimaryText}>Actualizar</Text>
+          <TouchableOpacity
+            style={[styles.btnPrimary, refreshing && { opacity: 0.6 }]}
+            onPress={handleRefresh}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <ActivityIndicator size="small" color={COLORS.onPrimary} />
+            ) : (
+              <>
+                <MaterialIcons name="refresh" size={16} color={COLORS.onPrimary} />
+                <Text style={styles.btnPrimaryText}>Actualizar</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 

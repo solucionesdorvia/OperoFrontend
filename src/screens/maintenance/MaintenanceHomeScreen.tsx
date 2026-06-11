@@ -38,7 +38,7 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
       const assigned = incidents.filter(inc => inc.workerId === user?.id);
 
       const sorted = assigned
-        .filter(inc => inc.status !== 'FINALIZADO')
+        .filter(inc => inc.status !== 'FINISHED')
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 2);
 
@@ -46,13 +46,13 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
 
       const today = new Date();
       const completedToday = assigned.filter(inc => {
-        if (inc.status !== 'FINALIZADO') return false;
+        if (inc.status !== 'FINISHED') return false;
         const updated = new Date(inc.updatedAt);
         return updated.toDateString() === today.toDateString();
       });
 
       setStats({
-        asignadas: assigned.filter(inc => inc.status !== 'FINALIZADO').length,
+        asignadas: assigned.filter(inc => inc.status !== 'FINISHED').length,
         completadasHoy: completedToday.length,
       });
     } catch (error: any) {
