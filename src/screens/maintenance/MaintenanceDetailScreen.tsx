@@ -6,11 +6,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
 import TopAppBar from '../../components/TopAppBar';
 import IncidentPhoto from '../../components/IncidentPhoto';
+import InfoRow from '../../components/InfoRow';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './MaintenanceDetailScreen.styles';
 import { incidentService } from '../../services/incidentService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
+import { formatDate } from '../../utils/dateUtils';
 
 type MaintenanceDetailScreenProps = RootStackScreenProps<'MaintenanceDetail'>;
 
@@ -19,20 +21,6 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
   const [processing, setProcessing] = useState(false);
   const { dialogState, hideDialog, showError, showSuccess, showConfirmation } = useErrorDialog();
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Hace menos de 1 min';
-    if (diffMins < 60) return `Hace ${diffMins} min`;
-    if (diffHours < 24) return `Hace ${diffHours}h`;
-    if (diffDays === 1) return 'Ayer';
-    return `Hace ${diffDays} días`;
-  };
 
   const handleStartWork = async () => {
     showConfirmation(
@@ -98,23 +86,11 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
         </View>
 
         <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <MaterialIcons name="location-on" size={15} color={COLORS.onSurfaceVariant} />
-            <Text style={styles.infoLabel}>Departamento</Text>
-            <Text style={styles.infoValue}>{task?.departmentName || 'Sin asignar'}</Text>
-          </View>
+          <InfoRow icon="location-on" label="Departamento" value={task?.departmentName || 'Sin asignar'} />
           <View style={styles.divider} />
-          <View style={styles.infoRow}>
-            <MaterialIcons name="schedule" size={15} color={COLORS.onSurfaceVariant} />
-            <Text style={styles.infoLabel}>Reportado</Text>
-            <Text style={styles.infoValue}>{task?.createdAt ? formatDate(task.createdAt) : '-'}</Text>
-          </View>
+          <InfoRow icon="schedule" label="Reportado" value={task?.createdAt ? formatDate(task.createdAt) : '-'} />
           <View style={styles.divider} />
-          <View style={styles.infoRow}>
-            <MaterialIcons name="person-outline" size={15} color={COLORS.onSurfaceVariant} />
-            <Text style={styles.infoLabel}>Reportante</Text>
-            <Text style={styles.infoValue}>{task?.reporterName || 'Desconocido'}</Text>
-          </View>
+          <InfoRow icon="person-outline" label="Reportante" value={task?.reporterName || 'Desconocido'} />
         </View>
 
         <View style={styles.section}>
@@ -161,14 +137,10 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
               </>
             )}
           </TouchableOpacity>
-        ) : task?.status === 'FINISHED' ? (
-          <View style={{ padding: 16, alignItems: 'center' }}>
-            <Text style={{ color: COLORS.textMuted, fontSize: 15 }}>Tarea finalizada</Text>
-          </View>
         ) : (
-          <View style={{ padding: 16, alignItems: 'center' }}>
-            <Text style={{ color: COLORS.textMuted, fontSize: 15 }}>Tarea pendiente de asignación</Text>
-          </View>
+          <Text style={{ padding: 16, textAlign: 'center', color: COLORS.textMuted, fontSize: 15 }}>
+            {task?.status === 'FINISHED' ? 'Tarea finalizada' : 'Tarea pendiente de asignación'}
+          </Text>
         )}
       </View>
 

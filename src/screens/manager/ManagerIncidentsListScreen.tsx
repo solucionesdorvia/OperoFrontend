@@ -8,6 +8,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../../../constants/colors';
 import TopAppBar from '../../components/TopAppBar';
 import StatusBadge from '../../components/StatusBadge';
+import EmptyState from '../../components/EmptyState';
+import LoadingView from '../../components/LoadingView';
 import type { ManagerTabScreenProps } from '../../types/navigation';
 import { styles } from './ManagerIncidentsListScreen.styles';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
@@ -88,16 +90,7 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
   }, [active]);
 
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <TopAppBar showLogo rightIcon="search" showAvatar />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </View>
-    );
-  }
+  if (loading) return <LoadingView showLogo rightIcon="search" showAvatar />;
 
   return (
     <View style={styles.container}>
@@ -130,11 +123,7 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
         </ScrollView>
 
         {filteredIncidents.length === 0 ? (
-          <View style={{ padding: 24, alignItems: 'center' }}>
-            <Text style={{ color: COLORS.textMuted, fontSize: 15 }}>
-              No hay incidencias con este filtro
-            </Text>
-          </View>
+          <EmptyState message="No hay incidencias con este filtro" />
         ) : (
           <View style={styles.list}>
             {filteredIncidents.map((inc) => {

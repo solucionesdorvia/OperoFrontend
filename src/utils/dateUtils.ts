@@ -1,10 +1,13 @@
+const MS_PER_MINUTE = 60000;
+const MS_PER_HOUR = 3600000;
+const MS_PER_DAY = 86400000;
+const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
 export const getRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
+  const diffMs = Date.now() - new Date(dateString).getTime();
+  const diffMins = Math.floor(diffMs / MS_PER_MINUTE);
+  const diffHours = Math.floor(diffMs / MS_PER_HOUR);
+  const diffDays = Math.floor(diffMs / MS_PER_DAY);
 
   if (diffMins < 1) return 'Hace menos de 1 min';
   if (diffMins < 60) return `Hace ${diffMins} min`;
@@ -15,12 +18,8 @@ export const getRelativeTime = (dateString: string): string => {
 
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  return `${date.getDate()} ${months[date.getMonth()]}, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  return `${date.getDate()} ${MONTHS[date.getMonth()]}, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 };
 
-export const isToday = (dateString: string): boolean => {
-  const date = new Date(dateString);
-  const today = new Date();
-  return date.toDateString() === today.toDateString();
-};
+export const isToday = (dateString: string): boolean =>
+  new Date(dateString).toDateString() === new Date().toDateString();

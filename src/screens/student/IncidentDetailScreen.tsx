@@ -8,6 +8,7 @@ import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
 import StatusBadge from '../../components/StatusBadge';
 import IncidentPhoto from '../../components/IncidentPhoto';
+import InfoRow from '../../components/InfoRow';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './IncidentDetailScreen.styles';
 import ErrorDialog from '../../components/ErrorDialog';
@@ -145,23 +146,11 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
         </View>
 
         <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <MaterialIcons name="location-on" size={15} color={COLORS.onSurfaceVariant} />
-            <Text style={styles.infoLabel}>Departamento</Text>
-            <Text style={styles.infoValue}>{incident?.departmentName || 'Sin asignar'}</Text>
-          </View>
+          <InfoRow icon="location-on" label="Departamento" value={incident?.departmentName || 'Sin asignar'} />
           <View style={styles.divider} />
-          <View style={styles.infoRow}>
-            <MaterialIcons name="access-time" size={15} color={COLORS.onSurfaceVariant} />
-            <Text style={styles.infoLabel}>Reportado</Text>
-            <Text style={styles.infoValue}>{incident?.createdAt ? formatDate(incident.createdAt) : '-'}</Text>
-          </View>
+          <InfoRow icon="access-time" label="Reportado" value={incident?.createdAt ? formatDate(incident.createdAt) : '-'} />
           <View style={styles.divider} />
-          <View style={styles.infoRow}>
-            <MaterialIcons name="person-outline" size={15} color={COLORS.onSurfaceVariant} />
-            <Text style={styles.infoLabel}>Asignado a</Text>
-            <Text style={styles.infoValue}>{incident?.workerName || 'Sin asignar'}</Text>
-          </View>
+          <InfoRow icon="person-outline" label="Asignado a" value={incident?.workerName || 'Sin asignar'} />
         </View>
 
         <View style={styles.section}>

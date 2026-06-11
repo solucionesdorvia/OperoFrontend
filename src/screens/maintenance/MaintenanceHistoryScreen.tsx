@@ -7,13 +7,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../../../constants/colors';
 import TopAppBar from '../../components/TopAppBar';
+import EmptyState from '../../components/EmptyState';
+import LoadingView from '../../components/LoadingView';
 import type { MaintenanceTabScreenProps } from '../../types/navigation';
 import { styles } from './MaintenanceHistoryScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
-import { getRelativeTime } from '../../utils/dateUtils';
+import { formatDate } from '../../utils/dateUtils';
 
 const periods = ['Hoy', 'Semana', 'Mes', 'Todo'];
 
@@ -87,34 +89,8 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
     applyFilter(allHistory, period);
   }, [period]);
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
 
-    if (date.toDateString() === now.toDateString()) {
-      return `Hoy, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    }
-
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (date.toDateString() === yesterday.toDateString()) {
-      return `Ayer, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    }
-
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return `${date.getDate()} ${months[date.getMonth()]}, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <TopAppBar showLogo rightIcon="search" showAvatar />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </View>
-    );
-  }
+  if (loading) return <LoadingView showLogo rightIcon="search" showAvatar />;
 
   return (
     <View style={styles.container}>
@@ -164,11 +140,7 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
         </View>
 
         {filtered.length === 0 ? (
-          <View style={{ padding: 24, alignItems: 'center' }}>
-            <Text style={{ color: COLORS.textMuted, fontSize: 15 }}>
-              No hay tareas finalizadas en este período
-            </Text>
-          </View>
+          <EmptyState message="No hay tareas finalizadas en este período" />
         ) : (
           <View style={styles.list}>
             {filtered.map((item) => (

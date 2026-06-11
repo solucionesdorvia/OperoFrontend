@@ -6,6 +6,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../../../constants/colors';
 import TopAppBar from '../../components/TopAppBar';
+import EmptyState from '../../components/EmptyState';
+import LoadingView from '../../components/LoadingView';
 import type { ManagerTabScreenProps } from '../../types/navigation';
 import { styles } from './ManagerDashboardScreen.styles';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
@@ -64,16 +66,7 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
   );
 
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <TopAppBar showLogo showAvatar rightIcon="notifications" />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </View>
-    );
-  }
+  if (loading) return <LoadingView showLogo showAvatar rightIcon="notifications" />;
 
   return (
     <View style={styles.container}>
@@ -117,12 +110,7 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
           </View>
 
           {incidents.length === 0 ? (
-            <View style={{ padding: 24, alignItems: 'center' }}>
-              <MaterialIcons name="check-circle" size={32} color={COLORS.outline} />
-              <Text style={{ color: COLORS.textMuted, fontSize: 15, marginTop: 8 }}>
-                No hay incidencias pendientes de asignar
-              </Text>
-            </View>
+            <EmptyState icon="check-circle" message="No hay incidencias pendientes de asignar" />
           ) : (
             <View style={styles.list}>
               {incidents.map((inc) => {

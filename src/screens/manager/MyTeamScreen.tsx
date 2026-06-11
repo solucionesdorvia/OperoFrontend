@@ -7,6 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../../../constants/colors';
 import TopAppBar from '../../components/TopAppBar';
+import EmptyState from '../../components/EmptyState';
+import LoadingView from '../../components/LoadingView';
 import type { ManagerTabScreenProps } from '../../types/navigation';
 import { styles } from './MyTeamScreen.styles';
 import { userService } from '../../services/userService';
@@ -86,16 +88,7 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
     m.fullName.toLowerCase().includes(query.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <TopAppBar showLogo rightIcon="search" showAvatar />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </View>
-    );
-  }
+  if (loading) return <LoadingView showLogo rightIcon="search" showAvatar />;
 
   return (
     <View style={styles.container}>
@@ -139,11 +132,7 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
         </View>
 
         {filtered.length === 0 ? (
-          <View style={{ padding: 24, alignItems: 'center' }}>
-            <Text style={{ color: COLORS.textMuted, fontSize: 15 }}>
-              No se encontraron operarios
-            </Text>
-          </View>
+          <EmptyState message="No se encontraron operarios" />
         ) : (
           <View style={styles.list}>
             {filtered.map((worker) => {
