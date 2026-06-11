@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
@@ -122,6 +122,17 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
             {task?.description || 'Sin descripción'}
           </Text>
         </View>
+
+        {task?.photoUrl && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Foto adjunta</Text>
+            <Image
+              source={{ uri: task.photoUrl }}
+              style={{ width: '100%', height: 200, borderRadius: 12, marginTop: 8 }}
+              resizeMode="cover"
+            />
+          </View>
+        )}
 
       </ScrollView>
 
