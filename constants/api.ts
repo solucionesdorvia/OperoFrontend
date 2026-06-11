@@ -35,4 +35,5 @@ export const ENDPOINTS = {
   DEPARTMENTS: '/api/departments',
   USERS: '/api/users',
   USERS_ME: '/api/users/me',
+  FILES: '/api/files',
 };

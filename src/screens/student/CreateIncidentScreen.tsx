@@ -13,6 +13,7 @@ import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './CreateIncidentScreen.styles';
 import { incidentService } from '../../services/incidentService';
 import { departmentService, DepartmentResponse } from '../../services/departmentService';
+import { fileService } from '../../services/fileService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 
@@ -174,12 +175,31 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
     try {
       setSubmitting(true);
 
-      const newIncident = await incidentService.create({
+      // Si hay imagen adjunta, subirla primero
+      let photoUrl: string | undefined = undefined;
+      if (attachedImages.length > 0) {
+        console.log('[CreateIncidentScreen] Subiendo imagen:', attachedImages[0]);
+        try {
+          photoUrl = await fileService.uploadImage(attachedImages[0]);
+          console.log('[CreateIncidentScreen] Imagen subida, URL:', photoUrl);
+        } catch (uploadError: any) {
+          console.error('[CreateIncidentScreen] Error al subir imagen:', uploadError);
+          showError('Error', 'No se pudo subir la imagen: ' + uploadError.message);
+          return;
+        }
+      }
+
+      const incidentData = {
         title: title.trim(),
         description: description.trim(),
         departmentId: selectedDepartment.id,
         locationDescription: location.trim() || undefined,
-      });
+        photoUrl: photoUrl,
+      };
+
+      console.log('[CreateIncidentScreen] Creando incidente con datos:', incidentData);
+
+      const newIncident = await incidentService.create(incidentData);
 
       showSuccess('Éxito', 'Incidencia creada correctamente');
 
