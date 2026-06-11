@@ -157,21 +157,21 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={[styles.closeBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+          style={[styles.closeBtn, { backgroundColor: COLORS.error }]}
           hitSlop={12}
         >
-          <MaterialIcons name="close" size={22} color="#FFFFFF" />
+          <MaterialIcons name="close" size={22} color={COLORS.onPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }]}>Escanear QR</Text>
+        <Text style={[styles.headerTitle, { color: COLORS.onPrimary, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }]}>Escanear QR</Text>
         <TouchableOpacity
-          style={[styles.closeBtn, { backgroundColor: flashEnabled ? COLORS.primary : 'rgba(0,0,0,0.6)' }]}
+          style={[styles.closeBtn, { backgroundColor: flashEnabled ? COLORS.primary : COLORS.surfaceContainerHigh }]}
           hitSlop={12}
           onPress={() => setFlashEnabled(!flashEnabled)}
         >
           <MaterialIcons
             name={flashEnabled ? 'flash-on' : 'flash-off'}
             size={20}
-            color="#FFFFFF"
+            color={flashEnabled ? COLORS.onPrimary : COLORS.onSurface}
           />
         </TouchableOpacity>
       </View>

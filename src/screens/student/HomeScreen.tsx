@@ -160,7 +160,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       />
 
       <TouchableOpacity
-        style={[styles.fab, { bottom: tabBarHeight + 80 }]}
+        style={[styles.fab, { bottom: tabBarHeight + 16 }]}
         onPress={() => navigation.navigate('CreateIncident')}
         activeOpacity={0.85}
       >
