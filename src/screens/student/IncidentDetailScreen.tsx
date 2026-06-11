@@ -13,6 +13,7 @@ import { styles } from './IncidentDetailScreen.styles';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { incidentService } from '../../services/incidentService';
+import { formatDate } from '../../utils/dateUtils';
 
 const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PENDIENTE'> = {
   'PENDING': 'PENDIENTE',
@@ -52,11 +53,6 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
     );
   };
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return `${date.getDate()} ${months[date.getMonth()]}, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  };
 
   const buildTimeline = () => {
     const steps = [
