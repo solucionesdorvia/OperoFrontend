@@ -39,9 +39,9 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
       setIncidents(unassigned);
 
       setStats({
-        nuevas: data.filter(inc => inc.status === 'ABIERTO').length,
-        enProceso: data.filter(inc => inc.status === 'EN_PROCESO').length,
-        resueltas: data.filter(inc => inc.status === 'FINALIZADO').length,
+        nuevas: data.filter(inc => inc.status === 'PENDING' || inc.status === 'PENDING_ASSIGNMENT' || inc.status === 'ASSIGNED').length,
+        enProceso: data.filter(inc => inc.status === 'IN_PROCESS').length,
+        resueltas: data.filter(inc => inc.status === 'FINISHED').length,
       });
     } catch (error: any) {
       console.error('[ManagerDashboardScreen] Error al cargar datos:', error);

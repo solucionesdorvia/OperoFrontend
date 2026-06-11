@@ -30,9 +30,13 @@ export default function DepartmentSettingsScreen({ navigation }: DepartmentSetti
   const loadData = async () => {
     try {
       setLoading(true);
+
+      // Obtener perfil del manager
+      const myProfile = await userService.getMe();
+
       const [deptsData, usersData] = await Promise.all([
         departmentService.getAll(),
-        userService.getAll(),
+        myProfile.departmentId ? userService.getByDepartment(myProfile.departmentId) : Promise.resolve([]),
       ]);
 
       setDepartments(deptsData);

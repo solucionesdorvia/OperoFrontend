@@ -33,8 +33,11 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
+      // Primero obtener el perfil del manager para saber su departamento
+      const myProfile = await userService.getMe();
+
       const [usersData, incidentsData] = await Promise.all([
-        userService.getAll(),
+        myProfile.departmentId ? userService.getByDepartment(myProfile.departmentId) : Promise.resolve([]),
         incidentService.getAll(),
       ]);
 
@@ -70,8 +73,8 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
 
   const getWorkerStats = (workerId: number) => {
     const assigned = incidents.filter(inc => inc.workerId === workerId);
-    const active = assigned.filter(inc => inc.status !== 'FINALIZADO').length;
-    const done = assigned.filter(inc => inc.status === 'FINALIZADO').length;
+    const active = assigned.filter(inc => inc.status !== 'FINISHED').length;
+    const done = assigned.filter(inc => inc.status === 'FINISHED').length;
     return { active, done };
   };
 

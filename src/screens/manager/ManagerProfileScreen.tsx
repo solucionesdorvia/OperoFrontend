@@ -39,16 +39,20 @@ export default function ManagerProfileScreen({ navigation }: ManagerProfileScree
   const loadStats = async () => {
     try {
       setLoading(true);
+
+      // Obtener perfil del manager
+      const myProfile = await userService.getMe();
+
       const [incidents, users] = await Promise.all([
         incidentService.getAll(),
-        userService.getAll(),
+        myProfile.departmentId ? userService.getByDepartment(myProfile.departmentId) : Promise.resolve([]),
       ]);
 
       const workers = users.filter(u => u.roleName === 'WORKER');
 
       setStats({
-        abiertas: incidents.filter(inc => inc.status === 'ABIERTO').length,
-        enProceso: incidents.filter(inc => inc.status === 'EN_PROCESO').length,
+        abiertas: incidents.filter(inc => inc.status === 'ASSIGNED').length,
+        enProceso: incidents.filter(inc => inc.status === 'IN_PROCESS').length,
         operarios: workers.length,
       });
     } catch (error) {
