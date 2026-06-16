@@ -5,10 +5,11 @@ import { FONTS } from '../../../constants/fonts';
 export const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 26, 46, 0.6)', // COLORS.primaryDim con alpha
+    backgroundColor: 'rgba(15, 26, 46, 0.8)', // COLORS.primaryDim con alpha
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    zIndex: 9999,
   },
 
   dialog: {
@@ -18,6 +19,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
+    zIndex: 10000,
     // Sombra sutil
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },

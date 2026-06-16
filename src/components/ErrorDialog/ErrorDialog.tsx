@@ -58,6 +58,7 @@ export default function ErrorDialog({
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
+    console.log('[ErrorDialog] visible changed:', visible, 'title:', title);
     if (visible) {
       // Fade in + scale
       Animated.parallel([
@@ -97,26 +98,19 @@ export default function ErrorDialog({
     onDismiss?.();
   };
 
+  console.log('[ErrorDialog] RENDER - visible:', visible, 'title:', title);
+
+  if (!visible) return null;
+
   return (
     <Modal
       transparent
       visible={visible}
-      animationType="none"
+      animationType="fade"
       onRequestClose={onDismiss}
-      statusBarTranslucent
     >
-      <Pressable style={styles.backdrop} onPress={onDismiss}>
-        <Animated.View
-          style={[
-            styles.dialog,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
-            },
-          ]}
-          // Evitar que toques en dialog cierren el modal
-          onStartShouldSetResponder={() => true}
-        >
+      <View style={styles.backdrop}>
+        <View style={styles.dialog}>
           <View style={[styles.iconContainer, { backgroundColor: config.bgColor }]}>
             <MaterialIcons name={config.icon} size={32} color={config.color} />
           </View>
@@ -153,8 +147,8 @@ export default function ErrorDialog({
               );
             })}
           </View>
-        </Animated.View>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
