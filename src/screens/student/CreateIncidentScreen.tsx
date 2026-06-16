@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image, ActionSheetIOS,
+  View, Text, TextInput, TouchableOpacity,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image, Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../../../constants/colors';
-import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './CreateIncidentScreen.styles';
 import { incidentService } from '../../services/incidentService';
 import { departmentService, DepartmentResponse } from '../../services/departmentService';
 import { fileService } from '../../services/fileService';
+import { offlineQueueService } from '../../services/offlineQueueService';
+import { useNetwork } from '../../hooks/useNetwork';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 
@@ -33,6 +34,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
   const isEdit = route?.params?.mode === 'edit';
 
   const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
+  const { isOnline } = useNetwork();
 
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
   const [loadingDepts, setLoadingDepts] = useState(true);
@@ -48,20 +50,38 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
     loadDepartments();
   }, []);
 
+  const DEPTS_CACHE_KEY = '@opero_departments_cache';
+
+  const applyPrefillDept = (data: DepartmentResponse[]) => {
+    if (prefill?.department) {
+      const index = data.findIndex(d => d.name === prefill.department);
+      if (index !== -1) setSelectedDept(index);
+    }
+  };
+
   const loadDepartments = async () => {
     try {
       setLoadingDepts(true);
       const data = await departmentService.getAll();
       setDepartments(data);
-
-      // Si hay prefill con departamento, seleccionarlo
-      if (prefill?.department) {
-        const index = data.findIndex(d => d.name === prefill.department);
-        if (index !== -1) setSelectedDept(index);
-      }
+      applyPrefillDept(data);
+      // Cacheamos para poder crear incidencias también sin conexión.
+      await AsyncStorage.setItem(DEPTS_CACHE_KEY, JSON.stringify(data));
     } catch (error: any) {
       console.error('[CreateIncidentScreen] Error al cargar departamentos:', error);
-      showError('Error', 'No se pudieron cargar los departamentos');
+      // Sin conexión: usamos los departamentos cacheados de la última vez.
+      try {
+        const cached = await AsyncStorage.getItem(DEPTS_CACHE_KEY);
+        if (cached) {
+          const data = JSON.parse(cached) as DepartmentResponse[];
+          setDepartments(data);
+          applyPrefillDept(data);
+        } else {
+          showError('Sin conexión', 'No se pudieron cargar los departamentos. Conectate al menos una vez para poder crear reportes offline.');
+        }
+      } catch {
+        showError('Error', 'No se pudieron cargar los departamentos');
+      }
     } finally {
       setLoadingDepts(false);
     }
@@ -79,7 +99,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: true,
-        quality: 0.8,
+        quality: 0.5,
         allowsEditing: false,
       });
 
@@ -103,7 +123,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        quality: 0.8,
+        quality: 0.5,
         allowsEditing: false,
       });
 
@@ -117,30 +137,19 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
     }
   };
 
-  const handleAttachFile = async () => {
-    console.log('[CreateIncidentScreen] handleAttachFile llamado, Platform:', Platform.OS);
-
-    if (Platform.OS === 'ios') {
-      console.log('[CreateIncidentScreen] Mostrando ActionSheet para iOS');
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancelar', 'Tomar foto', 'Elegir de galería'],
-          cancelButtonIndex: 0,
-        },
-        async (buttonIndex) => {
-          console.log('[CreateIncidentScreen] Opción seleccionada:', buttonIndex);
-          if (buttonIndex === 1) {
-            await handleTakePhoto();
-          } else if (buttonIndex === 2) {
-            await handlePickImage();
-          }
-        }
-      );
-    } else {
-      // En Android, permitir ambas opciones
-      console.log('[CreateIncidentScreen] Android - llamando handlePickImage directamente');
-      await handlePickImage();
-    }
+  const handleAttachFile = () => {
+    // Chooser cross-platform (iOS y Android): tomar foto con la cámara o
+    // elegir de la galería. Alert.alert soporta hasta 3 botones en ambos.
+    Alert.alert(
+      'Adjuntar imagen',
+      '¿Cómo querés agregar la imagen?',
+      [
+        { text: 'Tomar foto', onPress: () => { handleTakePhoto(); } },
+        { text: 'Elegir de galería', onPress: () => { handlePickImage(); } },
+        { text: 'Cancelar', style: 'cancel' },
+      ],
+      { cancelable: true },
+    );
   };
 
   const handleRemoveImage = (index: number) => {
@@ -175,16 +184,38 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
     try {
       setSubmitting(true);
 
-      const incidentData = {
+      const baseData = {
         title: title.trim(),
         description: description.trim(),
         departmentId: selectedDepartment.id,
         locationDescription: location.trim() || undefined,
       };
 
-      console.log('[CreateIncidentScreen] Creando incidente con datos:', incidentData);
+      // Sin conexión: guardamos el reporte (con las imágenes locales) en la
+      // cola y avisamos. OfflineSyncManager lo subirá al reconectar.
+      if (!isOnline) {
+        await offlineQueueService.enqueue({
+          ...baseData,
+          departmentName: selectedDepartment.name,
+          imageUris: attachedImages,
+        });
+        showSuccess(
+          'Guardado sin conexión',
+          'El reporte quedó guardado y se subirá cuando recuperes la conexión.',
+        );
+        setTimeout(() => {
+          navigation.navigate('StudentTabs', { screen: 'StudentHome' });
+        }, 1000);
+        return;
+      }
 
-      await incidentService.create(incidentData);
+      // Con conexión: subimos la imagen (si hay) y creamos el incidente.
+      let photoUrl: string | undefined;
+      if (attachedImages.length > 0) {
+        photoUrl = await fileService.uploadImage(attachedImages[0]);
+      }
+
+      await incidentService.create({ ...baseData, photoUrl });
 
       showSuccess('Éxito', 'Incidencia creada correctamente');
 
@@ -313,10 +344,9 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
           />
         </View>
 
-        {/* Adjuntar imagen deshabilitado temporalmente */}
-        {/* <TouchableOpacity style={styles.photoBtn} activeOpacity={0.7} onPress={handleAttachFile}>
+        <TouchableOpacity style={styles.photoBtn} activeOpacity={0.7} onPress={handleAttachFile}>
           <MaterialIcons name="add-a-photo" size={18} color={COLORS.onSurfaceVariant} />
-          <Text style={styles.photoBtnText}>Adjuntar imagen</Text>
+          <Text style={styles.photoBtnText}>Adjuntar imagen (cámara o galería)</Text>
         </TouchableOpacity>
 
         {attachedImages.length > 0 && (
@@ -337,7 +367,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
               ))}
             </ScrollView>
           </View>
-        )} */}
+        )}
 
       </ScrollView>
 
