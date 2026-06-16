@@ -89,22 +89,32 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
 
   const handlePickImage = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('[CreateIncidentScreen] handlePickImage iniciado, Platform:', Platform.OS);
 
-      if (status !== 'granted') {
-        showError('Permiso denegado', 'Necesitamos acceso a tus fotos para adjuntar imágenes.');
-        return;
+      // En web, no se necesitan permisos explícitos
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        console.log('[CreateIncidentScreen] Permiso de galería:', status);
+
+        if (status !== 'granted') {
+          showError('Permiso denegado', 'Necesitamos acceso a tus fotos para adjuntar imágenes.');
+          return;
+        }
       }
 
+      console.log('[CreateIncidentScreen] Abriendo selector de imágenes...');
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true,
+        allowsMultipleSelection: Platform.OS !== 'web', // En web solo una imagen a la vez
         quality: 0.5,
         allowsEditing: false,
       });
 
+      console.log('[CreateIncidentScreen] Resultado del picker:', result);
+
       if (!result.canceled && result.assets) {
         const newImages = result.assets.map(asset => asset.uri);
+        console.log('[CreateIncidentScreen] Imágenes seleccionadas:', newImages);
         setAttachedImages([...attachedImages, ...newImages]);
       }
     } catch (error) {
