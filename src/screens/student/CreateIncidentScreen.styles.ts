@@ -57,22 +57,18 @@ export const styles = StyleSheet.create({
   deptText: { fontSize: 13, color: COLORS.onSurfaceVariant, fontFamily: FONTS.family.bodyMedium },
   deptTextActive: { color: COLORS.onSurface, fontFamily: FONTS.family.bodySemiBold },
 
-  photoBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingVertical: 14, paddingHorizontal: 16,
-    borderRadius: 8, borderWidth: 1, borderColor: COLORS.outlineVariant,
-    borderStyle: 'dashed',
+  offlineNotice: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: COLORS.warningTint,
+    borderRadius: 8, padding: 12,
+    borderWidth: 1, borderColor: COLORS.warning,
   },
-  photoBtnText: { fontSize: 13, color: COLORS.onSurfaceVariant },
+  offlineNoticeText: { flex: 1, fontSize: 12, color: COLORS.warningDim },
+
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     padding: 20, paddingBottom: 36,
     backgroundColor: COLORS.surface,
     borderTopWidth: 1, borderTopColor: COLORS.outlineVariant,
   },
-  submitBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: COLORS.primary, borderRadius: 8, paddingVertical: 15,
-  },
-  submitText: { fontSize: 12, fontFamily: FONTS.family.monoSemiBold, color: COLORS.onPrimary, textTransform: 'uppercase', letterSpacing: FONTS.tracking.caps },
 });

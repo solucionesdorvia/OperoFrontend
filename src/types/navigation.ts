@@ -25,6 +25,13 @@ export interface Incident {
   time?: string | null;
   assignee?: string | null;
   sub?: string | null;
+  // Reporte creado en el dispositivo: identificador local, departamento elegido,
+  // imágenes adjuntas (data URIs base64) y estado de sincronización con el backend.
+  localId?: string | null;
+  department?: string | null;
+  images?: string[] | null;
+  createdAt?: string | null;
+  syncStatus?: 'pending' | 'uploaded' | 'error' | null;
 }
 
 export interface Task {

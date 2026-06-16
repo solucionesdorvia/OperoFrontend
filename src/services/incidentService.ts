@@ -5,6 +5,11 @@ export interface IncidentRequest {
   title: string;
   description: string;
   departmentId: number;
+  // Ubicación textual del reporte (ej. "Edificio B, Planta 2").
+  location?: string;
+  // Imágenes adjuntas como data URIs base64 ("data:image/jpeg;base64,...").
+  // El backend debe aceptar/ignorar este campo según su contrato final.
+  images?: string[];
 }
 
 export interface UpdateIncidentRequest {

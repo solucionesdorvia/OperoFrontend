@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable, Alert,
+  View, Text, ScrollView, TouchableOpacity, Modal, Pressable, Alert, Image,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
@@ -76,6 +76,12 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
             <StatusBadge status="EN PROCESO" />
           </View>
           <Text style={styles.title}>{incident?.title ?? 'Rotura de tubería principal'}</Text>
+          {incident?.syncStatus && incident.syncStatus !== 'uploaded' ? (
+            <View style={styles.pendingChip}>
+              <MaterialIcons name="cloud-off" size={12} color={COLORS.warningDim} />
+              <Text style={styles.pendingChipText}>Pendiente de subir</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.infoCard}>
@@ -101,16 +107,25 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Descripción</Text>
           <Text style={styles.desc}>
-            Fuga de agua detectada en el pasillo central del segundo piso. Riesgo eléctrico por cercanía a paneles de control.
+            {incident?.description ??
+              'Fuga de agua detectada en el pasillo central del segundo piso. Riesgo eléctrico por cercanía a paneles de control.'}
           </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Evidencia</Text>
-          <View style={styles.photoPlaceholder}>
-            <MaterialIcons name="image" size={22} color={COLORS.outline} />
-            <Text style={styles.photoLabel}>Captura_01.jpg</Text>
-          </View>
+          {incident?.images && incident.images.length > 0 ? (
+            <View style={styles.evidenceGrid}>
+              {incident.images.map((uri, i) => (
+                <Image key={`${uri.slice(0, 24)}-${i}`} source={{ uri }} style={styles.evidenceImg} />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.photoPlaceholder}>
+              <MaterialIcons name="image" size={22} color={COLORS.outline} />
+              <Text style={styles.photoLabel}>Sin imágenes adjuntas</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>

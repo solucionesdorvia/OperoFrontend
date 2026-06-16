@@ -1,25 +1,45 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../../../constants/colors';
-import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
 import StatusBadge from '../../components/StatusBadge';
-import type { StudentTabScreenProps } from '../../types/navigation';
+import { offlineIncidentService, LocalIncident } from '../../services/offlineIncidentService';
+import type { Incident, StudentTabScreenProps } from '../../types/navigation';
 import { styles } from './MyIncidentsScreen.styles';
 
 const filters = ['Todas', 'En curso', 'Resueltas', 'Pendientes'];
 const dateRanges = ['Cualquier fecha', 'Hoy', 'Semana', 'Mes'];
 
-const incidents = [
-  { id: '1', title: 'Fallo sistema de climatización',    location: 'Edificio Central · Ala Norte', status: 'EN PROCESO' as const, time: 'Hace 2h',  sub: 'Técnico asignado', priority: null },
-  { id: '2', title: 'Filtración de agua - Lab. B2',      location: 'Sótano · Planta Química',      status: 'ABIERTO'    as const, time: null,        sub: null,                priority: 'ALTA' },
-  { id: '3', title: 'Sustitución luminaria LED',         location: 'Biblioteca · Sala 3',           status: 'FINALIZADO' as const, time: null,        sub: 'Cerrada ayer',      priority: null },
-  { id: '4', title: 'Puerta de acceso bloqueada',        location: 'Cafetería Universitaria',       status: 'PENDIENTE'  as const, time: null,        sub: null,                priority: null },
+type Card = Incident & { id: string; sub?: string | null };
+
+const mockIncidents: Card[] = [
+  { id: '1', title: 'Fallo sistema de climatización',    location: 'Edificio Central · Ala Norte', status: 'EN PROCESO', time: 'Hace 2h',  sub: 'Técnico asignado', priority: null },
+  { id: '2', title: 'Filtración de agua - Lab. B2',      location: 'Sótano · Planta Química',      status: 'ABIERTO',    time: null,        sub: null,                priority: 'ALTA' },
+  { id: '3', title: 'Sustitución luminaria LED',         location: 'Biblioteca · Sala 3',           status: 'FINALIZADO', time: null,        sub: 'Cerrada ayer',      priority: null },
+  { id: '4', title: 'Puerta de acceso bloqueada',        location: 'Cafetería Universitaria',       status: 'PENDIENTE',  time: null,        sub: null,                priority: null },
 ];
+
+// Mapea un reporte local (creado en el dispositivo) al formato de tarjeta.
+const localToCard = (inc: LocalIncident): Card => ({
+  id: inc.localId,
+  localId: inc.localId,
+  title: inc.title,
+  description: inc.description,
+  location: inc.location ?? null,
+  department: inc.department ?? null,
+  images: inc.images,
+  status: inc.status,
+  createdAt: inc.createdAt,
+  syncStatus: inc.syncStatus,
+  time: null,
+  sub: inc.syncStatus === 'uploaded' ? null : 'Sin subir',
+  priority: null,
+});
 
 type MyIncidentsScreenProps = StudentTabScreenProps<'StudentIncidents'>;
 
@@ -28,6 +48,23 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
   const tabBarHeight = 60 + insets.bottom;
   const [active, setActive] = useState(0);
   const [dateIdx, setDateIdx] = useState(0);
+  const [localCards, setLocalCards] = useState<Card[]>([]);
+
+  // Recargamos los reportes locales cada vez que la pantalla toma foco
+  // (al volver de crear una incidencia, por ejemplo).
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      offlineIncidentService.getAll().then((items) => {
+        if (active) setLocalCards(items.map(localToCard));
+      });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
+
+  const incidents: Card[] = [...localCards, ...mockIncidents];
 
   return (
     <View style={styles.container}>
@@ -42,7 +79,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
       />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        <Text style={styles.summary}>12 reportes en total</Text>
+        <Text style={styles.summary}>{incidents.length} reportes en total</Text>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
           <View style={styles.filters}>
@@ -90,7 +127,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
                   <Text style={styles.cardTitle} numberOfLines={2}>{inc.title}</Text>
                   <Text style={styles.cardLocation}>{inc.location}</Text>
                 </View>
-                <StatusBadge status={inc.status} />
+                <StatusBadge status={(inc.status ?? 'PENDIENTE') as any} />
               </View>
               {(inc.time || inc.sub || inc.priority) ? (
                 <View style={styles.cardMeta}>

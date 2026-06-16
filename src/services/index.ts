@@ -6,6 +6,7 @@
 
 export { authService } from './authService';
 export { incidentService } from './incidentService';
+export { offlineIncidentService } from './offlineIncidentService';
 export { userService } from './userService';
 export { departmentService } from './departmentService';
 
@@ -22,6 +23,13 @@ export type {
   UpdateIncidentRequest,
   IncidentResponse
 } from './incidentService';
+
+export type {
+  LocalIncident,
+  NewLocalIncident,
+  LocalSyncStatus,
+  FlushResult
+} from './offlineIncidentService';
 
 export type {
   UpdateUserRequest

@@ -32,6 +32,22 @@ export const styles = StyleSheet.create({
   },
   photoLabel: { fontSize: 12, color: COLORS.onSurfaceVariant },
 
+  evidenceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  evidenceImg: {
+    width: 100, height: 100, borderRadius: 8,
+    backgroundColor: COLORS.surfaceContainerHigh,
+    borderWidth: 1, borderColor: COLORS.outlineVariant,
+  },
+
+  pendingChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.warningTint,
+    borderRadius: 999, paddingVertical: 5, paddingHorizontal: 10,
+    borderWidth: 1, borderColor: COLORS.warning,
+  },
+  pendingChipText: { fontSize: 11, fontFamily: FONTS.family.bodyMedium, color: COLORS.warningDim },
+
   timeline: {},
   timelineItem: { flexDirection: 'row', gap: 14 },
   timelineLeft: { alignItems: 'center', width: 20 },

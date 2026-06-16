@@ -20,6 +20,7 @@ import {
 import AppNavigator from './src/navigation/AppNavigator';
 import { COLORS } from './constants/colors';
 import { AuthProvider } from './src/context/AuthContext';
+import OfflineSyncManager from './src/components/OfflineSyncManager';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -48,6 +49,7 @@ export default function App() {
       <AuthProvider>
         <StatusBar style="dark" backgroundColor={COLORS.bg} />
         <AppNavigator />
+        <OfflineSyncManager />
       </AuthProvider>
     </SafeAreaProvider>
   );
