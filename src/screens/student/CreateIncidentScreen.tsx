@@ -138,18 +138,22 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
   };
 
   const handleAttachFile = () => {
-    // Chooser cross-platform (iOS y Android): tomar foto con la cámara o
-    // elegir de la galería. Alert.alert soporta hasta 3 botones en ambos.
-    Alert.alert(
-      'Adjuntar imagen',
-      '¿Cómo querés agregar la imagen?',
-      [
-        { text: 'Tomar foto', onPress: () => { handleTakePhoto(); } },
-        { text: 'Elegir de galería', onPress: () => { handlePickImage(); } },
-        { text: 'Cancelar', style: 'cancel' },
-      ],
-      { cancelable: true },
-    );
+    // En web, Alert.alert no funciona, por lo que vamos directo a seleccionar imagen
+    if (Platform.OS === 'web') {
+      handlePickImage();
+    } else {
+      // En móvil (iOS y Android): mostrar opciones de cámara o galería
+      Alert.alert(
+        'Adjuntar imagen',
+        '¿Cómo querés agregar la imagen?',
+        [
+          { text: 'Tomar foto', onPress: () => { handleTakePhoto(); } },
+          { text: 'Elegir de galería', onPress: () => { handlePickImage(); } },
+          { text: 'Cancelar', style: 'cancel' },
+        ],
+        { cancelable: true },
+      );
+    }
   };
 
   const handleRemoveImage = (index: number) => {
