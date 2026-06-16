@@ -35,7 +35,6 @@ export default {
       "expo-font",
       "expo-splash-screen",
       "expo-camera",
-      "expo-barcode-scanner",
       [
         "expo-image-picker",
         {
