@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator, Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -10,8 +10,6 @@ import { FONTS } from '../../../constants/fonts';
 import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './LoginScreen.styles';
 import { useAuth } from '../../context/AuthContext';
-import ErrorDialog from '../../components/ErrorDialog';
-import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { isValidEmail } from '../../utils/validationUtils';
 
 const logo = require('../../../assets/operologo.png');
@@ -25,7 +23,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const { login, user, isAuthenticated } = useAuth();
-  const { dialogState, hideDialog, showError } = useErrorDialog();
 
   /**
    * Redirigir automáticamente si el usuario ya está autenticado
@@ -52,7 +49,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         break;
       default:
         console.warn('[LoginScreen] Rol desconocido:', roleName);
-        showError('Error', 'Rol de usuario no reconocido');
+        Alert.alert('Error', 'Rol de usuario no reconocido');
     }
   };
 
@@ -62,34 +59,27 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const handleLogin = async () => {
     // Validaciones básicas
     if (!email.trim()) {
-      showError('Error', 'Por favor ingresa tu email');
+      Alert.alert('Error', 'Por favor ingresa tu email');
       return;
     }
 
     // Validar formato de email
     if (!isValidEmail(email.trim())) {
-      showError('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
+      Alert.alert('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
       return;
     }
 
     if (!password.trim()) {
-      showError('Error', 'Por favor ingresa tu contraseña');
+      Alert.alert('Error', 'Por favor ingresa tu contraseña');
       return;
     }
 
-    let errorToShow: { title: string; message: string } | null = null;
-
     try {
       setIsLoading(true);
-
-      // Llamar al servicio de autenticación
       await login(email.trim(), password);
-
-      // El useEffect se encargará de la navegación cuando user se actualice
     } catch (error: any) {
       console.error('[LoginScreen] Error en login:', error);
 
-      // Personalizar mensajes de error del backend
       let errorMessage = error.message || 'No se pudo iniciar sesión. Verifica tus credenciales.';
       let errorTitle = 'Error de autenticación';
 
@@ -101,14 +91,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         errorMessage = 'La contraseña ingresada es incorrecta. Verifica e intenta nuevamente.';
       }
 
-      errorToShow = { title: errorTitle, message: errorMessage };
+      Alert.alert(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
-
-      // Mostrar error DESPUÉS de setIsLoading para evitar race condition
-      if (errorToShow) {
-        showError(errorToShow.title, errorToShow.message);
-      }
     }
   };
 
@@ -189,15 +174,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         </View>
 
       </ScrollView>
-
-      <ErrorDialog
-        visible={dialogState.visible}
-        type={dialogState.type}
-        title={dialogState.title}
-        message={dialogState.message}
-        buttons={dialogState.buttons}
-        onDismiss={hideDialog}
-      />
     </KeyboardAvoidingView>
   );
 }
