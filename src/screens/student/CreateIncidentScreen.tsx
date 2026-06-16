@@ -227,12 +227,14 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       let photoUrl: string | undefined;
       if (attachedImages.length > 0) {
         try {
-          console.log('[CreateIncidentScreen] Subiendo imagen...');
+          console.log('[CreateIncidentScreen] Subiendo imagen, URI:', attachedImages[0]);
+          console.log('[CreateIncidentScreen] Platform:', Platform.OS);
           photoUrl = await fileService.uploadImage(attachedImages[0]);
           console.log('[CreateIncidentScreen] Imagen subida correctamente:', photoUrl);
         } catch (error: any) {
           console.error('[CreateIncidentScreen] Error al subir imagen:', error);
-          showError('Error', 'No se pudo subir la imagen. Intenta nuevamente.');
+          console.error('[CreateIncidentScreen] Error completo:', JSON.stringify(error));
+          showError('Error', `No se pudo subir la imagen: ${error.message || 'Error desconocido'}`);
           return;
         }
       }
