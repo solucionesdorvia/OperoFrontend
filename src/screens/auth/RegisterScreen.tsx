@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
@@ -12,6 +12,7 @@ import { styles } from './RegisterScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { departmentService, DepartmentResponse } from '../../services';
 import { isValidEmail } from '../../utils/validationUtils';
+import { showAlert } from '../../utils/alertUtils';
 
 const logo = require('../../../assets/operologo.png');
 
@@ -100,34 +101,34 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const handleRegister = async () => {
     // Validaciones
     if (!fullName.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu nombre completo');
+      showAlert('Error', 'Por favor ingresa tu nombre completo');
       return;
     }
 
     if (!email.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu email');
+      showAlert('Error', 'Por favor ingresa tu email');
       return;
     }
 
     // Validar formato de email
     if (!isValidEmail(email.trim())) {
-      Alert.alert('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
+      showAlert('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
       return;
     }
 
     if (!password.trim()) {
-      Alert.alert('Error', 'Por favor ingresa una contraseña');
+      showAlert('Error', 'Por favor ingresa una contraseña');
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Contraseña muy corta', 'La contraseña debe tener al menos 8 caracteres');
+      showAlert('Contraseña muy corta', 'La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
     // Para MANAGER y WORKER, el departamento es requerido
     if ((selectedRole === 2 || selectedRole === 3) && !selectedDepartment) {
-      Alert.alert('Error', 'Por favor selecciona un departamento');
+      showAlert('Error', 'Por favor selecciona un departamento');
       return;
     }
 
@@ -158,7 +159,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         errorMessage = 'El departamento seleccionado no existe. Intenta seleccionar otro.';
       }
 
-      Alert.alert(errorTitle, errorMessage);
+      showAlert(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
     }

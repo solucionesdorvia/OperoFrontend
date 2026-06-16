@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './LoginScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { isValidEmail } from '../../utils/validationUtils';
+import { showAlert } from '../../utils/alertUtils';
 
 const logo = require('../../../assets/operologo.png');
 
@@ -49,7 +50,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         break;
       default:
         console.warn('[LoginScreen] Rol desconocido:', roleName);
-        Alert.alert('Error', 'Rol de usuario no reconocido');
+        showAlert('Error', 'Rol de usuario no reconocido');
     }
   };
 
@@ -59,18 +60,18 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const handleLogin = async () => {
     // Validaciones básicas
     if (!email.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu email');
+      showAlert('Error', 'Por favor ingresa tu email');
       return;
     }
 
     // Validar formato de email
     if (!isValidEmail(email.trim())) {
-      Alert.alert('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
+      showAlert('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
       return;
     }
 
     if (!password.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu contraseña');
+      showAlert('Error', 'Por favor ingresa tu contraseña');
       return;
     }
 
@@ -91,7 +92,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         errorMessage = 'La contraseña ingresada es incorrecta. Verifica e intenta nuevamente.';
       }
 
-      Alert.alert(errorTitle, errorMessage);
+      showAlert(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
     }
