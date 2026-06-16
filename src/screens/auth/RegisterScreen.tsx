@@ -97,6 +97,14 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   };
 
   /**
+   * Validar formato de email
+   */
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  /**
    * Manejar el registro
    */
   const handleRegister = async () => {
@@ -111,13 +119,19 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       return;
     }
 
+    // Validar formato de email
+    if (!isValidEmail(email.trim())) {
+      showError('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
+      return;
+    }
+
     if (!password.trim()) {
       showError('Error', 'Por favor ingresa una contraseña');
       return;
     }
 
     if (password.length < 8) {
-      showError('Error', 'La contraseña debe tener al menos 8 caracteres');
+      showError('Contraseña muy corta', 'La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
@@ -141,10 +155,23 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       // El useEffect se encargará de la navegación
     } catch (error: any) {
       console.error('[RegisterScreen] Error en registro:', error);
-      showError(
-        'Error de registro',
-        error.message || 'No se pudo crear la cuenta. Intenta nuevamente.'
-      );
+
+      // Personalizar mensajes de error del backend
+      let errorMessage = error.message || 'No se pudo crear la cuenta. Intenta nuevamente.';
+      let errorTitle = 'Error de registro';
+
+      if (error.message?.includes('El email ya está registrado')) {
+        errorTitle = 'Email ya registrado';
+        errorMessage = 'Ya existe una cuenta con este email. Intenta iniciar sesión o usa otro email.';
+      } else if (error.message?.includes('Rol no encontrado')) {
+        errorTitle = 'Error en el sistema';
+        errorMessage = 'Hubo un problema con el rol seleccionado. Intenta nuevamente o contacta soporte.';
+      } else if (error.message?.includes('Departamento no encontrado')) {
+        errorTitle = 'Departamento no válido';
+        errorMessage = 'El departamento seleccionado no existe. Intenta seleccionar otro.';
+      }
+
+      showError(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
     }

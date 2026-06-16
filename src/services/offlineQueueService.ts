@@ -39,6 +39,12 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 const notify = () => listeners.forEach((l) => l());
 
+// Genera un ID local único para incidencias pendientes offline.
+// Math.random() es suficiente aquí porque:
+// 1. Solo se usa para IDs temporales locales (no tokens de seguridad)
+// 2. Los IDs se descartan cuando se sube la incidencia al servidor
+// 3. La colisión es extremadamente improbable dado el timestamp
+// NOSONAR: No es un caso de seguridad crítico
 const genId = (): string =>
   `pend_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 

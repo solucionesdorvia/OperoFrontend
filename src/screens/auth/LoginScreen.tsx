@@ -56,12 +56,26 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   };
 
   /**
+   * Validar formato de email
+   */
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  /**
    * Manejar el login
    */
   const handleLogin = async () => {
     // Validaciones básicas
     if (!email.trim()) {
       showError('Error', 'Por favor ingresa tu email');
+      return;
+    }
+
+    // Validar formato de email
+    if (!isValidEmail(email.trim())) {
+      showError('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
       return;
     }
 
@@ -79,10 +93,20 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       // El useEffect se encargará de la navegación cuando user se actualice
     } catch (error: any) {
       console.error('[LoginScreen] Error en login:', error);
-      showError(
-        'Error de autenticación',
-        error.message || 'No se pudo iniciar sesión. Verifica tus credenciales.'
-      );
+
+      // Personalizar mensajes de error del backend
+      let errorMessage = error.message || 'No se pudo iniciar sesión. Verifica tus credenciales.';
+      let errorTitle = 'Error de autenticación';
+
+      if (error.message?.includes('Email no encontrado')) {
+        errorTitle = 'Email no encontrado';
+        errorMessage = 'No existe una cuenta con este email. Verifica que esté escrito correctamente o regístrate.';
+      } else if (error.message?.includes('Contraseña incorrecta')) {
+        errorTitle = 'Contraseña incorrecta';
+        errorMessage = 'La contraseña ingresada es incorrecta. Verifica e intenta nuevamente.';
+      }
+
+      showError(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
     }
