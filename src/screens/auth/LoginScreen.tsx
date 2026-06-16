@@ -77,6 +77,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       return;
     }
 
+    let errorToShow: { title: string; message: string } | null = null;
+
     try {
       setIsLoading(true);
 
@@ -99,9 +101,14 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         errorMessage = 'La contraseña ingresada es incorrecta. Verifica e intenta nuevamente.';
       }
 
-      showError(errorTitle, errorMessage);
+      errorToShow = { title: errorTitle, message: errorMessage };
     } finally {
       setIsLoading(false);
+
+      // Mostrar error DESPUÉS de setIsLoading para evitar race condition
+      if (errorToShow) {
+        showError(errorToShow.title, errorToShow.message);
+      }
     }
   };
 
