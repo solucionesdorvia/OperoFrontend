@@ -44,16 +44,10 @@ const notify = () => listeners.forEach((l) => l());
 // para evitar colisiones en IDs locales temporales.
 const genId = (): string => {
   const timestamp = Date.now().toString(36);
-  // Generar 6 caracteres aleatorios seguros
-  const randomPart = Array.from(
-    typeof crypto !== 'undefined' && crypto.getRandomValues
-      ? crypto.getRandomValues(new Uint8Array(3))
-      : new Uint8Array([
-          Math.floor(Math.random() * 256),
-          Math.floor(Math.random() * 256),
-          Math.floor(Math.random() * 256),
-        ])
-  )
+  // Generar 8 caracteres aleatorios seguros con crypto.getRandomValues
+  const randomBytes = new Uint8Array(6);
+  crypto.getRandomValues(randomBytes);
+  const randomPart = Array.from(randomBytes)
     .map((b) => b.toString(36))
     .join('')
     .slice(0, 8);
