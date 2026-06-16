@@ -175,11 +175,26 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
     try {
       setSubmitting(true);
 
+      // Subir imagen si existe
+      let photoUrl = undefined;
+      if (attachedImages.length > 0) {
+        try {
+          console.log('[CreateIncidentScreen] Subiendo imagen...');
+          photoUrl = await fileService.uploadImage(attachedImages[0]);
+          console.log('[CreateIncidentScreen] Imagen subida correctamente:', photoUrl);
+        } catch (error: any) {
+          console.error('[CreateIncidentScreen] Error al subir imagen:', error);
+          showError('Error', 'No se pudo subir la imagen. Intenta nuevamente.');
+          return;
+        }
+      }
+
       const incidentData = {
         title: title.trim(),
         description: description.trim(),
         departmentId: selectedDepartment.id,
         locationDescription: location.trim() || undefined,
+        photoUrl,
       };
 
       console.log('[CreateIncidentScreen] Creando incidente con datos:', incidentData);
@@ -313,8 +328,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
           />
         </View>
 
-        {/* Adjuntar imagen deshabilitado temporalmente */}
-        {/* <TouchableOpacity style={styles.photoBtn} activeOpacity={0.7} onPress={handleAttachFile}>
+        <TouchableOpacity style={styles.photoBtn} activeOpacity={0.7} onPress={handleAttachFile}>
           <MaterialIcons name="add-a-photo" size={18} color={COLORS.onSurfaceVariant} />
           <Text style={styles.photoBtnText}>Adjuntar imagen</Text>
         </TouchableOpacity>
@@ -337,7 +351,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
               ))}
             </ScrollView>
           </View>
-        )} */}
+        )}
 
       </ScrollView>
 
