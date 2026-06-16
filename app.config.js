@@ -1,7 +1,7 @@
 export default {
   expo: {
-    name: "frontend",
-    slug: "frontend",
+    name: "Opero",
+    slug: "opero",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -15,10 +15,12 @@ export default {
     },
     ios: {
       supportsTablet: true,
-      backgroundColor: "#FFFFFF"
+      backgroundColor: "#FFFFFF",
+      bundleIdentifier: "ar.uade.opero"
     },
     android: {
       backgroundColor: "#FFFFFF",
+      package: "ar.uade.opero",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#FFFFFF"
@@ -33,7 +35,6 @@ export default {
       "expo-font",
       "expo-splash-screen",
       "expo-camera",
-      "expo-barcode-scanner",
       [
         "expo-image-picker",
         {
@@ -43,7 +44,10 @@ export default {
       ]
     ],
     extra: {
-      apiUrl: process.env.EXPO_PUBLIC_API_URL
+      apiUrl: process.env.EXPO_PUBLIC_API_URL,
+      eas: {
+        projectId: process.env.EAS_PROJECT_ID
+      }
     }
   }
 };
