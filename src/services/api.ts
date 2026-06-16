@@ -27,8 +27,20 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Solo borrar token en errores 401 que NO sean de endpoints de auth
+    // (para no interferir con errores de login/registro)
     if (error.response?.status === 401) {
-      await AsyncStorage.removeItem(TOKEN_KEY);
+      const isAuthEndpoint = error.config?.url?.includes('/auth/login') ||
+                             error.config?.url?.includes('/auth/register');
+
+      if (!isAuthEndpoint) {
+        // Token expirado o inválido - borrarlo
+        try {
+          await AsyncStorage.removeItem(TOKEN_KEY);
+        } catch (e) {
+          console.error('[api] Error al borrar token:', e);
+        }
+      }
     }
     return Promise.reject(error);
   }
@@ -37,14 +49,15 @@ api.interceptors.response.use(
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     if (error.response?.data) {
+      // El backend puede retornar { error: "mensaje" } o solo "mensaje"
       if (typeof error.response.data === 'string') {
         return error.response.data;
       }
-      if (error.response.data.message) {
-        return error.response.data.message;
-      }
       if (error.response.data.error) {
         return error.response.data.error;
+      }
+      if (error.response.data.message) {
+        return error.response.data.message;
       }
     }
     if (error.message === 'Network Error') {

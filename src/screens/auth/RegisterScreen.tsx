@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { departmentService, DepartmentResponse } from '../../services';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
+import { isValidEmail } from '../../utils/validationUtils';
 
 const logo = require('../../../assets/operologo.png');
 
@@ -94,14 +95,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       default:
         console.warn('[RegisterScreen] Rol desconocido:', roleName);
     }
-  };
-
-  /**
-   * Validar formato de email
-   */
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   };
 
   /**

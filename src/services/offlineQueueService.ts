@@ -39,14 +39,26 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 const notify = () => listeners.forEach((l) => l());
 
-// Genera un ID local único para incidencias pendientes offline.
-// Math.random() es suficiente aquí porque:
-// 1. Solo se usa para IDs temporales locales (no tokens de seguridad)
-// 2. Los IDs se descartan cuando se sube la incidencia al servidor
-// 3. La colisión es extremadamente improbable dado el timestamp
-// NOSONAR: No es un caso de seguridad crítico
-const genId = (): string =>
-  `pend_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+// Genera un ID local único para incidencias pendientes offline usando crypto.
+// Usamos una combinación de timestamp y valores aleatorios criptográficamente seguros
+// para evitar colisiones en IDs locales temporales.
+const genId = (): string => {
+  const timestamp = Date.now().toString(36);
+  // Generar 6 caracteres aleatorios seguros
+  const randomPart = Array.from(
+    typeof crypto !== 'undefined' && crypto.getRandomValues
+      ? crypto.getRandomValues(new Uint8Array(3))
+      : new Uint8Array([
+          Math.floor(Math.random() * 256),
+          Math.floor(Math.random() * 256),
+          Math.floor(Math.random() * 256),
+        ])
+  )
+    .map((b) => b.toString(36))
+    .join('')
+    .slice(0, 8);
+  return `pend_${timestamp}_${randomPart}`;
+};
 
 async function readAll(): Promise<PendingIncident[]> {
   try {

@@ -12,6 +12,7 @@ import { styles } from './LoginScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
+import { isValidEmail } from '../../utils/validationUtils';
 
 const logo = require('../../../assets/operologo.png');
 
@@ -53,14 +54,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         console.warn('[LoginScreen] Rol desconocido:', roleName);
         showError('Error', 'Rol de usuario no reconocido');
     }
-  };
-
-  /**
-   * Validar formato de email
-   */
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   };
 
   /**
