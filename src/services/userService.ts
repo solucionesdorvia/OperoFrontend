@@ -7,6 +7,13 @@ export interface UpdateUserRequest {
   password?: string;
 }
 
+export interface CreateWorkerRequest {
+  fullName: string;
+  emailUade: string;
+  password: string;
+  departmentId: number;
+}
+
 export const userService = {
   async getMe(): Promise<UserResponse> {
     try {
@@ -48,6 +55,22 @@ export const userService = {
     try {
       const response = await api.get<UserResponse[]>(`${ENDPOINTS.USERS}?departmentId=${departmentId}`);
       return response.data;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
+  },
+
+  // Crear un operario (rol WORKER) desde la pantalla de Manager.
+  // Usa el endpoint público /auth/register pero NO toca el token actual
+  // (a diferencia de authService.register que loguea al usuario nuevo).
+  // El manager sigue logueado con su propio token.
+  async createWorker(data: CreateWorkerRequest): Promise<UserResponse> {
+    try {
+      const response = await api.post<{ token: string; user: UserResponse; message: string }>(
+        ENDPOINTS.AUTH.REGISTER,
+        { ...data, roleId: 3 },
+      );
+      return response.data.user;
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }
