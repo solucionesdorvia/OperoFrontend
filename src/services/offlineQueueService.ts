@@ -10,6 +10,7 @@
 // cuando cambia la cantidad de pendientes.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system/legacy';
 import { incidentService } from './incidentService';
 import { fileService } from './fileService';
 
@@ -33,6 +34,7 @@ export type NewPendingIncident = Omit<PendingIncident, 'localId' | 'createdAt'>;
 export interface FlushResult {
   uploaded: number;
   failed: number;
+  lastError?: string;
 }
 
 type Listener = () => void;
@@ -53,6 +55,30 @@ const genId = (): string => {
     .slice(0, 8);
   return `pend_${timestamp}_${randomPart}`;
 };
+
+// Copia las imágenes elegidas a un directorio persistente de la app, para que
+// sus URIs sigan siendo válidas al reconectar (las del picker/cámara viven en
+// caché y pueden desaparecer). Si la copia falla, se deja la URI original.
+async function persistImages(uris: string[]): Promise<string[]> {
+  const dir = FileSystem.documentDirectory;
+  if (!dir || uris.length === 0) return uris;
+
+  const out: string[] = [];
+  for (let i = 0; i < uris.length; i++) {
+    const uri = uris[i];
+    try {
+      const match = uri.split('?')[0].match(/\.(jpg|jpeg|png|gif|webp)$/i);
+      const ext = match ? match[0] : '.jpg';
+      const dest = `${dir}offline_${Date.now().toString(36)}_${i}${ext}`;
+      await FileSystem.copyAsync({ from: uri, to: dest });
+      out.push(dest);
+    } catch (e) {
+      console.warn('[offlineQueue] no se pudo persistir la imagen, uso la uri original', e);
+      out.push(uri);
+    }
+  }
+  return out;
+}
 
 async function readAll(): Promise<PendingIncident[]> {
   try {
@@ -88,8 +114,11 @@ export const offlineQueueService = {
   /** Agrega un reporte a la cola de pendientes. */
   async enqueue(data: NewPendingIncident): Promise<PendingIncident> {
     const items = await readAll();
+    // Persistimos las imágenes para que sobrevivan hasta la reconexión.
+    const imageUris = await persistImages(data.imageUris ?? []);
     const pending: PendingIncident = {
       ...data,
+      imageUris,
       localId: genId(),
       createdAt: new Date().toISOString(),
     };
@@ -115,13 +144,21 @@ export const offlineQueueService = {
     const remaining: PendingIncident[] = [];
     let uploaded = 0;
     let failed = 0;
+    let lastError: string | undefined;
 
     for (const pending of items) {
       try {
+        // La imagen es "best-effort": si falla subirla (uri perdida, etc.),
+        // igual creamos la incidencia sin foto en vez de perder todo el reporte.
         let photoUrl: string | undefined;
         if (pending.imageUris.length > 0) {
-          photoUrl = await fileService.uploadImage(pending.imageUris[0]);
+          try {
+            photoUrl = await fileService.uploadImage(pending.imageUris[0]);
+          } catch (imgErr) {
+            console.warn('[offlineQueue] no se pudo subir la imagen, creo sin foto:', imgErr);
+          }
         }
+
         await incidentService.create({
           title: pending.title,
           description: pending.description,
@@ -131,13 +168,20 @@ export const offlineQueueService = {
           photoUrl,
         });
         uploaded += 1;
-      } catch {
+
+        // Limpiamos las imágenes persistidas ya subidas.
+        for (const uri of pending.imageUris) {
+          FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[offlineQueue] falló crear la incidencia, queda en cola:', err);
+        lastError = (err as Error)?.message || String(err);
         failed += 1;
         remaining.push(pending);
       }
     }
 
     await writeAll(remaining);
-    return { uploaded, failed };
+    return { uploaded, failed, lastError };
   },
 };

@@ -23,7 +23,7 @@ export default function OfflineSyncManager() {
   const [pending, setPending] = useState(0);
   const [promptVisible, setPromptVisible] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [result, setResult] = useState<{ uploaded: number; failed: number } | null>(null);
+  const [result, setResult] = useState<{ uploaded: number; failed: number; lastError?: string } | null>(null);
 
   const refreshPending = useCallback(async () => {
     const count = await offlineQueueService.count();
@@ -136,7 +136,8 @@ export default function OfflineSyncManager() {
             </Text>
             <Text style={styles.subtitle}>
               {result
-                ? `Subidos: ${result.uploaded}${result.failed > 0 ? ` · Pendientes: ${result.failed}` : ''}`
+                ? `Subidos: ${result.uploaded}${result.failed > 0 ? ` · Pendientes: ${result.failed}` : ''}` +
+                  (result.failed > 0 && result.lastError ? `\n\nMotivo: ${result.lastError}` : '')
                 : ''}
             </Text>
             <View style={styles.actions}>
