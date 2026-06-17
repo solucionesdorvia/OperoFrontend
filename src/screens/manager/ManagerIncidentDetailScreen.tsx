@@ -46,23 +46,17 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
   const loadData = async () => {
     try {
       setLoading(true);
-      // Primero obtener el perfil del manager para saber su departamento
-      const [deptsData, myProfile] = await Promise.all([
+      // Traemos TODOS los deptos y TODOS los users en paralelo.
+      // Antes solo se traian los workers del depto del manager: si el manager
+      // reasignaba el incidente a otro depto, la lista de operadores quedaba
+      // mostrando los del depto viejo. Ahora la filtramos por selectedDeptId
+      // en el picker.
+      const [deptsData, allUsers] = await Promise.all([
         departmentService.getAll(),
-        userService.getMe(),
+        userService.getAll(),
       ]);
-
       setDepartments(deptsData);
-
-      // Obtener usuarios del departamento del manager
-      if (myProfile.departmentId) {
-        const usersData = await userService.getByDepartment(myProfile.departmentId);
-        // Filtrar solo workers (WORKER role)
-        const workersOnly = usersData.filter(u => u.roleName === 'WORKER');
-        setWorkers(workersOnly);
-      } else {
-        setWorkers([]);
-      }
+      setWorkers(allUsers.filter((u) => u.roleName === 'WORKER'));
     } catch (error: any) {
       console.error('[ManagerIncidentDetailScreen] Error al cargar datos:', error);
       showError('Error', error.message || 'No se pudieron cargar los datos');
@@ -70,6 +64,12 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
       setLoading(false);
     }
   };
+
+  // Operadores del depto actualmente seleccionado para esta incidencia.
+  // Si el manager cambia el depto en el picker, esta lista se actualiza sola.
+  const workersInSelectedDept = selectedDeptId
+    ? workers.filter((w) => w.departmentId === selectedDeptId)
+    : [];
 
   const handleSave = async () => {
     try {
@@ -146,7 +146,7 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
         </View>
 
         <View style={[styles.section, { paddingBottom: 120 }]}>
-          <Text style={styles.sectionTitle}>Asignar operario</Text>
+          <Text style={styles.sectionTitle}>Asignar operador</Text>
           <TouchableOpacity style={styles.select} onPress={() => setShowWorkerModal(true)}>
             <Text style={styles.selectText}>{selectedWorker?.fullName || 'Sin asignar'}</Text>
             <MaterialIcons name="keyboard-arrow-down" size={20} color={COLORS.onSurfaceVariant} />
@@ -181,6 +181,11 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
                   key={dept.id}
                   style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceVariant }}
                   onPress={() => {
+                    // Si cambio el depto, reseteo el operador (puede no pertenecer al nuevo)
+                    if (dept.id !== selectedDeptId) {
+                      const stillBelongs = workers.find(w => w.id === selectedWorkerId)?.departmentId === dept.id;
+                      if (!stillBelongs) setSelectedWorkerId(null);
+                    }
                     setSelectedDeptId(dept.id);
                     setShowDeptModal(false);
                   }}
@@ -198,8 +203,13 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
       {/* Worker Modal */}
       <Modal transparent visible={showWorkerModal} animationType="fade" onRequestClose={() => setShowWorkerModal(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} onPress={() => setShowWorkerModal(false)}>
-          <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: '50%' }}>
-            <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 16, color: COLORS.text }}>Asignar operario</Text>
+          <View style={{ backgroundColor: COLORS.surface, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: '60%' }}>
+            <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 4, color: COLORS.text }}>Asignar operador</Text>
+            <Text style={{ fontSize: 12, color: COLORS.onSurfaceVariant, marginBottom: 12 }}>
+              {selectedDept
+                ? `Operadores del departamento ${selectedDept.name}`
+                : 'Seleccioná primero un departamento'}
+            </Text>
             <ScrollView>
               <TouchableOpacity
                 style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceVariant }}
@@ -212,20 +222,29 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
                   Sin asignar
                 </Text>
               </TouchableOpacity>
-              {workers.map(worker => (
-                <TouchableOpacity
-                  key={worker.id}
-                  style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceVariant }}
-                  onPress={() => {
-                    setSelectedWorkerId(worker.id);
-                    setShowWorkerModal(false);
-                  }}
-                >
-                  <Text style={{ color: worker.id === selectedWorkerId ? COLORS.primary : COLORS.text, fontWeight: worker.id === selectedWorkerId ? '600' : '400' }}>
-                    {worker.fullName}
+              {workersInSelectedDept.length === 0 && selectedDeptId ? (
+                <View style={{ padding: 24, alignItems: 'center' }}>
+                  <Text style={{ color: COLORS.onSurfaceVariant, fontStyle: 'italic', textAlign: 'center' }}>
+                    Este departamento todavía no tiene operadores.{'\n'}
+                    Creá uno desde la pantalla "Equipo".
                   </Text>
-                </TouchableOpacity>
-              ))}
+                </View>
+              ) : (
+                workersInSelectedDept.map(worker => (
+                  <TouchableOpacity
+                    key={worker.id}
+                    style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceVariant }}
+                    onPress={() => {
+                      setSelectedWorkerId(worker.id);
+                      setShowWorkerModal(false);
+                    }}
+                  >
+                    <Text style={{ color: worker.id === selectedWorkerId ? COLORS.primary : COLORS.text, fontWeight: worker.id === selectedWorkerId ? '600' : '400' }}>
+                      {worker.fullName}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
             </ScrollView>
           </View>
         </Pressable>

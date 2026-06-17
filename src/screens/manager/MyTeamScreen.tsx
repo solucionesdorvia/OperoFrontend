@@ -32,7 +32,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
   const [refreshing, setRefreshing] = useState(false);
   const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
 
-  // Modal: crear operario
+  // Modal: crear operador
   const [workerModalDeptId, setWorkerModalDeptId] = useState<number | undefined>();
   const [newFullName, setNewFullName] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -99,7 +99,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
   const handleCreateWorker = async () => {
     if (!workerModalDeptId) return;
     if (!newFullName.trim()) {
-      showError('Falta el nombre', 'Ingresá el nombre completo del operario');
+      showError('Falta el nombre', 'Ingresá el nombre completo del operador');
       return;
     }
     if (!newEmail.trim()) {
@@ -120,11 +120,11 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
         departmentId: workerModalDeptId,
       });
       resetWorkerForm();
-      showSuccess('Operario creado', `Se agregó al equipo de ${dept?.name ?? 'sin nombre'}`);
+      showSuccess('Operador creado', `Se agregó al equipo de ${dept?.name ?? 'sin nombre'}`);
       await loadData(true);
     } catch (error: any) {
-      console.error('[MyTeamScreen] Error al crear operario:', error);
-      showError('Error al crear', error.message || 'No se pudo crear el operario');
+      console.error('[MyTeamScreen] Error al crear operador:', error);
+      showError('Error al crear', error.message || 'No se pudo crear el operador');
     } finally {
       setCreatingWorker(false);
     }
@@ -165,7 +165,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
         <View style={styles.header}>
           <Text style={styles.title}>Departamentos</Text>
           <Text style={styles.sub}>
-            {departments.length} departamentos · {workers.length} operarios
+            {departments.length} departamentos · {workers.length} operadores
           </Text>
         </View>
 
@@ -188,7 +188,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
                   </View>
 
                   {deptWorkers.length === 0 ? (
-                    <Text style={styles.deptEmpty}>Sin operarios todavía</Text>
+                    <Text style={styles.deptEmpty}>Sin operadores todavía</Text>
                   ) : (
                     <View style={styles.workerList}>
                       {deptWorkers.map((worker) => {
@@ -222,7 +222,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
                     activeOpacity={0.7}
                   >
                     <MaterialIcons name="person-add" size={16} color={COLORS.primary} />
-                    <Text style={styles.addWorkerText}>Nuevo operario en {dept.name}</Text>
+                    <Text style={styles.addWorkerText}>Nuevo operador en {dept.name}</Text>
                   </TouchableOpacity>
                 </View>
               );
@@ -241,7 +241,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
         <Text style={styles.fabText}>Nuevo depto</Text>
       </TouchableOpacity>
 
-      {/* Modal: crear operario (en depto específico) */}
+      {/* Modal: crear operador (en depto específico) */}
       <Modal
         visible={!!workerModalDeptId}
         transparent
@@ -259,7 +259,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
           />
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Nuevo operario</Text>
+              <Text style={styles.modalTitle}>Nuevo operador</Text>
               <TouchableOpacity onPress={() => !creatingWorker && resetWorkerForm()}>
                 <MaterialIcons name="close" size={22} color={COLORS.onSurface} />
               </TouchableOpacity>
@@ -320,7 +320,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
               {creatingWorker ? (
                 <ActivityIndicator color={COLORS.onPrimary} />
               ) : (
-                <Text style={styles.submitText}>Crear operario</Text>
+                <Text style={styles.submitText}>Crear operador</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -351,7 +351,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
               </TouchableOpacity>
             </View>
             <Text style={styles.modalSub}>
-              Va a aparecer en la lista de departamentos. Después podés agregar operarios desde
+              Va a aparecer en la lista de departamentos. Después podés agregar operadores desde
               su tarjeta.
             </Text>
 
