@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
@@ -65,7 +65,14 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
           <View style={styles.avatar}>
             <Text style={styles.avatarInitials}>{getInitials(user?.fullName)}</Text>
           </View>
-          <TouchableOpacity style={styles.changePhoto} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.changePhoto}
+            activeOpacity={0.7}
+            onPress={() => Alert.alert(
+              'Cambiar foto',
+              'La subida de foto de perfil está en desarrollo y estará disponible en una próxima versión.',
+            )}
+          >
             <MaterialIcons name="photo-camera" size={15} color={COLORS.onSurface} />
             <Text style={styles.changePhotoText}>Cambiar foto</Text>
           </TouchableOpacity>

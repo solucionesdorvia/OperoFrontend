@@ -1,17 +1,21 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import type { ManagerTabScreenProps } from '../../types/navigation';
 import { styles } from './ManagerProfileScreen.styles';
 import BaseProfileScreen from '../../components/BaseProfileScreen';
 
 type ManagerProfileScreenProps = ManagerTabScreenProps<'ManagerProfile'>;
 
+const comingSoon = (title: string) =>
+  Alert.alert(title, 'Esta función está en desarrollo y estará disponible en una próxima versión.');
+
 export default function ManagerProfileScreen({ navigation }: ManagerProfileScreenProps) {
   const menuItems = [
     { icon: 'edit' as const, label: 'Editar perfil', onPress: () => navigation.navigate('EditProfile' as never) },
     { icon: 'people' as const, label: 'Gestión de equipo', onPress: () => navigation.navigate('MyTeam') },
-    { icon: 'notifications-none' as const, label: 'Notificaciones', onPress: () => {} },
-    { icon: 'security' as const, label: 'Seguridad', onPress: () => {} },
-    { icon: 'help-outline' as const, label: 'Soporte', onPress: () => {} },
+    { icon: 'notifications-none' as const, label: 'Notificaciones', onPress: () => comingSoon('Notificaciones') },
+    { icon: 'security' as const, label: 'Seguridad', onPress: () => comingSoon('Seguridad') },
+    { icon: 'help-outline' as const, label: 'Soporte', onPress: () => comingSoon('Soporte') },
   ];
 
   const statsFilter = (incidents: any[], userId?: number) => {

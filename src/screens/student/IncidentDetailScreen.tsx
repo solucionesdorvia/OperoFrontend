@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable, ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable, ActivityIndicator, Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
@@ -187,7 +187,13 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
         </View>
 
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.btnSecondary}>
+          <TouchableOpacity
+            style={styles.btnSecondary}
+            onPress={() => Alert.alert(
+              'Mensaje',
+              'El chat con el responsable del reporte está en desarrollo y estará disponible en una próxima versión.',
+            )}
+          >
             <MaterialIcons name="chat-bubble-outline" size={16} color={COLORS.onSurface} />
             <Text style={styles.btnSecondaryText}>Mensaje</Text>
           </TouchableOpacity>
