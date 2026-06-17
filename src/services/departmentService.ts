@@ -1,15 +1,18 @@
 import { api, getErrorMessage } from './api';
 import { ENDPOINTS } from '../../constants/api';
 
+// Matchea DepartmentResponse del backend (no usa description).
 export interface DepartmentResponse {
   id: number;
   name: string;
-  description: string;
+  managerId?: number | null;
+  managerName?: string | null;
+  managerEmail?: string | null;
 }
 
 export interface DepartmentRequest {
   name: string;
-  description: string;
+  managerId?: number;
 }
 
 export const departmentService = {
@@ -44,14 +47,6 @@ export const departmentService = {
     try {
       const response = await api.put<DepartmentResponse>(`${ENDPOINTS.DEPARTMENTS}/${id}`, updates);
       return response.data;
-    } catch (error) {
-      throw new Error(getErrorMessage(error));
-    }
-  },
-
-  async delete(id: number): Promise<void> {
-    try {
-      await api.delete(`${ENDPOINTS.DEPARTMENTS}/${id}`);
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }

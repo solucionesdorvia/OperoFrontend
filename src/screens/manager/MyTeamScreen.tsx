@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl,
-  Modal, KeyboardAvoidingView, Platform,
+  Modal, KeyboardAvoidingView, Platform, StyleSheet,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,6 @@ import TopAppBar from '../../components/TopAppBar';
 import EmptyState from '../../components/EmptyState';
 import LoadingView from '../../components/LoadingView';
 import type { ManagerTabScreenProps } from '../../types/navigation';
-import { styles } from './MyTeamScreen.styles';
 import { userService } from '../../services/userService';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
 import { departmentService, DepartmentResponse } from '../../services/departmentService';
@@ -22,50 +21,42 @@ import { useErrorDialog } from '../../hooks/useErrorDialog';
 
 type MyTeamScreenProps = ManagerTabScreenProps<'ManagerMyTeam'>;
 
-export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
+export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenProps) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = 60 + insets.bottom;
 
+  const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
   const [workers, setWorkers] = useState<UserResponse[]>([]);
   const [incidents, setIncidents] = useState<IncidentResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [query, setQuery] = useState('');
   const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
 
-  // Modal de "crear operario"
-  const [myDepartmentId, setMyDepartmentId] = useState<number | undefined>();
-  const [myDepartmentName, setMyDepartmentName] = useState<string>('');
-  const [allDepartments, setAllDepartments] = useState<DepartmentResponse[]>([]);
-  const [selectedDeptId, setSelectedDeptId] = useState<number | undefined>();
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  // Modal: crear operario
+  const [workerModalDeptId, setWorkerModalDeptId] = useState<number | undefined>();
   const [newFullName, setNewFullName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [creating, setCreating] = useState(false);
+  const [creatingWorker, setCreatingWorker] = useState(false);
+
+  // Modal: crear departamento
+  const [deptModalOpen, setDeptModalOpen] = useState(false);
+  const [newDeptName, setNewDeptName] = useState('');
+  const [creatingDept, setCreatingDept] = useState(false);
 
   const loadData = async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      // Primero obtener el perfil del manager para saber su departamento
-      const myProfile = await userService.getMe();
-      setMyDepartmentId(myProfile.departmentId ?? undefined);
-      setMyDepartmentName(myProfile.departmentName ?? '');
-
-      const [usersData, incidentsData, deptsData] = await Promise.all([
-        myProfile.departmentId ? userService.getByDepartment(myProfile.departmentId) : Promise.resolve([]),
-        incidentService.getAll(),
+      const [deptsData, allUsers, incidentsData] = await Promise.all([
         departmentService.getAll(),
+        userService.getAll(),
+        incidentService.getAll(),
       ]);
-      setAllDepartments(deptsData);
 
-      // Default: pre-seleccionar el depto del manager en el form
-      setSelectedDeptId((prev) => prev ?? myProfile.departmentId ?? deptsData[0]?.id);
-
-      const workersOnly = usersData.filter(u => u.roleName === 'WORKER');
-      setWorkers(workersOnly);
+      setDepartments(deptsData);
+      setWorkers(allUsers.filter((u) => u.roleName === 'WORKER'));
       setIncidents(incidentsData);
     } catch (error: any) {
       console.error('[MyTeamScreen] Error al cargar datos:', error);
@@ -76,10 +67,6 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   useFocusEffect(
     React.useCallback(() => {
       loadData();
@@ -88,34 +75,29 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
 
   const getInitials = (name: string) => {
     const parts = name.split(' ');
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    }
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     return name.substring(0, 2).toUpperCase();
   };
 
   const getWorkerStats = (workerId: number) => {
-    const assigned = incidents.filter(inc => inc.workerId === workerId);
-    const active = assigned.filter(inc => inc.status !== 'FINISHED').length;
-    const done = assigned.filter(inc => inc.status === 'FINISHED').length;
-    return { active, done };
+    const assigned = incidents.filter((inc) => inc.workerId === workerId);
+    return {
+      active: assigned.filter((inc) => inc.status !== 'FINISHED').length,
+      done: assigned.filter((inc) => inc.status === 'FINISHED').length,
+    };
   };
 
-  const totalActive = workers.reduce((sum, w) => sum + getWorkerStats(w.id).active, 0);
-  const totalDone = workers.reduce((sum, w) => sum + getWorkerStats(w.id).done, 0);
-  const activeCount = workers.filter(w => getWorkerStats(w.id).active > 0).length;
+  const workersByDept = (deptId: number) => workers.filter((w) => w.departmentId === deptId);
 
-  const filtered = workers.filter((m) =>
-    m.fullName.toLowerCase().includes(query.toLowerCase())
-  );
-
-  const resetNewForm = () => {
+  const resetWorkerForm = () => {
     setNewFullName('');
     setNewEmail('');
     setNewPassword('');
+    setWorkerModalDeptId(undefined);
   };
 
   const handleCreateWorker = async () => {
+    if (!workerModalDeptId) return;
     if (!newFullName.trim()) {
       showError('Falta el nombre', 'Ingresá el nombre completo del operario');
       return;
@@ -128,226 +110,273 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
       showError('Contraseña corta', 'La contraseña debe tener al menos 8 caracteres');
       return;
     }
-    if (!selectedDeptId) {
-      showError('Sin departamento', 'Seleccioná un departamento para el operario');
-      return;
-    }
-    const targetDept = allDepartments.find((d) => d.id === selectedDeptId);
+    const dept = departments.find((d) => d.id === workerModalDeptId);
     try {
-      setCreating(true);
+      setCreatingWorker(true);
       await userService.createWorker({
         fullName: newFullName.trim(),
         emailUade: newEmail.trim(),
         password: newPassword,
-        departmentId: selectedDeptId,
+        departmentId: workerModalDeptId,
       });
-      setCreateModalOpen(false);
-      resetNewForm();
-      showSuccess(
-        'Operario creado',
-        `Se agregó al equipo de ${targetDept?.name ?? 'sin nombre'}`,
-      );
+      resetWorkerForm();
+      showSuccess('Operario creado', `Se agregó al equipo de ${dept?.name ?? 'sin nombre'}`);
       await loadData(true);
     } catch (error: any) {
       console.error('[MyTeamScreen] Error al crear operario:', error);
       showError('Error al crear', error.message || 'No se pudo crear el operario');
     } finally {
-      setCreating(false);
+      setCreatingWorker(false);
     }
   };
 
-  if (loading) return <LoadingView showLogo rightIcon="search" showAvatar />;
+  const handleCreateDept = async () => {
+    if (!newDeptName.trim()) {
+      showError('Falta el nombre', 'Ingresá el nombre del departamento');
+      return;
+    }
+    try {
+      setCreatingDept(true);
+      await departmentService.create({ name: newDeptName.trim() });
+      setDeptModalOpen(false);
+      setNewDeptName('');
+      showSuccess('Departamento creado', `Se agregó ${newDeptName.trim()}`);
+      await loadData(true);
+    } catch (error: any) {
+      console.error('[MyTeamScreen] Error al crear departamento:', error);
+      showError('Error al crear', error.message || 'No se pudo crear el departamento');
+    } finally {
+      setCreatingDept(false);
+    }
+  };
+
+  if (loading) return <LoadingView showLogo showAvatar />;
 
   return (
     <View style={styles.container}>
-      <TopAppBar showLogo rightIcon="search" showAvatar />
+      <TopAppBar showLogo showAvatar />
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarHeight + 40 }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarHeight + 80 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} />
         }
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Mi equipo</Text>
-          <Text style={styles.sub}>{workers.length} operarios</Text>
+          <Text style={styles.title}>Departamentos</Text>
+          <Text style={styles.sub}>
+            {departments.length} departamentos · {workers.length} operarios
+          </Text>
         </View>
 
-        <View style={styles.searchBox}>
-          <MaterialIcons name="search" size={18} color={COLORS.onSurfaceVariant} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar por nombre"
-            placeholderTextColor={COLORS.outline}
-            value={query}
-            onChangeText={setQuery}
-          />
-        </View>
-
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryNum}>{activeCount}</Text>
-            <Text style={styles.summaryLabel}>Activos</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryNum}>{totalActive}</Text>
-            <Text style={styles.summaryLabel}>Tareas abiertas</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryNum}>{totalDone}</Text>
-            <Text style={styles.summaryLabel}>Resueltas</Text>
-          </View>
-        </View>
-
-        {filtered.length === 0 ? (
-          <EmptyState message="No se encontraron operarios" />
+        {departments.length === 0 ? (
+          <EmptyState message="No hay departamentos. Creá el primero con el botón de abajo." />
         ) : (
-          <View style={styles.list}>
-            {filtered.map((worker) => {
-              const stats = getWorkerStats(worker.id);
-              const isActive = stats.active > 0;
+          <View style={styles.deptList}>
+            {departments.map((dept) => {
+              const deptWorkers = workersByDept(dept.id);
               return (
-                <TouchableOpacity key={worker.id} style={styles.card} activeOpacity={0.7}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{getInitials(worker.fullName)}</Text>
-                  </View>
-                  <View style={styles.info}>
-                    <View style={styles.infoTop}>
-                      <Text style={styles.name}>{worker.fullName}</Text>
-                      <View style={[styles.badge, !isActive && styles.badgeMuted]}>
-                        <View style={[styles.badgeDot, !isActive && styles.badgeDotMuted]} />
-                        <Text style={[styles.badgeText, !isActive && styles.badgeTextMuted]}>
-                          {isActive ? 'Activo' : 'Disponible'}
-                        </Text>
-                      </View>
+                <View key={dept.id} style={styles.deptCard}>
+                  <View style={styles.deptHeader}>
+                    <View style={styles.deptHeaderLeft}>
+                      <MaterialIcons name="domain" size={18} color={COLORS.primary} />
+                      <Text style={styles.deptName}>{dept.name}</Text>
                     </View>
-                    <Text style={styles.role}>{worker.emailUade}</Text>
-                    <View style={styles.statsRow}>
-                      <Text style={styles.stat}>
-                        <Text style={styles.statNum}>{stats.active}</Text> en curso
-                      </Text>
-                      <Text style={styles.sep}>·</Text>
-                      <Text style={styles.stat}>
-                        <Text style={styles.statNum}>{stats.done}</Text> completadas
-                      </Text>
+                    <View style={styles.countBadge}>
+                      <Text style={styles.countBadgeText}>{deptWorkers.length}</Text>
                     </View>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color={COLORS.outline} />
-                </TouchableOpacity>
+
+                  {deptWorkers.length === 0 ? (
+                    <Text style={styles.deptEmpty}>Sin operarios todavía</Text>
+                  ) : (
+                    <View style={styles.workerList}>
+                      {deptWorkers.map((worker) => {
+                        const stats = getWorkerStats(worker.id);
+                        return (
+                          <View key={worker.id} style={styles.workerRow}>
+                            <View style={styles.avatar}>
+                              <Text style={styles.avatarText}>{getInitials(worker.fullName)}</Text>
+                            </View>
+                            <View style={styles.workerInfo}>
+                              <Text style={styles.workerName} numberOfLines={1}>{worker.fullName}</Text>
+                              <Text style={styles.workerEmail} numberOfLines={1}>{worker.emailUade}</Text>
+                            </View>
+                            <View style={styles.workerStats}>
+                              <Text style={styles.workerStat}>
+                                <Text style={styles.workerStatNum}>{stats.active}</Text> en curso
+                              </Text>
+                              <Text style={styles.workerStat}>
+                                <Text style={styles.workerStatNum}>{stats.done}</Text> ok
+                              </Text>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+
+                  <TouchableOpacity
+                    style={styles.addWorkerBtn}
+                    onPress={() => setWorkerModalDeptId(dept.id)}
+                    activeOpacity={0.7}
+                  >
+                    <MaterialIcons name="person-add" size={16} color={COLORS.primary} />
+                    <Text style={styles.addWorkerText}>Nuevo operario en {dept.name}</Text>
+                  </TouchableOpacity>
+                </View>
               );
             })}
           </View>
         )}
       </ScrollView>
 
-      {/* FAB: crear operario */}
+      {/* FAB: crear departamento */}
       <TouchableOpacity
-        style={[teamExtra.fab, { bottom: tabBarHeight + 16 }]}
+        style={[styles.fab, { bottom: tabBarHeight + 16 }]}
         activeOpacity={0.85}
-        onPress={() => setCreateModalOpen(true)}
+        onPress={() => setDeptModalOpen(true)}
       >
-        <MaterialIcons name="person-add" size={20} color={COLORS.onPrimary} />
-        <Text style={teamExtra.fabText}>Nuevo operario</Text>
+        <MaterialIcons name="add" size={20} color={COLORS.onPrimary} />
+        <Text style={styles.fabText}>Nuevo depto</Text>
       </TouchableOpacity>
 
-      {/* Modal: form de creación */}
+      {/* Modal: crear operario (en depto específico) */}
       <Modal
-        visible={createModalOpen}
+        visible={!!workerModalDeptId}
         transparent
         animationType="slide"
-        onRequestClose={() => !creating && setCreateModalOpen(false)}
+        onRequestClose={() => !creatingWorker && resetWorkerForm()}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={teamExtra.modalBackdrop}
+          style={styles.modalBackdrop}
         >
           <TouchableOpacity
-            style={teamExtra.modalBackdropTouchable}
+            style={styles.modalBackdropTouchable}
             activeOpacity={1}
-            onPress={() => !creating && setCreateModalOpen(false)}
+            onPress={() => !creatingWorker && resetWorkerForm()}
           />
-          <View style={teamExtra.modalSheet}>
-            <View style={teamExtra.modalHeader}>
-              <Text style={teamExtra.modalTitle}>Nuevo operario</Text>
-              <TouchableOpacity onPress={() => !creating && setCreateModalOpen(false)}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Nuevo operario</Text>
+              <TouchableOpacity onPress={() => !creatingWorker && resetWorkerForm()}>
                 <MaterialIcons name="close" size={22} color={COLORS.onSurface} />
               </TouchableOpacity>
             </View>
-            <Text style={teamExtra.modalSub}>
-              El operario podrá iniciar sesión con su email y contraseña. Va a aparecer en
-              "Mi equipo" solo si lo asignás al departamento de este manager.
+            <Text style={styles.modalSub}>
+              Va al departamento{' '}
+              <Text style={styles.modalSubBold}>
+                {departments.find((d) => d.id === workerModalDeptId)?.name ?? '—'}
+              </Text>
+              . Podrá iniciar sesión con su email y contraseña.
             </Text>
 
-            <View style={teamExtra.field}>
-              <Text style={teamExtra.label}>Departamento</Text>
-              <View style={teamExtra.deptGrid}>
-                {allDepartments.map((d) => {
-                  const active = d.id === selectedDeptId;
-                  return (
-                    <TouchableOpacity
-                      key={d.id}
-                      style={[teamExtra.deptChip, active && teamExtra.deptChipActive]}
-                      onPress={() => !creating && setSelectedDeptId(d.id)}
-                      disabled={creating}
-                    >
-                      <Text style={[teamExtra.deptChipText, active && teamExtra.deptChipTextActive]}>
-                        {d.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-
-            <View style={teamExtra.field}>
-              <Text style={teamExtra.label}>Nombre completo</Text>
+            <View style={styles.field}>
+              <Text style={styles.label}>Nombre completo</Text>
               <TextInput
-                style={teamExtra.input}
+                style={styles.input}
                 placeholder="Juan Pérez"
                 placeholderTextColor={COLORS.outline}
                 value={newFullName}
                 onChangeText={setNewFullName}
-                editable={!creating}
+                editable={!creatingWorker}
               />
             </View>
 
-            <View style={teamExtra.field}>
-              <Text style={teamExtra.label}>Email institucional</Text>
+            <View style={styles.field}>
+              <Text style={styles.label}>Email institucional</Text>
               <TextInput
-                style={teamExtra.input}
+                style={styles.input}
                 placeholder="nombre@uade.edu.ar"
                 placeholderTextColor={COLORS.outline}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={newEmail}
                 onChangeText={setNewEmail}
-                editable={!creating}
+                editable={!creatingWorker}
               />
             </View>
 
-            <View style={teamExtra.field}>
-              <Text style={teamExtra.label}>Contraseña inicial</Text>
+            <View style={styles.field}>
+              <Text style={styles.label}>Contraseña inicial</Text>
               <TextInput
-                style={teamExtra.input}
+                style={styles.input}
                 placeholder="Mínimo 8 caracteres"
                 placeholderTextColor={COLORS.outline}
                 secureTextEntry
                 value={newPassword}
                 onChangeText={setNewPassword}
-                editable={!creating}
+                editable={!creatingWorker}
               />
             </View>
 
             <TouchableOpacity
-              style={[teamExtra.submitBtn, creating && { opacity: 0.6 }]}
+              style={[styles.submitBtn, creatingWorker && { opacity: 0.6 }]}
               onPress={handleCreateWorker}
-              disabled={creating}
+              disabled={creatingWorker}
               activeOpacity={0.85}
             >
-              {creating ? (
+              {creatingWorker ? (
                 <ActivityIndicator color={COLORS.onPrimary} />
               ) : (
-                <Text style={teamExtra.submitText}>Crear operario</Text>
+                <Text style={styles.submitText}>Crear operario</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Modal: crear departamento */}
+      <Modal
+        visible={deptModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => !creatingDept && setDeptModalOpen(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalBackdrop}
+        >
+          <TouchableOpacity
+            style={styles.modalBackdropTouchable}
+            activeOpacity={1}
+            onPress={() => !creatingDept && setDeptModalOpen(false)}
+          />
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Nuevo departamento</Text>
+              <TouchableOpacity onPress={() => !creatingDept && setDeptModalOpen(false)}>
+                <MaterialIcons name="close" size={22} color={COLORS.onSurface} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSub}>
+              Va a aparecer en la lista de departamentos. Después podés agregar operarios desde
+              su tarjeta.
+            </Text>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Nombre</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ej. Mantenimiento, Redes..."
+                placeholderTextColor={COLORS.outline}
+                value={newDeptName}
+                onChangeText={setNewDeptName}
+                editable={!creatingDept}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.submitBtn, creatingDept && { opacity: 0.6 }]}
+              onPress={handleCreateDept}
+              disabled={creatingDept}
+              activeOpacity={0.85}
+            >
+              {creatingDept ? (
+                <ActivityIndicator color={COLORS.onPrimary} />
+              ) : (
+                <Text style={styles.submitText}>Crear departamento</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -366,11 +395,133 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
   );
 }
 
-import { StyleSheet } from 'react-native';
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background },
+  scroll: { padding: 20, gap: 20 },
 
-// Estilos locales para el FAB y el modal de creación de operarios.
-// Evitamos tocar MyTeamScreen.styles.ts para no chocar con tobías.
-const teamExtra = StyleSheet.create({
+  header: { gap: 4 },
+  title: {
+    fontSize: 22,
+    fontFamily: FONTS.family.display,
+    color: COLORS.onSurface,
+    letterSpacing: -0.3,
+  },
+  sub: {
+    fontSize: 12,
+    fontFamily: FONTS.family.mono,
+    color: COLORS.onSurfaceVariant,
+    letterSpacing: 0.2,
+  },
+
+  deptList: { gap: 14 },
+  deptCard: {
+    backgroundColor: COLORS.surfaceContainerLow,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+    overflow: 'hidden',
+  },
+  deptHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.outlineVariant,
+  },
+  deptHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  deptName: {
+    fontSize: 14,
+    fontFamily: FONTS.family.bodySemiBold,
+    color: COLORS.onSurface,
+    letterSpacing: -0.2,
+  },
+  countBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: COLORS.primaryContainer,
+  },
+  countBadgeText: {
+    fontSize: 11,
+    fontFamily: FONTS.family.monoBold,
+    color: COLORS.primary,
+    letterSpacing: 0.3,
+  },
+
+  deptEmpty: {
+    fontSize: 12,
+    fontFamily: FONTS.family.mono,
+    color: COLORS.onSurfaceVariant,
+    fontStyle: 'italic',
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+    textAlign: 'center',
+  },
+  workerList: { paddingVertical: 6 },
+  workerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: COLORS.primaryContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 10,
+    fontFamily: FONTS.family.monoBold,
+    color: COLORS.primary,
+    letterSpacing: 0.5,
+  },
+  workerInfo: { flex: 1, gap: 2 },
+  workerName: {
+    fontSize: 13,
+    fontFamily: FONTS.family.bodyMedium,
+    color: COLORS.onSurface,
+  },
+  workerEmail: {
+    fontSize: 11,
+    fontFamily: FONTS.family.mono,
+    color: COLORS.onSurfaceVariant,
+  },
+  workerStats: { alignItems: 'flex-end', gap: 2 },
+  workerStat: {
+    fontSize: 10,
+    fontFamily: FONTS.family.mono,
+    color: COLORS.onSurfaceVariant,
+    letterSpacing: 0.2,
+  },
+  workerStatNum: {
+    fontFamily: FONTS.family.monoBold,
+    color: COLORS.onSurface,
+  },
+
+  addWorkerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.outlineVariant,
+    backgroundColor: COLORS.surfaceContainer,
+  },
+  addWorkerText: {
+    fontSize: 11,
+    fontFamily: FONTS.family.monoSemiBold,
+    color: COLORS.primary,
+    textTransform: 'uppercase',
+    letterSpacing: FONTS.tracking.caps,
+  },
+
   fab: {
     position: 'absolute',
     right: 20,
@@ -394,14 +545,13 @@ const teamExtra = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: FONTS.tracking.caps,
   },
+
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
-  modalBackdropTouchable: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  modalBackdropTouchable: { ...StyleSheet.absoluteFillObject },
   modalSheet: {
     backgroundColor: COLORS.background,
     borderTopLeftRadius: 20,
@@ -425,6 +575,10 @@ const teamExtra = StyleSheet.create({
     color: COLORS.onSurfaceVariant,
     lineHeight: 18,
   },
+  modalSubBold: {
+    fontFamily: FONTS.family.bodySemiBold,
+    color: COLORS.onSurface,
+  },
   field: { gap: 6 },
   label: {
     fontSize: 11,
@@ -442,32 +596,6 @@ const teamExtra = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
     color: COLORS.onSurface,
-  },
-  deptGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  deptChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
-    backgroundColor: COLORS.surfaceContainerLow,
-  },
-  deptChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  deptChipText: {
-    fontSize: 12,
-    fontFamily: FONTS.family.bodyMedium,
-    color: COLORS.onSurface,
-  },
-  deptChipTextActive: {
-    color: COLORS.onPrimary,
-    fontFamily: FONTS.family.bodySemiBold,
   },
   submitBtn: {
     backgroundColor: COLORS.primary,
