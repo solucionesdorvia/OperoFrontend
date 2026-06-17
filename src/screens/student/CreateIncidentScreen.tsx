@@ -184,16 +184,10 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       return;
     }
 
-    if (departments.length === 0) {
-      showError('Error', 'No hay departamentos disponibles');
-      return;
-    }
-
-    const selectedDepartment = departments[selectedDept];
-    if (!selectedDepartment || !selectedDepartment.id) {
-      showError('Error', 'Por favor selecciona un departamento válido');
-      return;
-    }
+    // El alumno NO elige departamento — siempre se asigna al primero (Mantenimiento
+    // por convención del seed) y el manager lo reasigna después con PUT /department.
+    // Esto simplifica el form para el alumno y centraliza la decisión en el manager.
+    const defaultDepartment = departments[0] ?? { id: 1, name: 'Mantenimiento' };
 
     try {
       setSubmitting(true);
@@ -201,7 +195,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       const baseData = {
         title: title.trim(),
         description: description.trim(),
-        departmentId: selectedDepartment.id,
+        departmentId: defaultDepartment.id,
         locationDescription: location.trim() || undefined,
       };
 
@@ -210,7 +204,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       if (!isOnline) {
         await offlineQueueService.enqueue({
           ...baseData,
-          departmentName: selectedDepartment.name,
+          departmentName: defaultDepartment.name,
           imageUris: attachedImages,
         });
         showSuccess(
@@ -335,25 +329,6 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
             ) : null}
           </View>
         ) : null}
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Departamento</Text>
-          {loadingDepts ? (
-            <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 16 }} />
-          ) : (
-            <View style={styles.deptGrid}>
-              {departments.map((d, i) => (
-                <TouchableOpacity
-                  key={d.id}
-                  style={[styles.deptBtn, selectedDept === i && styles.deptBtnActive]}
-                  onPress={() => setSelectedDept(i)}
-                >
-                  <Text style={[styles.deptText, selectedDept === i && styles.deptTextActive]}>{d.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Descripción</Text>
