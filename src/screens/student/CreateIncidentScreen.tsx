@@ -189,6 +189,35 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
     // Esto simplifica el form para el alumno y centraliza la decisión en el manager.
     const defaultDepartment = departments[0] ?? { id: 1, name: 'Mantenimiento' };
 
+    // Helper: detecta si un error es por falta de red. Lo usamos para fallback
+    // al modo offline cuando isOnline da true (default inicial mientras NetInfo
+    // sincroniza) pero el fetch real falla con Network Error.
+    const isNetworkError = (err: any) => {
+      const msg = (err?.message || '').toLowerCase();
+      return (
+        msg.includes('no se pudo conectar') ||
+        msg.includes('network error') ||
+        msg.includes('tardó demasiado') ||
+        err?.code === 'ECONNABORTED' ||
+        err?.code === 'ERR_NETWORK'
+      );
+    };
+
+    const queueOfflineAndExit = async (baseData: any) => {
+      await offlineQueueService.enqueue({
+        ...baseData,
+        departmentName: defaultDepartment.name,
+        imageUris: attachedImages,
+      });
+      showSuccess(
+        'Guardado sin conexión',
+        'El reporte quedó guardado y se subirá cuando recuperes la conexión.',
+      );
+      setTimeout(() => {
+        navigation.navigate('StudentTabs', { screen: 'StudentHome' });
+      }, 1000);
+    };
+
     try {
       setSubmitting(true);
 
@@ -199,48 +228,38 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
         locationDescription: location.trim() || undefined,
       };
 
-      // Sin conexión: guardamos el reporte (con las imágenes locales) en la
-      // cola y avisamos. OfflineSyncManager lo subirá al reconectar.
+      // Caso 1 — NetInfo ya nos confirmó que estamos offline: directo al queue.
       if (!isOnline) {
-        await offlineQueueService.enqueue({
-          ...baseData,
-          departmentName: defaultDepartment.name,
-          imageUris: attachedImages,
-        });
-        showSuccess(
-          'Guardado sin conexión',
-          'El reporte quedó guardado y se subirá cuando recuperes la conexión.',
-        );
-        setTimeout(() => {
-          navigation.navigate('StudentTabs', { screen: 'StudentHome' });
-        }, 1000);
+        await queueOfflineAndExit(baseData);
         return;
       }
 
-      // Con conexión: subimos la imagen (si hay) y creamos el incidente.
-      let photoUrl: string | undefined;
-      if (attachedImages.length > 0) {
-        try {
-          console.log('[CreateIncidentScreen] Subiendo imagen, URI:', attachedImages[0]);
-          console.log('[CreateIncidentScreen] Platform:', Platform.OS);
+      // Caso 2 — NetInfo dice online (puede ser el estado por default antes de
+      // que sincronice). Intentamos el upload normal. Si falla por red,
+      // hacemos fallback transparente al queue sin mostrar el error.
+      try {
+        let photoUrl: string | undefined;
+        if (attachedImages.length > 0) {
           photoUrl = await fileService.uploadImage(attachedImages[0]);
-          console.log('[CreateIncidentScreen] Imagen subida correctamente:', photoUrl);
-        } catch (error: any) {
-          console.error('[CreateIncidentScreen] Error al subir imagen:', error);
-          console.error('[CreateIncidentScreen] Error completo:', JSON.stringify(error));
-          showError('Error', `No se pudo subir la imagen: ${error.message || 'Error desconocido'}`);
+        }
+
+        await incidentService.create({ ...baseData, photoUrl });
+
+        showSuccess('Éxito', 'Incidencia creada correctamente');
+        setTimeout(() => {
+          navigation.navigate('StudentTabs', { screen: 'StudentHome' });
+        }, 1000);
+      } catch (uploadErr: any) {
+        if (isNetworkError(uploadErr)) {
+          // Era falsa "conexión": encolamos en silencio. Lo subirá el
+          // OfflineSyncManager cuando NetInfo reporte online de verdad.
+          console.log('[CreateIncidentScreen] Sin red real, fallback a queue offline:', uploadErr.message);
+          await queueOfflineAndExit(baseData);
           return;
         }
+        // Otros errores (validación, 4xx, 5xx) sí los reportamos.
+        throw uploadErr;
       }
-
-      await incidentService.create({ ...baseData, photoUrl });
-
-      showSuccess('Éxito', 'Incidencia creada correctamente');
-
-      // Ir al inicio y refrescar
-      setTimeout(() => {
-        navigation.navigate('StudentTabs', { screen: 'StudentHome' });
-      }, 1000);
     } catch (error: any) {
       console.error('[CreateIncidentScreen] Error al crear incidencia:', error);
       showError('Error', error.message || 'No se pudo crear la incidencia');
