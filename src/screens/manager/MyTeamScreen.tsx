@@ -15,6 +15,7 @@ import type { ManagerTabScreenProps } from '../../types/navigation';
 import { styles } from './MyTeamScreen.styles';
 import { userService } from '../../services/userService';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
+import { departmentService, DepartmentResponse } from '../../services/departmentService';
 import { UserResponse } from '../../services/authService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
@@ -35,6 +36,8 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
   // Modal de "crear operario"
   const [myDepartmentId, setMyDepartmentId] = useState<number | undefined>();
   const [myDepartmentName, setMyDepartmentName] = useState<string>('');
+  const [allDepartments, setAllDepartments] = useState<DepartmentResponse[]>([]);
+  const [selectedDeptId, setSelectedDeptId] = useState<number | undefined>();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newFullName, setNewFullName] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -51,10 +54,15 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
       setMyDepartmentId(myProfile.departmentId ?? undefined);
       setMyDepartmentName(myProfile.departmentName ?? '');
 
-      const [usersData, incidentsData] = await Promise.all([
+      const [usersData, incidentsData, deptsData] = await Promise.all([
         myProfile.departmentId ? userService.getByDepartment(myProfile.departmentId) : Promise.resolve([]),
         incidentService.getAll(),
+        departmentService.getAll(),
       ]);
+      setAllDepartments(deptsData);
+
+      // Default: pre-seleccionar el depto del manager en el form
+      setSelectedDeptId((prev) => prev ?? myProfile.departmentId ?? deptsData[0]?.id);
 
       const workersOnly = usersData.filter(u => u.roleName === 'WORKER');
       setWorkers(workersOnly);
@@ -120,21 +128,25 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
       showError('Contraseña corta', 'La contraseña debe tener al menos 8 caracteres');
       return;
     }
-    if (!myDepartmentId) {
-      showError('Sin departamento', 'No se pudo determinar tu departamento');
+    if (!selectedDeptId) {
+      showError('Sin departamento', 'Seleccioná un departamento para el operario');
       return;
     }
+    const targetDept = allDepartments.find((d) => d.id === selectedDeptId);
     try {
       setCreating(true);
       await userService.createWorker({
         fullName: newFullName.trim(),
         emailUade: newEmail.trim(),
         password: newPassword,
-        departmentId: myDepartmentId,
+        departmentId: selectedDeptId,
       });
       setCreateModalOpen(false);
       resetNewForm();
-      showSuccess('Operario creado', `Se agregó al equipo de ${myDepartmentName}`);
+      showSuccess(
+        'Operario creado',
+        `Se agregó al equipo de ${targetDept?.name ?? 'sin nombre'}`,
+      );
       await loadData(true);
     } catch (error: any) {
       console.error('[MyTeamScreen] Error al crear operario:', error);
@@ -262,9 +274,30 @@ export default function MyTeamScreen({ navigation }: MyTeamScreenProps) {
               </TouchableOpacity>
             </View>
             <Text style={teamExtra.modalSub}>
-              Va al departamento {myDepartmentName || '—'}. El operario podrá iniciar sesión
-              con su email y contraseña.
+              El operario podrá iniciar sesión con su email y contraseña. Va a aparecer en
+              "Mi equipo" solo si lo asignás al departamento de este manager.
             </Text>
+
+            <View style={teamExtra.field}>
+              <Text style={teamExtra.label}>Departamento</Text>
+              <View style={teamExtra.deptGrid}>
+                {allDepartments.map((d) => {
+                  const active = d.id === selectedDeptId;
+                  return (
+                    <TouchableOpacity
+                      key={d.id}
+                      style={[teamExtra.deptChip, active && teamExtra.deptChipActive]}
+                      onPress={() => !creating && setSelectedDeptId(d.id)}
+                      disabled={creating}
+                    >
+                      <Text style={[teamExtra.deptChipText, active && teamExtra.deptChipTextActive]}>
+                        {d.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
 
             <View style={teamExtra.field}>
               <Text style={teamExtra.label}>Nombre completo</Text>
@@ -409,6 +442,32 @@ const teamExtra = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 14,
     color: COLORS.onSurface,
+  },
+  deptGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  deptChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+    backgroundColor: COLORS.surfaceContainerLow,
+  },
+  deptChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  deptChipText: {
+    fontSize: 12,
+    fontFamily: FONTS.family.bodyMedium,
+    color: COLORS.onSurface,
+  },
+  deptChipTextActive: {
+    color: COLORS.onPrimary,
+    fontFamily: FONTS.family.bodySemiBold,
   },
   submitBtn: {
     backgroundColor: COLORS.primary,
