@@ -33,7 +33,18 @@ export default {
     },
     plugins: [
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          // En SDK 50+ el splash nativo se configura desde aca, no desde el
+          // campo `splash:` top-level (deprecado). Sin esta config el plugin
+          // usaba el splash generico de Expo.
+          image: "./assets/operologo.png",
+          imageWidth: 160,
+          backgroundColor: "#FFFFFF",
+          resizeMode: "contain"
+        }
+      ],
       "expo-camera",
       [
         "expo-image-picker",
