@@ -16,6 +16,10 @@ import { useNetwork } from '../hooks/useNetwork';
 import { offlineQueueService } from '../services/offlineQueueService';
 import { styles } from './OfflineSyncManager.styles';
 
+// Cuánto tiempo dejamos visible el cartel de "sin conexión" antes de auto-ocultarlo
+// para no tapar el botón de Guardar/FAB de las pantallas de abajo.
+const BANNER_AUTOHIDE_MS = 4000;
+
 export default function OfflineSyncManager() {
   const { isOnline } = useNetwork();
   const wasOnline = useRef(isOnline);
@@ -24,6 +28,7 @@ export default function OfflineSyncManager() {
   const [promptVisible, setPromptVisible] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [result, setResult] = useState<{ uploaded: number; failed: number; lastError?: string } | null>(null);
+  const [bannerVisible, setBannerVisible] = useState(false);
 
   const refreshPending = useCallback(async () => {
     const count = await offlineQueueService.count();
@@ -57,6 +62,18 @@ export default function OfflineSyncManager() {
     if (reconnected) maybePrompt();
   }, [isOnline, maybePrompt]);
 
+  // Banner: mostrar al pasar a offline, auto-ocultar a los 4s para no tapar
+  // el botón de guardar. Se puede dismissear manualmente con la X.
+  useEffect(() => {
+    if (!isOnline) {
+      setBannerVisible(true);
+      const timer = setTimeout(() => setBannerVisible(false), BANNER_AUTOHIDE_MS);
+      return () => clearTimeout(timer);
+    } else {
+      setBannerVisible(false);
+    }
+  }, [isOnline]);
+
   const handleUpload = async () => {
     setSyncing(true);
     try {
@@ -73,13 +90,16 @@ export default function OfflineSyncManager() {
 
   return (
     <>
-      {!isOnline ? (
-        <View style={styles.banner} pointerEvents="none">
+      {!isOnline && bannerVisible ? (
+        <View style={styles.banner}>
           <MaterialIcons name="cloud-off" size={16} color={COLORS.onPrimary} />
           <Text style={styles.bannerText}>
             Sin conexión
-            {pending > 0 ? ` · ${pending} reporte(s) en cola` : ' · los reportes se guardan en el dispositivo'}
+            {pending > 0 ? ` · ${pending} reporte(s) en cola` : ' · los reportes se guardan acá'}
           </Text>
+          <TouchableOpacity onPress={() => setBannerVisible(false)} hitSlop={12} style={{ marginLeft: 6 }}>
+            <MaterialIcons name="close" size={16} color={COLORS.onPrimary} />
+          </TouchableOpacity>
         </View>
       ) : null}
 

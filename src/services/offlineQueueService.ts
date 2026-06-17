@@ -41,19 +41,15 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 const notify = () => listeners.forEach((l) => l());
 
-// Genera un ID local único para incidencias pendientes offline usando crypto.
-// Usamos una combinación de timestamp y valores aleatorios criptográficamente seguros
-// para evitar colisiones en IDs locales temporales.
+// Genera un ID local único para incidencias pendientes offline.
+// No usamos crypto.getRandomValues porque Hermes en React Native no expone el
+// objeto crypto globalmente y rompe el bundle con "property crypto doesn't exist".
+// El ID es solo interno para la cola; no necesita ser seguro criptográficamente.
 const genId = (): string => {
   const timestamp = Date.now().toString(36);
-  // Generar 8 caracteres aleatorios seguros con crypto.getRandomValues
-  const randomBytes = new Uint8Array(6);
-  crypto.getRandomValues(randomBytes);
-  const randomPart = Array.from(randomBytes)
-    .map((b) => b.toString(36))
-    .join('')
-    .slice(0, 8);
-  return `pend_${timestamp}_${randomPart}`;
+  const rand1 = Math.random().toString(36).slice(2, 8);
+  const rand2 = Math.random().toString(36).slice(2, 6);
+  return `pend_${timestamp}_${rand1}${rand2}`;
 };
 
 // Copia las imágenes elegidas a un directorio persistente de la app, para que
