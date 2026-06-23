@@ -14,8 +14,6 @@ export default function MaintenanceProfileScreen({ navigation }: MaintenanceProf
     { icon: 'edit' as const, label: 'Editar perfil', onPress: () => navigation.navigate('EditProfile' as never) },
     { icon: 'history' as const, label: 'Ver historial', onPress: () => navigation.navigate('MaintenanceHistory') },
     { icon: 'notifications-none' as const, label: 'Notificaciones', onPress: () => comingSoon('Notificaciones') },
-    { icon: 'security' as const, label: 'Seguridad', onPress: () => comingSoon('Seguridad') },
-    { icon: 'help-outline' as const, label: 'Soporte', onPress: () => comingSoon('Soporte') },
   ];
 
   const statsFilter = (incidents: any[], userId?: number) => {

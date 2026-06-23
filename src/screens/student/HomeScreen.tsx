@@ -79,9 +79,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     <View style={styles.container}>
       <TopAppBar
         showLogo
-        rightActions={[
-          { icon: 'notifications', onPress: () => navigation.navigate('StudentNotifications') },
-        ]}
         showAvatar
         onAvatarPress={() => navigation.navigate('StudentProfile')}
       />

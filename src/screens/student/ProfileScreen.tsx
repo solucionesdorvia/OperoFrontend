@@ -12,9 +12,6 @@ const comingSoon = (title: string) =>
 export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const menuItems = [
     { icon: 'edit' as const, label: 'Editar perfil', onPress: () => navigation.navigate('EditProfile') },
-    { icon: 'notifications-none' as const, label: 'Notificaciones', onPress: () => comingSoon('Notificaciones') },
-    { icon: 'security' as const, label: 'Seguridad', onPress: () => comingSoon('Seguridad') },
-    { icon: 'help-outline' as const, label: 'Soporte', onPress: () => comingSoon('Soporte') },
   ];
 
   const statsFilter = (incidents: any[], userId?: number) => {

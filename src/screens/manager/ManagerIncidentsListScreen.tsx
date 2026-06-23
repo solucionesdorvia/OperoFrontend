@@ -94,11 +94,11 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
   }, [active]);
 
 
-  if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile')} />;
+  if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile' as any)} />;
 
   return (
     <View style={styles.container}>
-      <TopAppBar showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile')} />
+      <TopAppBar showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile' as any)} />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: tabBarHeight + 40 }]}
         showsVerticalScrollIndicator={false}
