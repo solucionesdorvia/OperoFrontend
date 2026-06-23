@@ -16,7 +16,7 @@ import { useErrorDialog } from '../../hooks/useErrorDialog';
 type EditProfileScreenProps = RootStackScreenProps<'EditProfile'>;
 
 export default function EditProfileScreen({ navigation }: EditProfileScreenProps) {
-  const { user, updateUser } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   const [name, setName] = useState(user?.fullName || '');
   const [saving, setSaving] = useState(false);
@@ -39,8 +39,8 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
 
     try {
       setSaving(true);
-      const updated = await userService.updateMe({ fullName: name.trim() });
-      updateUser(updated);
+      await userService.updateMe({ fullName: name.trim() });
+      await refreshUser();
       showSuccess('Éxito', 'Perfil actualizado correctamente');
       setTimeout(() => {
         navigation.goBack();
