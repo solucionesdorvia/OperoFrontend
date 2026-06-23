@@ -185,8 +185,10 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       }
 
       showError(errorTitle, errorMessage);
+      console.log('[RegisterScreen] showError called, dialogState should be updated');
     } finally {
       setIsLoading(false);
+      console.log('[RegisterScreen] setIsLoading(false) called');
     }
   };
 

@@ -27,14 +27,16 @@ export function useErrorDialog() {
   const showDialog = useCallback((params: ShowDialogParams) => {
     console.log('[useErrorDialog] showDialog called:', params);
     Keyboard.dismiss(); // Cerrar keyboard antes de mostrar dialog
-    setDialogState({
+    const newState = {
       visible: true,
       type: params.type || 'error',
       title: params.title,
       message: params.message,
       buttons: params.buttons || [{ text: 'OK', style: 'default' }],
-    });
-    console.log('[useErrorDialog] dialogState updated to visible=true');
+    };
+    console.log('[useErrorDialog] About to call setDialogState with:', newState);
+    setDialogState(newState);
+    console.log('[useErrorDialog] setDialogState called');
   }, []);
 
   const hideDialog = useCallback(() => {
