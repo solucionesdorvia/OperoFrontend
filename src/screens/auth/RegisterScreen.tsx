@@ -50,13 +50,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   }, []);
 
   /**
-   * Debug: observar cambios en dialogState
-   */
-  useEffect(() => {
-    console.log('[RegisterScreen] dialogState changed - visible:', dialogState.visible, 'title:', dialogState.title);
-  }, [dialogState]);
-
-  /**
    * Redirigir si ya está autenticado
    */
   useEffect(() => {
@@ -85,9 +78,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       setIsDepartmentsLoading(false);
     }
   };
-
-  // Debug: verificar re-renders
-  console.log('[RegisterScreen] Render - dialogState.visible:', dialogState.visible, 'isLoading:', isLoading);
 
   /**
    * Navegar según el rol del usuario
@@ -185,10 +175,8 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       }
 
       showError(errorTitle, errorMessage);
-      console.log('[RegisterScreen] showError called, dialogState should be updated');
     } finally {
       setIsLoading(false);
-      console.log('[RegisterScreen] setIsLoading(false) called');
     }
   };
 
@@ -357,9 +345,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         </View>
 
       </ScrollView>
-
-      {/* Debug: verificar estado del dialog */}
-      {console.log('[RegisterScreen] Rendering ErrorDialog with visible=', dialogState.visible, 'title=', dialogState.title)}
 
       <ErrorDialog
         visible={dialogState.visible}
