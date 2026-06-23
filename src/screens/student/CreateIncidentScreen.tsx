@@ -32,6 +32,7 @@ type CreateIncidentScreenProps = RootStackScreenProps<'CreateIncident'>;
 export default function CreateIncidentScreen({ navigation, route }: CreateIncidentScreenProps) {
   const prefill: Prefill | undefined = route?.params?.prefill;
   const isEdit = route?.params?.mode === 'edit';
+  const incident = route?.params?.incident;
 
   const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
   const { isOnline } = useNetwork();
@@ -40,11 +41,11 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const [title, setTitle] = useState('');
-  const [location, setLocation] = useState(prefill?.location ?? '');
-  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState(isEdit && incident ? (incident.title || '') : '');
+  const [location, setLocation] = useState(isEdit && incident ? (incident.locationDescription || '') : (prefill?.location ?? ''));
+  const [description, setDescription] = useState(isEdit && incident ? (incident.description || '') : '');
   const [selectedDept, setSelectedDept] = useState(0);
-  const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [attachedImages, setAttachedImages] = useState<string[]>(isEdit && incident?.photoUrl ? [incident.photoUrl] : []);
 
   useEffect(() => {
     loadDepartments();
@@ -181,6 +182,27 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
 
     if (!description.trim()) {
       showError('Error', 'Por favor ingresa una descripción');
+      return;
+    }
+
+    // Si estamos en modo edición, solo actualizamos título y descripción
+    if (isEdit && incident) {
+      try {
+        setSubmitting(true);
+        await incidentService.update(incident.id, {
+          title: title.trim(),
+          description: description.trim(),
+        });
+        showSuccess('Éxito', 'Incidencia actualizada correctamente');
+        setTimeout(() => {
+          navigation.goBack();
+        }, 1000);
+      } catch (error: any) {
+        console.error('[CreateIncidentScreen] Error al actualizar incidencia:', error);
+        showError('Error', error.message || 'No se pudo actualizar la incidencia');
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
 

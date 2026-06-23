@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable, ActivityIndicator, Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../../../constants/colors';
 import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
@@ -106,6 +107,16 @@ export default function IncidentDetailScreen({ navigation, route }: IncidentDeta
       setRefreshing(false);
     }
   };
+
+  // Recargar la incidencia cuando la pantalla vuelve a estar enfocada
+  // (ej: después de editar y volver)
+  useFocusEffect(
+    useCallback(() => {
+      if (incident?.id) {
+        handleRefresh();
+      }
+    }, [incident?.id])
+  );
 
   return (
     <View style={styles.container}>

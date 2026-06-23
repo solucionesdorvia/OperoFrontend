@@ -7,25 +7,12 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
+import type { IncidentResponse } from '../services/incidentService';
 
 // ===== Params de pantallas que reciben datos =====
 
-// Placeholders mientras se cierra el schema con el backend Spring.
-// Los campos son opcionales y aceptan null para reflejar la mock-data
-// actual y los datos parciales que pueda devolver la API.
-// Cuando el backend confirme el contrato, ajustar tipos y opcionalidad.
-export interface Incident {
-  id?: number | string | null;
-  code?: string | null;
-  title?: string | null;
-  description?: string | null;
-  location?: string | null;
-  status?: string | null;
-  priority?: string | null;
-  time?: string | null;
-  assignee?: string | null;
-  sub?: string | null;
-}
+// Usamos IncidentResponse del servicio como tipo estándar para incidencias
+export type Incident = IncidentResponse;
 
 export interface Task {
   id?: number | string | null;
