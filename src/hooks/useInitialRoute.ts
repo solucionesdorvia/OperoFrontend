@@ -35,8 +35,11 @@ export function useInitialRoute(): RouteState {
   let routeName: RouteState['routeName'] = 'Onboarding';
 
   if (isReady) {
+    console.log('[useInitialRoute] Determinando ruta:', { isAuthenticated, hasUser: !!user, userRole: user?.roleName });
+
     if (isAuthenticated && user) {
       // Usuario autenticado → ir a tabs según rol
+      console.log('[useInitialRoute] Usuario autenticado, rol:', user.roleName);
       switch (user.roleName) {
         case 'USER':
           routeName = 'StudentTabs';
@@ -51,14 +54,18 @@ export function useInitialRoute(): RouteState {
           console.warn('[useInitialRoute] Rol desconocido:', user.roleName);
           routeName = 'Login';
       }
+      console.log('[useInitialRoute] Ruta determinada:', routeName);
     } else if (hasSeenOnboarding) {
       // No autenticado pero ya vio onboarding → Login
+      console.log('[useInitialRoute] No autenticado, redirigiendo a Login');
       routeName = 'Login';
     } else {
       // No autenticado y nunca vio onboarding → Onboarding
+      console.log('[useInitialRoute] No autenticado, redirigiendo a Onboarding');
       routeName = 'Onboarding';
     }
   }
 
+  console.log('[useInitialRoute] Ruta final:', routeName, 'isReady:', isReady);
   return { routeName, isReady };
 }

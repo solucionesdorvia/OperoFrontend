@@ -26,6 +26,8 @@ const roles: Role[] = [
 ];
 
 export default function RegisterScreen({ navigation }: RegisterScreenProps) {
+  console.log('[RegisterScreen] RENDER - componente renderizando');
+
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -46,6 +48,14 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   });
 
   const { register, isAuthenticated, user } = useAuth();
+
+  console.log('[RegisterScreen] Estado actual:', {
+    isAuthenticated,
+    hasUser: !!user,
+    registerSuccess,
+    errorModalVisible: errorModal.visible,
+    errorModalTitle: errorModal.title
+  });
 
   // Helper para mostrar alertas
   const showAlert = (title: string, message: string) => {
