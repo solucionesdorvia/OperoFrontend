@@ -26,8 +26,6 @@ const roles: Role[] = [
 ];
 
 export default function RegisterScreen({ navigation }: RegisterScreenProps) {
-  console.log('[RegisterScreen] RENDER - componente renderizando');
-
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -49,20 +47,9 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
 
   const { register, isAuthenticated, user } = useAuth();
 
-  console.log('[RegisterScreen] Estado actual:', {
-    isAuthenticated,
-    hasUser: !!user,
-    registerSuccess,
-    errorModalVisible: errorModal.visible,
-    errorModalTitle: errorModal.title
-  });
-
   // Helper para mostrar alertas
   const showAlert = (title: string, message: string) => {
-    console.log('[RegisterScreen] showAlert llamado:', { title, message });
-    console.log('[RegisterScreen] Antes - errorModal.visible:', errorModal.visible);
     setErrorModal({ visible: true, title, message });
-    console.log('[RegisterScreen] Después de setErrorModal');
   };
 
   /**
@@ -76,9 +63,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
    * Redirigir si ya está autenticado Y el registro fue exitoso
    */
   useEffect(() => {
-    console.log('[RegisterScreen] useEffect navigation:', { isAuthenticated, hasUser: !!user, registerSuccess });
     if (isAuthenticated && user && registerSuccess) {
-      console.log('[RegisterScreen] REDIRIGIENDO a:', user.roleName);
       navigateByRole(user.roleName);
     }
   }, [isAuthenticated, user, registerSuccess]);

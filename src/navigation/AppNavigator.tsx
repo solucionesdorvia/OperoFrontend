@@ -203,6 +203,7 @@ function MaintenanceTabs() {
 
 export default function AppNavigator() {
   const { routeName, isReady } = useInitialRoute();
+  const [initialRoute] = React.useState(routeName);
 
   // Mostrar loader mientras se determina ruta inicial
   if (!isReady) {
@@ -216,7 +217,7 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={routeName}
+        initialRouteName={initialRoute}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: COLORS.background },
