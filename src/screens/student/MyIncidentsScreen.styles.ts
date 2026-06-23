@@ -41,8 +41,11 @@ export const styles = StyleSheet.create({
   metaSub: { fontSize: 12, color: COLORS.primary },
   fab: {
     position: 'absolute', right: 20,
-    width: 44, height: 44, borderRadius: 8,
+    height: 44, paddingHorizontal: 18,
+    borderRadius: 8,
     backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', gap: 8,
   },
+  fabText: { fontSize: 12, fontFamily: FONTS.family.monoSemiBold, color: COLORS.onPrimary, textTransform: 'uppercase', letterSpacing: FONTS.tracking.caps },
 });
