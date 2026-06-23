@@ -12,6 +12,7 @@ export const styles = StyleSheet.create({
   form: { gap: 20 },
   field: { gap: 8 },
   label: { fontSize: 13, fontFamily: FONTS.family.bodyMedium, color: COLORS.onSurfaceVariant },
+  hint: { fontSize: 11, fontFamily: FONTS.family.mono, color: COLORS.onSurfaceVariant, opacity: 0.7, marginTop: -2 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',

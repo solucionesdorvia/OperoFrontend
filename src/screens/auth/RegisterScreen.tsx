@@ -34,6 +34,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const [selectedRole, setSelectedRole] = useState<number>(1); // Default: USER
   const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>();
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
+  const [invitationCode, setInvitationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false);
 
@@ -124,6 +125,18 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
     if (password.length < 8) {
       showAlert('Contraseña muy corta', 'La contraseña debe tener al menos 8 caracteres');
       return;
+    }
+
+    // Para MANAGER, validar código de invitación
+    if (selectedRole === 2) {
+      if (!invitationCode.trim()) {
+        showAlert('Error', 'Por favor ingresa el código de invitación');
+        return;
+      }
+      if (invitationCode.trim() !== 'ADMINUADE') {
+        showAlert('Código inválido', 'El código de invitación es incorrecto');
+        return;
+      }
     }
 
     // Para MANAGER y WORKER, el departamento es requerido
@@ -255,6 +268,23 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
               ))}
             </View>
           </View>
+
+          {/* Mostrar código de invitación solo para MANAGER */}
+          {selectedRole === 2 && (
+            <View style={styles.field}>
+              <Text style={styles.label}>Código de invitación</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ingresa el código de invitación"
+                placeholderTextColor={COLORS.outline}
+                autoCapitalize="characters"
+                value={invitationCode}
+                onChangeText={setInvitationCode}
+                editable={!isLoading}
+              />
+              <Text style={styles.hint}>Código requerido para registrarse como Manager</Text>
+            </View>
+          )}
 
           {/* Mostrar selector de departamento solo para MANAGER y WORKER */}
           {(selectedRole === 2 || selectedRole === 3) && (
