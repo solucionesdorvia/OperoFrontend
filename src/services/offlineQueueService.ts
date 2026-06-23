@@ -81,8 +81,38 @@ async function readAll(): Promise<PendingIncident[]> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as PendingIncident[]) : [];
-  } catch {
+    if (!Array.isArray(parsed)) return [];
+
+    // Validar y limpiar items corruptos o muy antiguos (>7 días)
+    const now = Date.now();
+    const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
+
+    const valid = (parsed as PendingIncident[]).filter(item => {
+      // Validar que tenga los campos requeridos
+      if (!item.localId || !item.title || !item.departmentId) {
+        console.warn('[offlineQueue] Item corrupto detectado, se descarta:', item);
+        return false;
+      }
+
+      // Limpiar items muy antiguos
+      const age = now - new Date(item.createdAt).getTime();
+      if (age > MAX_AGE_MS) {
+        console.warn('[offlineQueue] Item muy antiguo detectado (>7 días), se descarta:', item.localId);
+        return false;
+      }
+
+      return true;
+    });
+
+    // Si se limpiaron items, guardar la cola actualizada
+    if (valid.length !== parsed.length) {
+      console.log(`[offlineQueue] Se limpiaron ${parsed.length - valid.length} items`);
+      await writeAll(valid);
+    }
+
+    return valid;
+  } catch (err) {
+    console.error('[offlineQueue] Error al leer cola:', err);
     return [];
   }
 }
@@ -126,6 +156,27 @@ export const offlineQueueService = {
   async remove(localId: string): Promise<void> {
     const items = await readAll();
     await writeAll(items.filter((i) => i.localId !== localId));
+  },
+
+  /** Limpia TODA la cola (usar solo para debug/testing). */
+  async clear(): Promise<void> {
+    console.log('[offlineQueue] LIMPIANDO toda la cola');
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    notify();
+  },
+
+  /** Debug: muestra el contenido actual de la cola en consola. */
+  async debug(): Promise<void> {
+    const items = await readAll();
+    console.log('[offlineQueue] DEBUG - Items en cola:', items.length);
+    items.forEach((item, i) => {
+      console.log(`  [${i}]`, {
+        localId: item.localId,
+        title: item.title,
+        createdAt: item.createdAt,
+        age: `${Math.round((Date.now() - new Date(item.createdAt).getTime()) / 1000 / 60)} min`,
+      });
+    });
   },
 
   /**
@@ -181,3 +232,13 @@ export const offlineQueueService = {
     return { uploaded, failed, lastError };
   },
 };
+
+// Exponer globalmente para debug desde consola del navegador
+if (typeof window !== 'undefined') {
+  (window as any).__operoOfflineQueue = {
+    debug: () => offlineQueueService.debug(),
+    clear: () => offlineQueueService.clear(),
+    getAll: () => offlineQueueService.getAll(),
+  };
+  console.log('[offlineQueue] Debug tools disponibles: window.__operoOfflineQueue.debug() / .clear() / .getAll()');
+}

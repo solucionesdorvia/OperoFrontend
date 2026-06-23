@@ -32,14 +32,22 @@ export default function OfflineSyncManager() {
 
   const refreshPending = useCallback(async () => {
     const count = await offlineQueueService.count();
+    console.log('[OfflineSyncManager] Cola offline: ', count, 'items');
     setPending(count);
     return count;
   }, []);
 
   const maybePrompt = useCallback(async () => {
-    if (!isOnline) return;
+    if (!isOnline) {
+      console.log('[OfflineSyncManager] No online, no prompt');
+      return;
+    }
     const count = await refreshPending();
-    if (count > 0) setPromptVisible(true);
+    console.log('[OfflineSyncManager] Online, count:', count);
+    if (count > 0) {
+      console.log('[OfflineSyncManager] Mostrando prompt para subir', count, 'items');
+      setPromptVisible(true);
+    }
   }, [isOnline, refreshPending]);
 
   // Mantenemos el contador al día con los cambios de la cola.
@@ -65,9 +73,14 @@ export default function OfflineSyncManager() {
   // Banner: mostrar al pasar a offline, auto-ocultar a los 4s para no tapar
   // el botón de guardar. Se puede dismissear manualmente con la X.
   useEffect(() => {
+    console.log('[OfflineSyncManager] Estado conexión:', isOnline ? 'ONLINE' : 'OFFLINE');
     if (!isOnline) {
+      console.log('[OfflineSyncManager] Mostrando banner offline');
       setBannerVisible(true);
-      const timer = setTimeout(() => setBannerVisible(false), BANNER_AUTOHIDE_MS);
+      const timer = setTimeout(() => {
+        console.log('[OfflineSyncManager] Auto-ocultando banner offline');
+        setBannerVisible(false);
+      }, BANNER_AUTOHIDE_MS);
       return () => clearTimeout(timer);
     } else {
       setBannerVisible(false);
