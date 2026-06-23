@@ -130,9 +130,6 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
     <View style={styles.container}>
       <TopAppBar
         showLogo
-        rightActions={[
-          { icon: 'notifications', onPress: () => navigation.navigate('StudentNotifications') },
-        ]}
         showAvatar
         onAvatarPress={() => navigation.navigate('StudentProfile')}
       />
@@ -238,7 +235,8 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
         onPress={() => navigation.navigate('CreateIncident')}
         activeOpacity={0.85}
       >
-        <MaterialIcons name="add" size={22} color={COLORS.onPrimary} />
+        <MaterialIcons name="add" size={20} color={COLORS.onPrimary} />
+        <Text style={styles.fabText}>Nuevo reporte</Text>
       </TouchableOpacity>
 
       <ErrorDialog

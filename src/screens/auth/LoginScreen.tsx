@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator, Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -11,7 +11,6 @@ import type { RootStackScreenProps } from '../../types/navigation';
 import { styles } from './LoginScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { isValidEmail } from '../../utils/validationUtils';
-import { showAlert } from '../../utils/alertUtils';
 
 const logo = require('../../../assets/operologo.png');
 
@@ -23,7 +22,19 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Estado para modal de error
+  const [errorModal, setErrorModal] = useState<{ visible: boolean; title: string; message: string }>({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
   const { login, user, isAuthenticated } = useAuth();
+
+  // Helper para mostrar alertas
+  const showAlert = (title: string, message: string) => {
+    setErrorModal({ visible: true, title, message });
+  };
 
   /**
    * Redirigir automáticamente si el usuario ya está autenticado
@@ -175,6 +186,81 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         </View>
 
       </ScrollView>
+
+      {/* Modal de error */}
+      <Modal
+        visible={errorModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setErrorModal({ visible: false, title: '', message: '' })}
+      >
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.container}>
+            <View style={modalStyles.iconContainer}>
+              <MaterialIcons name="error-outline" size={48} color={COLORS.error} />
+            </View>
+            <Text style={modalStyles.title}>{errorModal.title}</Text>
+            <Text style={modalStyles.message}>{errorModal.message}</Text>
+            <TouchableOpacity
+              style={modalStyles.button}
+              onPress={() => setErrorModal({ visible: false, title: '', message: '' })}
+              activeOpacity={0.8}
+            >
+              <Text style={modalStyles.buttonText}>ENTENDIDO</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  container: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    gap: 16,
+  },
+  iconContainer: {
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: FONTS.size.lg,
+    fontFamily: FONTS.family.displaySemiBold,
+    color: COLORS.onSurface,
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: FONTS.size.sm,
+    fontFamily: FONTS.family.body,
+    color: COLORS.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  button: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    marginTop: 8,
+    width: '100%',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: FONTS.size.xs,
+    fontFamily: FONTS.family.monoSemiBold,
+    color: COLORS.onPrimary,
+    letterSpacing: FONTS.tracking.caps,
+  },
+});

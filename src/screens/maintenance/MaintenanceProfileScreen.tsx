@@ -13,7 +13,6 @@ export default function MaintenanceProfileScreen({ navigation }: MaintenanceProf
   const menuItems = [
     { icon: 'edit' as const, label: 'Editar perfil', onPress: () => navigation.navigate('EditProfile' as never) },
     { icon: 'history' as const, label: 'Ver historial', onPress: () => navigation.navigate('MaintenanceHistory') },
-    { icon: 'notifications-none' as const, label: 'Notificaciones', onPress: () => comingSoon('Notificaciones') },
   ];
 
   const statsFilter = (incidents: any[], userId?: number) => {

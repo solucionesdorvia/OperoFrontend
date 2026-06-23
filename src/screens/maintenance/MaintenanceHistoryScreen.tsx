@@ -94,11 +94,11 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
   }, [period]);
 
 
-  if (loading) return <LoadingView showLogo showAvatar />;
+  if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('MaintenanceProfile')} />;
 
   return (
     <View style={styles.container}>
-      <TopAppBar showLogo showAvatar />
+      <TopAppBar showLogo showAvatar onAvatarPress={() => navigation.navigate('MaintenanceProfile')} />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: tabBarHeight + 40 }]}
         showsVerticalScrollIndicator={false}

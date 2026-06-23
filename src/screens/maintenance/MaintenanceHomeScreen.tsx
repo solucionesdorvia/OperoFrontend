@@ -79,11 +79,11 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
 
   const firstName = user?.fullName?.split(' ')[0] || 'Operario';
 
-  if (loading) return <LoadingView showLogo showAvatar />;
+  if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('MaintenanceProfile')} />;
 
   return (
     <View style={styles.container}>
-      <TopAppBar showLogo showAvatar />
+      <TopAppBar showLogo showAvatar onAvatarPress={() => navigation.navigate('MaintenanceProfile')} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
