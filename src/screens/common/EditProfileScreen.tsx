@@ -62,7 +62,7 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
         <View style={styles.avatarSection}>
-          <View style={styles.avatar}>
+          <View key={user?.fullName || 'avatar'} style={styles.avatar}>
             <Text style={styles.avatarInitials}>{getInitials(user?.fullName)}</Text>
           </View>
           <TouchableOpacity

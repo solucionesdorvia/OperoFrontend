@@ -78,7 +78,7 @@ export default function BaseProfileScreen({
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.profile}>
-          <View style={styles.avatar}>
+          <View key={user?.fullName || 'avatar'} style={styles.avatar}>
             <Text style={styles.avatarInitials}>{getInitials(user?.fullName)}</Text>
           </View>
           <View style={styles.profileInfo}>
