@@ -56,7 +56,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
     if (isAuthenticated && user) {
       navigateByRole(user.roleName);
     }
-  }, [isAuthenticated, user, navigation]);
+  }, [isAuthenticated, user]);
 
   /**
    * Cargar lista de departamentos
@@ -345,6 +345,9 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         </View>
 
       </ScrollView>
+
+      {/* Debug: verificar estado del dialog */}
+      {console.log('[RegisterScreen] Rendering ErrorDialog with visible=', dialogState.visible, 'title=', dialogState.title)}
 
       <ErrorDialog
         visible={dialogState.visible}
