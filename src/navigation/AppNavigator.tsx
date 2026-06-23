@@ -6,6 +6,8 @@ import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInitialRoute } from '../hooks/useInitialRoute';
+import { AuthProvider } from '../context/AuthContext';
+import OfflineSyncManager from '../components/OfflineSyncManager';
 
 import { COLORS } from '../../constants/colors';
 import { FONTS } from '../../constants/fonts';
@@ -220,42 +222,45 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName={initialRouteRef.current as any}
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: COLORS.background },
-        }}
-      >
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="Login"      component={LoginScreen} />
-        <Stack.Screen name="Register"   component={RegisterScreen} />
+    <AuthProvider>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName={initialRouteRef.current as any}
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: COLORS.background },
+          }}
+        >
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name="Login"      component={LoginScreen} />
+          <Stack.Screen name="Register"   component={RegisterScreen} />
 
-        <Stack.Screen name="StudentTabs"     component={StudentTabs} />
-        <Stack.Screen name="ManagerTabs"     component={ManagerTabs} />
-        <Stack.Screen name="MaintenanceTabs" component={MaintenanceTabs} />
+          <Stack.Screen name="StudentTabs"     component={StudentTabs} />
+          <Stack.Screen name="ManagerTabs"     component={ManagerTabs} />
+          <Stack.Screen name="MaintenanceTabs" component={MaintenanceTabs} />
 
-        <Stack.Screen name="IncidentDetail"  component={IncidentDetailScreen} />
-        <Stack.Screen name="CreateIncident"  component={CreateIncidentScreen} />
-        <Stack.Screen
-          name="ScanQR"
-          component={ScanQRScreen}
-          options={{ animation: 'slide_from_bottom' }}
-        />
+          <Stack.Screen name="IncidentDetail"  component={IncidentDetailScreen} />
+          <Stack.Screen name="CreateIncident"  component={CreateIncidentScreen} />
+          <Stack.Screen
+            name="ScanQR"
+            component={ScanQRScreen}
+            options={{ animation: 'slide_from_bottom' }}
+          />
 
-        {/* Notificaciones y Perfil del alumno — accedidas desde el TopAppBar */}
-        <Stack.Screen name="StudentNotifications" component={NotificationsScreen} />
-        <Stack.Screen name="StudentProfile"       component={ProfileScreen} />
+          {/* Notificaciones y Perfil del alumno — accedidas desde el TopAppBar */}
+          <Stack.Screen name="StudentNotifications" component={NotificationsScreen} />
+          <Stack.Screen name="StudentProfile"       component={ProfileScreen} />
 
-        <Stack.Screen name="ManagerIncidentDetail" component={ManagerIncidentDetailScreen} />
-        <Stack.Screen name="ManagerMyTeam"         component={MyTeamScreen} />
-        <Stack.Screen name="DepartmentSettings"    component={DepartmentSettingsScreen} />
+          <Stack.Screen name="ManagerIncidentDetail" component={ManagerIncidentDetailScreen} />
+          <Stack.Screen name="ManagerMyTeam"         component={MyTeamScreen} />
+          <Stack.Screen name="DepartmentSettings"    component={DepartmentSettingsScreen} />
 
-        <Stack.Screen name="MaintenanceDetail"  component={MaintenanceDetailScreen} />
+          <Stack.Screen name="MaintenanceDetail"  component={MaintenanceDetailScreen} />
 
-        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <OfflineSyncManager />
+    </AuthProvider>
   );
 }

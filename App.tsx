@@ -93,11 +93,8 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <StatusBar style="dark" backgroundColor={COLORS.bg} />
-        <AppNavigator />
-        <OfflineSyncManager />
-      </AuthProvider>
+      <StatusBar style="dark" backgroundColor={COLORS.bg} />
+      <AppNavigator />
     </SafeAreaProvider>
   );
 }
