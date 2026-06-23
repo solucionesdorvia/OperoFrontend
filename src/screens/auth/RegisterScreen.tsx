@@ -12,7 +12,8 @@ import { styles } from './RegisterScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { departmentService, DepartmentResponse } from '../../services';
 import { isValidEmail } from '../../utils/validationUtils';
-import { showAlert } from '../../utils/alertUtils';
+import ErrorDialog from '../../components/ErrorDialog';
+import { useErrorDialog } from '../../hooks/useErrorDialog';
 
 const logo = require('../../../assets/operologo.png');
 
@@ -39,6 +40,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false);
 
   const { register, isAuthenticated, user } = useAuth();
+  const { dialogState, hideDialog, showError } = useErrorDialog();
 
   /**
    * Cargar departamentos al montar el componente
@@ -71,7 +73,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       }
     } catch (error: any) {
       console.error('[RegisterScreen] Error al cargar departamentos:', error);
-      showWarning('Advertencia', 'No se pudieron cargar los departamentos');
+      showError('Advertencia', 'No se pudieron cargar los departamentos');
     } finally {
       setIsDepartmentsLoading(false);
     }
@@ -102,46 +104,46 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const handleRegister = async () => {
     // Validaciones
     if (!fullName.trim()) {
-      showAlert('Error', 'Por favor ingresa tu nombre completo');
+      showError('Error', 'Por favor ingresa tu nombre completo');
       return;
     }
 
     if (!email.trim()) {
-      showAlert('Error', 'Por favor ingresa tu email');
+      showError('Error', 'Por favor ingresa tu email');
       return;
     }
 
     // Validar formato de email
     if (!isValidEmail(email.trim())) {
-      showAlert('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
+      showError('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
       return;
     }
 
     if (!password.trim()) {
-      showAlert('Error', 'Por favor ingresa una contraseña');
+      showError('Error', 'Por favor ingresa una contraseña');
       return;
     }
 
     if (password.length < 8) {
-      showAlert('Contraseña muy corta', 'La contraseña debe tener al menos 8 caracteres');
+      showError('Contraseña muy corta', 'La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
     // Para MANAGER, validar código de invitación
     if (selectedRole === 2) {
       if (!invitationCode.trim()) {
-        showAlert('Error', 'Por favor ingresa el código de invitación');
+        showError('Error', 'Por favor ingresa el código de invitación');
         return;
       }
       if (invitationCode.trim() !== 'ADMINUADE') {
-        showAlert('Código inválido', 'El código de invitación es incorrecto');
+        showError('Código inválido', 'El código de invitación es incorrecto');
         return;
       }
     }
 
     // Para MANAGER y WORKER, el departamento es requerido
     if ((selectedRole === 2 || selectedRole === 3) && !selectedDepartment) {
-      showAlert('Error', 'Por favor selecciona un departamento');
+      showError('Error', 'Por favor selecciona un departamento');
       return;
     }
 
@@ -172,7 +174,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         errorMessage = 'El departamento seleccionado no existe. Intenta seleccionar otro.';
       }
 
-      showAlert(errorTitle, errorMessage);
+      showError(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -343,6 +345,15 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         </View>
 
       </ScrollView>
+
+      <ErrorDialog
+        visible={dialogState.visible}
+        type={dialogState.type}
+        title={dialogState.title}
+        message={dialogState.message}
+        buttons={dialogState.buttons}
+        onDismiss={hideDialog}
+      />
     </KeyboardAvoidingView>
   );
 }
