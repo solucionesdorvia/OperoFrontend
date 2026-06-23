@@ -39,6 +39,15 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
 
   const { register, isAuthenticated, user } = useAuth();
 
+  // Helper para mostrar alertas (funciona en web y móvil)
+  const showAlert = (title: string, message: string) => {
+    if (Platform.OS === 'web') {
+      showAlert(`${title}\n\n${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   /**
    * Cargar departamentos al montar el componente
    */
@@ -70,7 +79,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       }
     } catch (error: any) {
       console.error('[RegisterScreen] Error al cargar departamentos:', error);
-      Alert.alert('Advertencia', 'No se pudieron cargar los departamentos');
+      showAlert('Advertencia', 'No se pudieron cargar los departamentos');
     } finally {
       setIsDepartmentsLoading(false);
     }
@@ -101,46 +110,46 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const handleRegister = async () => {
     // Validaciones
     if (!fullName.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu nombre completo');
+      showAlert('Error', 'Por favor ingresa tu nombre completo');
       return;
     }
 
     if (!email.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu email');
+      showAlert('Error', 'Por favor ingresa tu email');
       return;
     }
 
     // Validar formato de email
     if (!isValidEmail(email.trim())) {
-      Alert.alert('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
+      showAlert('Email inválido', 'Por favor ingresa un email válido (ejemplo: nombre@universidad.edu)');
       return;
     }
 
     if (!password.trim()) {
-      Alert.alert('Error', 'Por favor ingresa una contraseña');
+      showAlert('Error', 'Por favor ingresa una contraseña');
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Contraseña muy corta', 'La contraseña debe tener al menos 8 caracteres');
+      showAlert('Contraseña muy corta', 'La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
     // Para MANAGER, validar código de invitación
     if (selectedRole === 2) {
       if (!invitationCode.trim()) {
-        Alert.alert('Error', 'Por favor ingresa el código de invitación');
+        showAlert('Error', 'Por favor ingresa el código de invitación');
         return;
       }
       if (invitationCode.trim() !== 'ADMINUADE') {
-        Alert.alert('Código inválido', 'El código de invitación es incorrecto');
+        showAlert('Código inválido', 'El código de invitación es incorrecto');
         return;
       }
     }
 
     // Para MANAGER y WORKER, el departamento es requerido
     if ((selectedRole === 2 || selectedRole === 3) && !selectedDepartment) {
-      Alert.alert('Error', 'Por favor selecciona un departamento');
+      showAlert('Error', 'Por favor selecciona un departamento');
       return;
     }
 
@@ -171,7 +180,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         errorMessage = 'El departamento seleccionado no existe. Intenta seleccionar otro.';
       }
 
-      Alert.alert(errorTitle, errorMessage);
+      showAlert(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
     }
