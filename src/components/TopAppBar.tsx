@@ -58,16 +58,18 @@ function renderAvatar({
 }) {
   if (!showAvatar) return null;
   const initials = getInitials(userFullName);
+  // Usar fullName como key para forzar re-render cuando cambia
+  const key = userFullName || 'avatar';
 
   if (onAvatarPress) {
     return (
-      <TouchableOpacity onPress={onAvatarPress} style={styles.avatar} activeOpacity={0.7}>
+      <TouchableOpacity key={key} onPress={onAvatarPress} style={styles.avatar} activeOpacity={0.7}>
         <Text style={styles.avatarText}>{initials}</Text>
       </TouchableOpacity>
     );
   }
   return (
-    <View style={styles.avatar}>
+    <View key={key} style={styles.avatar}>
       <Text style={styles.avatarText}>{initials}</Text>
     </View>
   );
