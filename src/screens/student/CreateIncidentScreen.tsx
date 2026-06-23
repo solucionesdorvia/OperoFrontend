@@ -185,14 +185,37 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
       return;
     }
 
-    // Si estamos en modo edición, solo actualizamos título y descripción
+    // Si estamos en modo edición, actualizamos título, descripción y foto
     if (isEdit && incident) {
       try {
         setSubmitting(true);
+
+        // Determinar el photoUrl a enviar:
+        // - Si no hay imágenes adjuntas → enviar "" (vacío) para eliminar la foto
+        // - Si hay una imagen nueva (local, no es URL http) → subirla primero
+        // - Si es la misma URL que ya tenía → no cambiar nada (undefined)
+        let photoUrlToSend: string | undefined = undefined;
+
+        if (attachedImages.length === 0) {
+          // Usuario eliminó la imagen → enviar "" para borrarla del backend
+          photoUrlToSend = '';
+        } else if (attachedImages[0] !== incident.photoUrl) {
+          // Hay una imagen nueva (local) → subirla
+          if (!attachedImages[0].startsWith('http')) {
+            photoUrlToSend = await fileService.uploadImage(attachedImages[0]);
+          } else {
+            // Es una URL diferente a la original (caso raro, pero manejarlo)
+            photoUrlToSend = attachedImages[0];
+          }
+        }
+        // Si attachedImages[0] === incident.photoUrl → no enviar photoUrl (undefined)
+
         await incidentService.update(incident.id, {
           title: title.trim(),
           description: description.trim(),
+          ...(photoUrlToSend !== undefined && { photoUrl: photoUrlToSend }),
         });
+
         showSuccess('Éxito', 'Incidencia actualizada correctamente');
         setTimeout(() => {
           navigation.goBack();
