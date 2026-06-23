@@ -36,6 +36,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const [invitationCode, setInvitationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false);
+  const [registerSuccess, setRegisterSuccess] = useState(false);
 
   // Estado para modal de error
   const [errorModal, setErrorModal] = useState<{ visible: boolean; title: string; message: string }>({
@@ -59,13 +60,13 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   }, []);
 
   /**
-   * Redirigir si ya está autenticado
+   * Redirigir si ya está autenticado Y el registro fue exitoso
    */
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && registerSuccess) {
       navigateByRole(user.roleName);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, registerSuccess]);
 
   /**
    * Cargar lista de departamentos
@@ -166,6 +167,9 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         selectedRole,
         selectedDepartment
       );
+
+      // Si llegó aquí, el registro fue exitoso
+      setRegisterSuccess(true);
     } catch (error: any) {
       console.error('[RegisterScreen] Error en registro:', error);
 
