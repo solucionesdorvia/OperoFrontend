@@ -42,7 +42,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   // Helper para mostrar alertas (funciona en web y móvil)
   const showAlert = (title: string, message: string) => {
     if (Platform.OS === 'web') {
-      showAlert(`${title}\n\n${message}`);
+      window.alert(`${title}\n\n${message}`);
     } else {
       Alert.alert(title, message);
     }
