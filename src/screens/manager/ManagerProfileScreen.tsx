@@ -12,10 +12,7 @@ const comingSoon = (title: string) =>
 export default function ManagerProfileScreen({ navigation }: ManagerProfileScreenProps) {
   const menuItems = [
     { icon: 'edit' as const, label: 'Editar perfil', onPress: () => navigation.navigate('EditProfile' as never) },
-    { icon: 'people' as const, label: 'Gestión de equipo', onPress: () => navigation.navigate('MyTeam') },
-    { icon: 'notifications-none' as const, label: 'Notificaciones', onPress: () => comingSoon('Notificaciones') },
-    { icon: 'security' as const, label: 'Seguridad', onPress: () => comingSoon('Seguridad') },
-    { icon: 'help-outline' as const, label: 'Soporte', onPress: () => comingSoon('Soporte') },
+    { icon: 'people' as const, label: 'Gestión de equipo', onPress: () => navigation.navigate('ManagerMyTeam' as any) },
   ];
 
   const statsFilter = (incidents: any[], userId?: number) => {

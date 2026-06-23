@@ -74,7 +74,7 @@ export default function BaseProfileScreen({
 
   return (
     <View style={styles.container}>
-      <TopAppBar title="Perfil" onBack={() => navigation.goBack()} rightIcon="settings" />
+      <TopAppBar title="Perfil" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.profile}>

@@ -150,11 +150,11 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
     }
   };
 
-  if (loading) return <LoadingView showLogo showAvatar />;
+  if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile')} />;
 
   return (
     <View style={styles.container}>
-      <TopAppBar showLogo showAvatar />
+      <TopAppBar showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile')} />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: tabBarHeight + 80 }]}
         showsVerticalScrollIndicator={false}
