@@ -81,7 +81,6 @@ export type RootStackParamList = {
   StudentProfile: undefined;
 
   ManagerIncidentDetail: ManagerIncidentDetailParams | undefined;
-  ManagerMyTeam: undefined;
   DepartmentSettings: undefined;
 
   MaintenanceDetail: MaintenanceDetailParams | undefined;

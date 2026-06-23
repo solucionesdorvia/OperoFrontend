@@ -10,6 +10,7 @@ import TopAppBar from '../../components/TopAppBar';
 import StatusBadge from '../../components/StatusBadge';
 import EmptyState from '../../components/EmptyState';
 import LoadingView from '../../components/LoadingView';
+import Pagination from '../../components/Pagination';
 import type { ManagerTabScreenProps } from '../../types/navigation';
 import { styles } from './ManagerIncidentsListScreen.styles';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
@@ -17,6 +18,7 @@ import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { getRelativeTime } from '../../utils/dateUtils';
 
+const ITEMS_PER_PAGE = 5;
 const filters = ['Todas', 'Abiertas', 'En proceso', 'Finalizadas'] as const;
 
 const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PENDIENTE'> = {
@@ -40,6 +42,7 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [active, setActive] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const { dialogState, hideDialog, showError } = useErrorDialog();
 
   const loadIncidents = async (isRefresh = false) => {
@@ -73,6 +76,7 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
     }
 
     setFilteredIncidents(filtered);
+    setCurrentPage(1); // Reset a página 1 cuando cambia el filtro
   };
 
   useEffect(() => {
@@ -90,11 +94,11 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
   }, [active]);
 
 
-  if (loading) return <LoadingView showLogo rightIcon="search" showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile')} />;
+  if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile')} />;
 
   return (
     <View style={styles.container}>
-      <TopAppBar showLogo rightIcon="search" showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile')} />
+      <TopAppBar showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile')} />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: tabBarHeight + 40 }]}
         showsVerticalScrollIndicator={false}
@@ -125,47 +129,56 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
         {filteredIncidents.length === 0 ? (
           <EmptyState message="No hay incidencias con este filtro" />
         ) : (
-          <View style={styles.list}>
-            {filteredIncidents.map((inc) => {
-              const priority = (inc.priority || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW';
-              return (
-                <TouchableOpacity
-                  key={inc.id}
-                  style={styles.card}
-                  onPress={() => navigation.navigate('ManagerIncidentDetail', { incident: inc as any })}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.priorityBar, { backgroundColor: priorityColor[priority] }]} />
-                  <View style={styles.cardBody}>
-                    <View style={styles.cardTop}>
-                      <Text style={styles.code}>#INC-{inc.id}</Text>
-                      <StatusBadge status={STATUS_MAP[inc.status] || 'ABIERTO'} />
-                    </View>
-                    <Text style={styles.cardTitle} numberOfLines={2}>{inc.title}</Text>
-                    <View style={styles.meta}>
-                      <View style={styles.metaItem}>
-                        <MaterialIcons name="location-on" size={12} color={COLORS.onSurfaceVariant} />
-                        <Text style={styles.metaText} numberOfLines={1}>{inc.departmentName}</Text>
+          <>
+            <View style={styles.list}>
+              {filteredIncidents
+                .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                .map((inc) => {
+                  const priority = (inc.priority || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW';
+                  return (
+                    <TouchableOpacity
+                      key={inc.id}
+                      style={styles.card}
+                      onPress={() => navigation.navigate('ManagerIncidentDetail', { incident: inc as any })}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.priorityBar, { backgroundColor: priorityColor[priority] }]} />
+                      <View style={styles.cardBody}>
+                        <View style={styles.cardTop}>
+                          <Text style={styles.code}>#INC-{inc.id}</Text>
+                          <StatusBadge status={STATUS_MAP[inc.status] || 'ABIERTO'} />
+                        </View>
+                        <Text style={styles.cardTitle} numberOfLines={2}>{inc.title}</Text>
+                        <View style={styles.meta}>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons name="location-on" size={12} color={COLORS.onSurfaceVariant} />
+                            <Text style={styles.metaText} numberOfLines={1}>{inc.departmentName}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.footer}>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons
+                              name={inc.workerName ? 'person' : 'person-off'}
+                              size={13}
+                              color={inc.workerName ? COLORS.primary : COLORS.onSurfaceVariant}
+                            />
+                            <Text style={[styles.assignee, !inc.workerName && { color: COLORS.onSurfaceVariant, fontStyle: 'italic' }]}>
+                              {inc.workerName ?? 'Sin asignar'}
+                            </Text>
+                          </View>
+                          <Text style={styles.time}>{getRelativeTime(inc.createdAt)}</Text>
+                        </View>
                       </View>
-                    </View>
-                    <View style={styles.footer}>
-                      <View style={styles.metaItem}>
-                        <MaterialIcons
-                          name={inc.workerName ? 'person' : 'person-off'}
-                          size={13}
-                          color={inc.workerName ? COLORS.primary : COLORS.onSurfaceVariant}
-                        />
-                        <Text style={[styles.assignee, !inc.workerName && { color: COLORS.onSurfaceVariant, fontStyle: 'italic' }]}>
-                          {inc.workerName ?? 'Sin asignar'}
-                        </Text>
-                      </View>
-                      <Text style={styles.time}>{getRelativeTime(inc.createdAt)}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                    </TouchableOpacity>
+                  );
+                })}
+            </View>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(filteredIncidents.length / ITEMS_PER_PAGE)}
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
 
       </ScrollView>

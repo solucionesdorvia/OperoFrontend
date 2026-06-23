@@ -252,7 +252,6 @@ export default function AppNavigator() {
           <Stack.Screen name="StudentProfile"       component={ProfileScreen} />
 
           <Stack.Screen name="ManagerIncidentDetail" component={ManagerIncidentDetailScreen} />
-          <Stack.Screen name="ManagerMyTeam"         component={MyTeamScreen} />
           <Stack.Screen name="DepartmentSettings"    component={DepartmentSettingsScreen} />
 
           <Stack.Screen name="MaintenanceDetail"  component={MaintenanceDetailScreen} />

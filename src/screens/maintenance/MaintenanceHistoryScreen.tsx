@@ -9,6 +9,7 @@ import { COLORS } from '../../../constants/colors';
 import TopAppBar from '../../components/TopAppBar';
 import EmptyState from '../../components/EmptyState';
 import LoadingView from '../../components/LoadingView';
+import Pagination from '../../components/Pagination';
 import type { MaintenanceTabScreenProps } from '../../types/navigation';
 import { styles } from './MaintenanceHistoryScreen.styles';
 import { useAuth } from '../../context/AuthContext';
@@ -17,6 +18,7 @@ import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { formatDate } from '../../utils/dateUtils';
 
+const ITEMS_PER_PAGE = 5;
 const periods = ['Hoy', 'Semana', 'Mes', 'Todo'];
 
 type MaintenanceHistoryScreenProps = MaintenanceTabScreenProps<'MaintenanceHistory'>;
@@ -31,6 +33,7 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [period, setPeriod] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const { dialogState, hideDialog, showError } = useErrorDialog();
 
   const loadHistory = async (isRefresh = false) => {
@@ -73,6 +76,7 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
     // filterIdx === 3: Todo (sin filtrar)
 
     setFiltered(result);
+    setCurrentPage(1); // Reset a página 1 cuando cambia el filtro
   };
 
   useEffect(() => {
@@ -90,11 +94,11 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
   }, [period]);
 
 
-  if (loading) return <LoadingView showLogo rightIcon="search" showAvatar />;
+  if (loading) return <LoadingView showLogo showAvatar />;
 
   return (
     <View style={styles.container}>
-      <TopAppBar showLogo rightIcon="search" showAvatar />
+      <TopAppBar showLogo showAvatar />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: tabBarHeight + 40 }]}
         showsVerticalScrollIndicator={false}
@@ -142,17 +146,20 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
         {filtered.length === 0 ? (
           <EmptyState message="No hay tareas finalizadas en este período" />
         ) : (
-          <View style={styles.list}>
-            {filtered.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.card}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('MaintenanceDetail', { task: item as any })}
-              >
-                <View style={styles.iconWrap}>
-                  <MaterialIcons name="check-circle" size={18} color={COLORS.primary} />
-                </View>
+          <>
+            <View style={styles.list}>
+              {filtered
+                .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                .map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.card}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate('MaintenanceDetail', { task: item as any })}
+                  >
+                    <View style={styles.iconWrap}>
+                      <MaterialIcons name="check-circle" size={18} color={COLORS.primary} />
+                    </View>
                 <View style={styles.cardBody}>
                   <View style={styles.cardTop}>
                     <Text style={styles.code}>#INC-{item.id}</Text>
@@ -164,11 +171,17 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
                       <MaterialIcons name="location-on" size={12} color={COLORS.onSurfaceVariant} />
                       <Text style={styles.metaText} numberOfLines={1}>{item.departmentName}</Text>
                     </View>
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(filtered.length / ITEMS_PER_PAGE)}
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
 
       </ScrollView>

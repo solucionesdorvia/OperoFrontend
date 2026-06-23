@@ -9,6 +9,7 @@ import { COLORS } from '../../../constants/colors';
 import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
 import StatusBadge from '../../components/StatusBadge';
+import Pagination from '../../components/Pagination';
 import type { StudentTabScreenProps } from '../../types/navigation';
 import { styles } from './MyIncidentsScreen.styles';
 import { useAuth } from '../../context/AuthContext';
@@ -16,6 +17,8 @@ import { incidentService, IncidentResponse } from '../../services/incidentServic
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { getRelativeTime } from '../../utils/dateUtils';
+
+const ITEMS_PER_PAGE = 5;
 
 const filters = ['Todas', 'En curso', 'Resueltas', 'Pendientes'];
 const dateRanges = ['Cualquier fecha', 'Hoy', 'Semana', 'Mes'];
@@ -43,6 +46,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
   const [refreshing, setRefreshing] = useState(false);
   const [active, setActive] = useState(0);
   const [dateIdx, setDateIdx] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loadIncidents = async (isRefresh = false) => {
     try {
@@ -93,6 +97,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
     }
 
     setFilteredIncidents(filtered);
+    setCurrentPage(1); // Reset a página 1 cuando cambian los filtros
   };
 
   useEffect(() => {
@@ -126,7 +131,6 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
       <TopAppBar
         showLogo
         rightActions={[
-          { icon: 'search' },
           { icon: 'notifications', onPress: () => navigation.navigate('StudentNotifications') },
         ]}
         showAvatar
@@ -182,41 +186,50 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
             </Text>
           </View>
         ) : (
-          <View style={[styles.list, { paddingBottom: tabBarHeight + 60 }]}>
-            {filteredIncidents.map((inc) => {
-              const statusSubtext = inc.workerName
-                ? `Técnico: ${inc.workerName}`
-                : inc.status === 'FINISHED'
-                ? 'Cerrada'
-                : null;
+          <>
+            <View style={[styles.list, { paddingBottom: tabBarHeight + 60 }]}>
+              {filteredIncidents
+                .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                .map((inc) => {
+                  const statusSubtext = inc.workerName
+                    ? `Técnico: ${inc.workerName}`
+                    : inc.status === 'FINISHED'
+                    ? 'Cerrada'
+                    : null;
 
-              return (
-                <TouchableOpacity
-                  key={inc.id}
-                  style={styles.card}
-                  onPress={() => navigation.navigate('IncidentDetail', { incident: inc as any })}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.cardTop}>
-                    <View style={styles.cardInfo}>
-                      <Text style={styles.cardTitle} numberOfLines={2}>{inc.title}</Text>
-                      <Text style={styles.cardLocation}>{inc.departmentName}</Text>
-                    </View>
-                    <StatusBadge status={STATUS_MAP[inc.status] || 'ABIERTO'} />
-                  </View>
-                  <View style={styles.cardMeta}>
-                    {inc.priority === 'HIGH' && (
-                      <View style={styles.priorityTag}>
-                        <Text style={styles.priorityText}>Prioridad alta</Text>
+                  return (
+                    <TouchableOpacity
+                      key={inc.id}
+                      style={styles.card}
+                      onPress={() => navigation.navigate('IncidentDetail', { incident: inc as any })}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.cardTop}>
+                        <View style={styles.cardInfo}>
+                          <Text style={styles.cardTitle} numberOfLines={2}>{inc.title}</Text>
+                          <Text style={styles.cardLocation}>{inc.departmentName}</Text>
+                        </View>
+                        <StatusBadge status={STATUS_MAP[inc.status] || 'ABIERTO'} />
                       </View>
-                    )}
-                    <Text style={styles.metaText}>{getRelativeTime(inc.createdAt)}</Text>
-                    {statusSubtext && <Text style={styles.metaSub}>{statusSubtext}</Text>}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                      <View style={styles.cardMeta}>
+                        {inc.priority === 'HIGH' && (
+                          <View style={styles.priorityTag}>
+                            <Text style={styles.priorityText}>Prioridad alta</Text>
+                          </View>
+                        )}
+                        <Text style={styles.metaText}>{getRelativeTime(inc.createdAt)}</Text>
+                        {statusSubtext && <Text style={styles.metaSub}>{statusSubtext}</Text>}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+            </View>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(filteredIncidents.length / ITEMS_PER_PAGE)}
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
       </ScrollView>
 
