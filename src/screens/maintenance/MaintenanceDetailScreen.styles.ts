@@ -16,12 +16,19 @@ export const styles = StyleSheet.create({
 
   infoCard: {
     backgroundColor: COLORS.surfaceContainerLow,
-    borderRadius: 8, borderWidth: 1, borderColor: COLORS.outlineVariant,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+    overflow: 'hidden',
   },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 13 },
   infoLabel: { fontSize: 13, color: COLORS.onSurfaceVariant, width: 80 },
   infoValue: { flex: 1, fontSize: 13, color: COLORS.onSurface, fontFamily: FONTS.family.bodyMedium, textAlign: 'right' },
-  divider: { height: 1, backgroundColor: COLORS.outlineVariant, marginHorizontal: 13 },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.outlineVariant,
+    opacity: 0.5,
+  },
 
   mapPlaceholder: {
     height: 100, backgroundColor: COLORS.surfaceContainerLow,

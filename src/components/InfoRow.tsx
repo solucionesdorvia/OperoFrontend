@@ -13,15 +13,38 @@ interface InfoRowProps {
 export default function InfoRow({ icon, label, value }: InfoRowProps) {
   return (
     <View style={styles.row}>
-      <MaterialIcons name={icon} size={15} color={COLORS.onSurfaceVariant} />
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      <MaterialIcons name={icon} size={18} color={COLORS.onSurfaceVariant} />
+      <View style={styles.textContainer}>
+        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.value}>{value}</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  label: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.onSurfaceVariant, flex: 1 },
-  value: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.onSurface },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  textContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  label: {
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    color: COLORS.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  value: {
+    fontFamily: FONTS.medium,
+    fontSize: 14,
+    color: COLORS.onSurface,
+    lineHeight: 20,
+  },
 });
