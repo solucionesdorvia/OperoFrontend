@@ -24,9 +24,9 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
 
   const getInitials = (fullName?: string) => {
     if (!fullName) return 'U';
-    const parts = fullName.split(' ');
+    const parts = fullName.trim().split(' ');
     if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
     }
     return fullName.substring(0, 2).toUpperCase();
   };
