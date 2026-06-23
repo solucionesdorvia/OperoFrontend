@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator, Modal,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
@@ -37,15 +37,18 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false);
 
+  // Estado para modal de error
+  const [errorModal, setErrorModal] = useState<{ visible: boolean; title: string; message: string }>({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
   const { register, isAuthenticated, user } = useAuth();
 
-  // Helper para mostrar alertas (funciona en web y móvil)
+  // Helper para mostrar alertas
   const showAlert = (title: string, message: string) => {
-    if (Platform.OS === 'web') {
-      window.alert(`${title}\n\n${message}`);
-    } else {
-      Alert.alert(title, message);
-    }
+    setErrorModal({ visible: true, title, message });
   };
 
   /**
@@ -351,6 +354,81 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         </View>
 
       </ScrollView>
+
+      {/* Modal de error */}
+      <Modal
+        visible={errorModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setErrorModal({ visible: false, title: '', message: '' })}
+      >
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.container}>
+            <View style={modalStyles.iconContainer}>
+              <MaterialIcons name="error-outline" size={48} color={COLORS.error} />
+            </View>
+            <Text style={modalStyles.title}>{errorModal.title}</Text>
+            <Text style={modalStyles.message}>{errorModal.message}</Text>
+            <TouchableOpacity
+              style={modalStyles.button}
+              onPress={() => setErrorModal({ visible: false, title: '', message: '' })}
+              activeOpacity={0.8}
+            >
+              <Text style={modalStyles.buttonText}>ENTENDIDO</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  container: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    gap: 16,
+  },
+  iconContainer: {
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: FONTS.size.lg,
+    fontFamily: FONTS.family.displaySemiBold,
+    color: COLORS.onSurface,
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: FONTS.size.sm,
+    fontFamily: FONTS.family.body,
+    color: COLORS.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  button: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    marginTop: 8,
+    width: '100%',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: FONTS.size.xs,
+    fontFamily: FONTS.family.monoSemiBold,
+    color: COLORS.onPrimary,
+    letterSpacing: FONTS.tracking.caps,
+  },
+});
