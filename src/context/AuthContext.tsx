@@ -98,6 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           try {
             const userData = await authService.me();
             setUser(userData);
+            await authService.saveUserData(userData); // Guardar para uso offline
             console.log('[AuthContext] Usuario autenticado:', userData.emailUade);
           } catch (error: any) {
             // Si es 401, el token es inválido → logout
@@ -106,36 +107,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setUser(null);
               await authService.logout();
             } else {
-              // Error de red u otro → usar datos del token
-              console.log('[AuthContext] Error de red, usando datos del token');
-              const decoded = decodeJWT(token);
-              if (decoded) {
-                setUser({
-                  id: decoded.userId,
-                  emailUade: decoded.email,
-                  fullName: 'Usuario', // No lo tenemos en el token
-                  roleName: decoded.roleName,
-                  roleId: decoded.roleId,
-                  departmentId: null,
-                  departmentName: null,
-                });
+              // Error de red u otro → usar datos guardados
+              console.log('[AuthContext] Error de red, usando datos guardados');
+              const savedUserData = await authService.getUserData();
+              if (savedUserData) {
+                setUser(savedUserData);
+              } else {
+                // Fallback: decodificar token si no hay datos guardados
+                const decoded = decodeJWT(token);
+                if (decoded) {
+                  setUser({
+                    id: decoded.userId,
+                    emailUade: decoded.email,
+                    fullName: 'Usuario',
+                    roleName: decoded.roleName,
+                    roleId: decoded.roleId,
+                    departmentId: null,
+                    departmentName: null,
+                  });
+                }
               }
             }
           }
         } else {
-          // Sin conexión → usar datos del token sin validar
-          console.log('[AuthContext] Sin conexión - Usando datos del token guardado');
-          const decoded = decodeJWT(token);
-          if (decoded) {
-            setUser({
-              id: decoded.userId,
-              emailUade: decoded.email,
-              fullName: 'Usuario', // No lo tenemos en el token
-              roleName: decoded.roleName,
-              roleId: decoded.roleId,
-              departmentId: null,
-              departmentName: null,
-            });
+          // Sin conexión → usar datos guardados
+          console.log('[AuthContext] Sin conexión - Usando datos guardados');
+          const savedUserData = await authService.getUserData();
+          if (savedUserData) {
+            setUser(savedUserData);
+          } else {
+            // Fallback: decodificar token si no hay datos guardados
+            const decoded = decodeJWT(token);
+            if (decoded) {
+              setUser({
+                id: decoded.userId,
+                emailUade: decoded.email,
+                fullName: 'Usuario',
+                roleName: decoded.roleName,
+                roleId: decoded.roleId,
+                departmentId: null,
+                departmentName: null,
+              });
+            }
           }
         }
       } else {

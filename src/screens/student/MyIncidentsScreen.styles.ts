@@ -4,7 +4,7 @@ import { FONTS } from '../../../constants/fonts';
 
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  scroll: { padding: 20, gap: 16, paddingBottom: 100 }, // Extra padding para que no tape el FAB y la paginación
+  scroll: { padding: 20, gap: 16, paddingBottom: 90 }, // Espacio para el FAB sin exceso
   summary: { fontSize: 13, color: COLORS.onSurfaceVariant },
   filtersScroll: { marginHorizontal: -20 },
   filters: { flexDirection: 'row', gap: 8, paddingHorizontal: 20 },

@@ -82,6 +82,17 @@ export default function OfflineSyncManager() {
     if (reconnected) maybePrompt();
   }, [isOnline, maybePrompt]);
 
+  // Si hay pendientes nuevos y estamos online (ej: creaste offline y luego conectaste antes del modal)
+  const prevPending = useRef(pending);
+  useEffect(() => {
+    const wentFromZeroToSome = prevPending.current === 0 && pending > 0;
+    prevPending.current = pending;
+    if (wentFromZeroToSome && isOnline && !isVerifying && isAuthenticated) {
+      console.log('[OfflineSyncManager] Detectado pending > 0, mostrando prompt');
+      maybePrompt();
+    }
+  }, [pending, isOnline, isVerifying, isAuthenticated, maybePrompt]);
+
   // Banner: mostrar al pasar a offline, auto-ocultar a los 4s para no tapar
   // el botón de guardar. Se puede dismissear manualmente con la X.
   // NO mostrar el banner si aún estamos verificando la conexión.
