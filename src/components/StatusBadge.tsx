@@ -4,7 +4,7 @@ import { COLORS } from '../../constants/colors';
 import { FONTS } from '../../constants/fonts';
 import { styles } from './StatusBadge.styles';
 
-type Status = 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'CRITICO' | 'PENDIENTE' | 'URGENTE' | 'MEDIA' | 'BAJA' | 'ALTA';
+type Status = 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'CRITICO' | 'PENDIENTE' | 'URGENTE' | 'MEDIA' | 'BAJA' | 'ALTA' | 'OFFLINE';
 
 type StatusBadgeProps = {
   status: Status;
@@ -20,6 +20,7 @@ const statusConfig: Record<Status, { dot: string; label: string }> = {
   MEDIA:        { dot: COLORS.warning,           label: 'Media'      },
   BAJA:         { dot: COLORS.textMuted,         label: 'Baja'       },
   ALTA:         { dot: COLORS.statusCritical,    label: 'Alta'       },
+  OFFLINE:      { dot: COLORS.textMuted,         label: 'Sin conexión' },
 };
 
 export default function StatusBadge({ status }: StatusBadgeProps) {

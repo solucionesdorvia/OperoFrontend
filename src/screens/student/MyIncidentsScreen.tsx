@@ -14,9 +14,11 @@ import type { StudentTabScreenProps } from '../../types/navigation';
 import { styles } from './MyIncidentsScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
+import { offlineQueueService, PendingIncident } from '../../services/offlineQueueService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { getRelativeTime } from '../../utils/dateUtils';
+import { useNetwork } from '../../hooks/useNetwork';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -38,7 +40,8 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
   const tabBarHeight = 60 + insets.bottom;
 
   const { user } = useAuth();
-  const { dialogState, hideDialog, showError } = useErrorDialog();
+  const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
+  const { isOnline } = useNetwork();
 
   const [allIncidents, setAllIncidents] = useState<IncidentResponse[]>([]);
   const [filteredIncidents, setFilteredIncidents] = useState<IncidentResponse[]>([]);
@@ -47,25 +50,85 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
   const [active, setActive] = useState(0);
   const [dateIdx, setDateIdx] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [syncing, setSyncing] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const loadIncidents = async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const data = await incidentService.getAll();
-      const userIncidents = data
-        .filter(inc => inc.reporterId === user?.id)
+      // Cargar incidentes del servidor (solo si hay conexión)
+      let serverIncidents: IncidentResponse[] = [];
+      try {
+        const data = await incidentService.getAll();
+        serverIncidents = data.filter(inc => inc.reporterId === user?.id);
+      } catch (error: any) {
+        console.log('[MyIncidentsScreen] No se pudieron cargar incidentes del servidor (probablemente offline)');
+      }
+
+      // Cargar incidentes offline
+      const offlineIncidents = await offlineQueueService.getAll();
+
+      // Convertir incidentes offline a formato IncidentResponse
+      const offlineAsIncidents: IncidentResponse[] = offlineIncidents.map((pending: PendingIncident, idx: number) => ({
+        id: -(idx + 1), // ID negativo para distinguir de los del servidor
+        title: pending.title,
+        description: pending.description,
+        status: 'OFFLINE' as any, // Estado especial para offline
+        priority: 'MEDIA',
+        createdAt: pending.timestamp,
+        updatedAt: pending.timestamp,
+        reporterId: user?.id || 0,
+        reporterName: user?.fullName || 'Tú',
+        departmentId: pending.departmentId,
+        departmentName: pending.departmentName || 'Sin departamento',
+        locationId: null,
+        locationName: pending.location || 'Sin ubicación',
+        photoUrl: pending.photoUri || null,
+        assignedToId: null,
+        assignedToName: null,
+      }));
+
+      // Combinar ambos y ordenar por fecha
+      const allUserIncidents = [...serverIncidents, ...offlineAsIncidents]
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      setAllIncidents(userIncidents);
-      applyFilters(userIncidents, active, dateIdx);
+      setAllIncidents(allUserIncidents);
+      applyFilters(allUserIncidents, active, dateIdx);
     } catch (error: any) {
       console.error('[MyIncidentsScreen] Error al cargar incidencias:', error);
       showError('Error', error.message || 'No se pudieron cargar las incidencias');
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const handleManualSync = async () => {
+    if (!isOnline) {
+      showError('Sin conexión', 'No hay conexión a internet. Conectate para sincronizar.');
+      return;
+    }
+
+    if (pendingCount === 0) {
+      showError('Sin pendientes', 'No hay incidentes pendientes para sincronizar.');
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      const result = await offlineQueueService.flush();
+      if (result.failed === 0) {
+        showSuccess('Sincronizado', `${result.uploaded} incidente(s) subido(s) correctamente.`);
+      } else {
+        showError('Sincronización parcial', `Subidos: ${result.uploaded}, Fallidos: ${result.failed}`);
+      }
+      await loadIncidents(true);
+    } catch (error: any) {
+      showError('Error', error.message || 'No se pudo sincronizar');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -110,6 +173,23 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
     }, [])
   );
 
+  // Recargar cuando cambie la cola offline (se guarde o sincronice)
+  useEffect(() => {
+    const updatePendingCount = async () => {
+      const count = await offlineQueueService.count();
+      setPendingCount(count);
+    };
+
+    updatePendingCount();
+
+    const unsubscribe = offlineQueueService.subscribe(() => {
+      console.log('[MyIncidentsScreen] Cola offline cambió, recargando...');
+      updatePendingCount();
+      loadIncidents();
+    });
+    return unsubscribe;
+  }, []);
+
   useEffect(() => {
     applyFilters(allIncidents, active, dateIdx);
   }, [active, dateIdx]);
@@ -141,7 +221,42 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
         }
       >
 
-        <Text style={styles.summary}>{allIncidents.length} reportes en total</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <Text style={styles.summary}>{allIncidents.length} reportes en total</Text>
+
+          {pendingCount > 0 && (
+            <TouchableOpacity
+              onPress={handleManualSync}
+              disabled={!isOnline || syncing}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                backgroundColor: isOnline ? COLORS.primary : COLORS.surfaceVariant,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 16,
+                opacity: (!isOnline || syncing) ? 0.6 : 1,
+              }}
+              activeOpacity={0.7}
+            >
+              {syncing ? (
+                <ActivityIndicator size="small" color={COLORS.onPrimary} />
+              ) : (
+                <MaterialIcons name="cloud-upload" size={16} color={isOnline ? COLORS.onPrimary : COLORS.onSurfaceVariant} />
+              )}
+              <Text style={{
+                fontSize: 12,
+                fontFamily: FONTS.family.monoSemiBold,
+                color: isOnline ? COLORS.onPrimary : COLORS.onSurfaceVariant,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+              }}>
+                {syncing ? 'Sincronizando...' : `Subir ${pendingCount}`}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
           <View style={styles.filters}>
