@@ -12,9 +12,11 @@ import type { MaintenanceTabScreenProps } from '../../types/navigation';
 import { styles } from './MaintenanceHomeScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
+import { incidentCacheService } from '../../services/incidentCacheService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { getRelativeTime } from '../../utils/dateUtils';
+import { useNetwork } from '../../hooks/useNetwork';
 
 const priorityConfig = {
   HIGH: { color: COLORS.error,   label: 'Urgente' },
@@ -26,6 +28,7 @@ type MaintenanceHomeScreenProps = MaintenanceTabScreenProps<'MaintenanceHomeTab'
 
 export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScreenProps) {
   const { user } = useAuth();
+  const { isOnline } = useNetwork();
   const [myTasks, setMyTasks] = useState<IncidentResponse[]>([]);
   const [stats, setStats] = useState({ asignadas: 0, completadasHoy: 0 });
   const [loading, setLoading] = useState(true);
@@ -37,7 +40,23 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const incidents = await incidentService.getAll();
+      let incidents: IncidentResponse[] = [];
+
+      if (isOnline) {
+        try {
+          incidents = await incidentService.getAll();
+          await incidentCacheService.save(incidents);
+        } catch (error: any) {
+          console.log('[MaintenanceHome] Error, usando caché');
+          const cached = await incidentCacheService.load();
+          incidents = cached || [];
+        }
+      } else {
+        console.log('[MaintenanceHome] Offline, cargando caché');
+        const cached = await incidentCacheService.load();
+        incidents = cached || [];
+      }
+
       const assigned = incidents.filter(inc => inc.workerId === user?.id);
 
       const sorted = assigned
@@ -60,7 +79,7 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
       });
     } catch (error: any) {
       console.error('[MaintenanceHomeScreen] Error al cargar datos:', error);
-      showError('Error', error.message || 'No se pudieron cargar los datos');
+      // No mostrar error - el caché ya maneja offline
     } finally {
       setLoading(false);
       setRefreshing(false);

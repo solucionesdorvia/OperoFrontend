@@ -8,6 +8,8 @@ import { COLORS } from '../../constants/colors';
 import TopAppBar from './TopAppBar';
 import { useAuth } from '../context/AuthContext';
 import { incidentService } from '../services/incidentService';
+import { incidentCacheService } from '../services/incidentCacheService';
+import { useNetwork } from '../hooks/useNetwork';
 
 type MenuItem = {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -29,13 +31,32 @@ export default function BaseProfileScreen({
   statsFilter,
 }: BaseProfileScreenProps) {
   const { logout, user } = useAuth();
+  const { isOnline } = useNetwork();
   const [stats, setStats] = useState({ reported: 0, resolved: 0, active: 0 });
   const [loading, setLoading] = useState(true);
 
   const loadStats = async () => {
     try {
       setLoading(true);
-      const incidents = await incidentService.getAll();
+
+      let incidents: any[] = [];
+
+      if (isOnline) {
+        try {
+          incidents = await incidentService.getAll();
+          // El caché ya se guarda en las otras pantallas, pero por si acaso:
+          await incidentCacheService.save(incidents);
+        } catch (error: any) {
+          console.log('[ProfileScreen] Error al cargar del servidor, usando caché');
+          const cached = await incidentCacheService.load();
+          incidents = cached || [];
+        }
+      } else {
+        console.log('[ProfileScreen] Sin conexión, cargando desde caché');
+        const cached = await incidentCacheService.load();
+        incidents = cached || [];
+      }
+
       setStats(statsFilter(incidents, user?.id));
     } catch (error) {
       console.error('[ProfileScreen] Error al cargar stats:', error);

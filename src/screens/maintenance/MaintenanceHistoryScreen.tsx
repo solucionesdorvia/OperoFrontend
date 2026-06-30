@@ -14,9 +14,11 @@ import type { MaintenanceTabScreenProps } from '../../types/navigation';
 import { styles } from './MaintenanceHistoryScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
+import { incidentCacheService } from '../../services/incidentCacheService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { formatDate } from '../../utils/dateUtils';
+import { useNetwork } from '../../hooks/useNetwork';
 
 const ITEMS_PER_PAGE = 5;
 const periods = ['Hoy', 'Semana', 'Mes', 'Todo'];
@@ -27,6 +29,7 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
   const insets = useSafeAreaInsets();
   const tabBarHeight = 60 + insets.bottom;
   const { user } = useAuth();
+  const { isOnline } = useNetwork();
 
   const [allHistory, setAllHistory] = useState<IncidentResponse[]>([]);
   const [filtered, setFiltered] = useState<IncidentResponse[]>([]);
@@ -41,7 +44,23 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const incidents = await incidentService.getAll();
+      let incidents: IncidentResponse[] = [];
+
+      if (isOnline) {
+        try {
+          incidents = await incidentService.getAll();
+          await incidentCacheService.save(incidents);
+        } catch (error: any) {
+          console.log('[MaintenanceHistory] Error, usando caché');
+          const cached = await incidentCacheService.load();
+          incidents = cached || [];
+        }
+      } else {
+        console.log('[MaintenanceHistory] Offline, cargando caché');
+        const cached = await incidentCacheService.load();
+        incidents = cached || [];
+      }
+
       const myCompleted = incidents
         .filter(inc => inc.workerId === user?.id && inc.status === 'FINISHED')
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -50,7 +69,7 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
       applyFilter(myCompleted, period);
     } catch (error: any) {
       console.error('[MaintenanceHistoryScreen] Error al cargar historial:', error);
-      showError('Error', error.message || 'No se pudo cargar el historial');
+      // No mostrar error - el caché ya maneja offline
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
+    marginTop: 12,
+    marginBottom: 80, // Espacio para el FAB
     gap: 8,
   },
   arrowBtn: {
