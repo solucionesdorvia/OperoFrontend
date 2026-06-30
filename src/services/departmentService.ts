@@ -57,21 +57,21 @@ export const departmentService = {
     try {
       // Obtener token explícitamente para asegurar que se envíe
       const token = await AsyncStorage.getItem(TOKEN_KEY);
-      console.log('[departmentService.delete] Token obtenido:', token ? 'SÍ (longitud: ' + token.length + ')' : 'NO');
+      console.log('[departmentService.delete] Token:', token ? `SÍ - Preview: ${token.substring(0, 30)}...` : 'NO - NULL o undefined');
 
       if (!token) {
         throw new Error('No autenticado - token no encontrado en AsyncStorage');
       }
 
-      console.log('[departmentService.delete] Enviando DELETE con Authorization header');
-      await api.delete(`${ENDPOINTS.DEPARTMENTS}/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+      console.log('[departmentService.delete] Headers que se enviarán:', JSON.stringify(headers).substring(0, 80));
+
+      await api.delete(`${ENDPOINTS.DEPARTMENTS}/${id}`, { headers });
       console.log('[departmentService.delete] DELETE exitoso');
     } catch (error) {
-      console.error('[departmentService.delete] Error:', error);
+      console.error('[departmentService.delete] Error completo:', error);
       throw new Error(getErrorMessage(error));
     }
   },

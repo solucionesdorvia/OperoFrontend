@@ -6,6 +6,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../../../constants/colors';
 import { FONTS } from '../../../constants/fonts';
 import TopAppBar from '../../components/TopAppBar';
@@ -43,13 +44,6 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
   const [deptModalOpen, setDeptModalOpen] = useState(false);
   const [newDeptName, setNewDeptName] = useState('');
   const [creatingDept, setCreatingDept] = useState(false);
-
-  // Modal: confirmar eliminación de departamento
-  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
-    visible: boolean;
-    deptId: number | null;
-    deptName: string;
-  }>({ visible: false, deptId: null, deptName: '' });
 
   const loadData = async (isRefresh = false) => {
     try {
@@ -157,33 +151,6 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
     }
   };
 
-  const handleDeleteDepartment = (deptId: number, deptName: string, workerCount: number) => {
-    if (workerCount > 0) {
-      showError(
-        'No se puede eliminar',
-        `El departamento "${deptName}" tiene ${workerCount} operador(es). Reasignalos primero.`
-      );
-      return;
-    }
-
-    // Mostrar modal de confirmación personalizado
-    setDeleteConfirmModal({ visible: true, deptId, deptName });
-  };
-
-  const confirmDeleteDepartment = async () => {
-    const { deptId, deptName } = deleteConfirmModal;
-    if (!deptId) return;
-
-    try {
-      setDeleteConfirmModal({ visible: false, deptId: null, deptName: '' });
-      await departmentService.delete(deptId);
-      showSuccess('Eliminado', `Se eliminó "${deptName}"`);
-      await loadData(true);
-    } catch (error: any) {
-      console.error('[MyTeamScreen] Error al eliminar departamento:', error);
-      showError('Error', error.message || 'No se pudo eliminar el departamento');
-    }
-  };
 
   if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile' as any)} />;
 
@@ -217,17 +184,8 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
                       <MaterialIcons name="domain" size={18} color={COLORS.primary} />
                       <Text style={styles.deptName}>{dept.name}</Text>
                     </View>
-                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-                      <View style={styles.countBadge}>
-                        <Text style={styles.countBadgeText}>{deptWorkers.length}</Text>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteDepartment(dept.id, dept.name, deptWorkers.length)}
-                        activeOpacity={0.7}
-                        hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-                      >
-                        <MaterialIcons name="delete-outline" size={20} color={COLORS.error} />
-                      </TouchableOpacity>
+                    <View style={styles.countBadge}>
+                      <Text style={styles.countBadgeText}>{deptWorkers.length}</Text>
                     </View>
                   </View>
 
@@ -425,39 +383,6 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
-      </Modal>
-
-      {/* Modal: confirmar eliminación */}
-      <Modal
-        visible={deleteConfirmModal.visible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDeleteConfirmModal({ visible: false, deptId: null, deptName: '' })}
-      >
-        <View style={modalStyles.overlay}>
-          <View style={modalStyles.card}>
-            <MaterialIcons name="warning" size={48} color={COLORS.error} style={{ alignSelf: 'center', marginBottom: 16 }} />
-            <Text style={modalStyles.title}>Eliminar departamento</Text>
-            <Text style={modalStyles.message}>
-              ¿Estás seguro de eliminar "{deleteConfirmModal.deptName}"?{'\n\n'}
-              Esta acción no se puede deshacer.
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
-              <TouchableOpacity
-                style={[modalStyles.button, { backgroundColor: COLORS.surfaceVariant, flex: 1 }]}
-                onPress={() => setDeleteConfirmModal({ visible: false, deptId: null, deptName: '' })}
-              >
-                <Text style={[modalStyles.buttonText, { color: COLORS.onSurfaceVariant }]}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[modalStyles.button, { backgroundColor: COLORS.error, flex: 1 }]}
-                onPress={confirmDeleteDepartment}
-              >
-                <Text style={[modalStyles.buttonText, { color: COLORS.onPrimary }]}>Eliminar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
       </Modal>
 
       <ErrorDialog
@@ -690,53 +615,3 @@ const styles = StyleSheet.create({
   },
 });
 
-const modalStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 26, 46, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  title: {
-    fontFamily: FONTS.family.bodySemiBold,
-    fontSize: 20,
-    lineHeight: 28,
-    color: COLORS.text,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  message: {
-    fontFamily: FONTS.family.body,
-    fontSize: 15,
-    lineHeight: 22,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  button: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    fontFamily: FONTS.family.bodyMedium,
-    fontSize: 15,
-    lineHeight: 20,
-    color: COLORS.onPrimary,
-  },
-});
