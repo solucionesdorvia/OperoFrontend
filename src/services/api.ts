@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../../constants/api';
 
@@ -6,16 +6,44 @@ export const TOKEN_KEY = '@opero_auth_token';
 
 export const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,
+  timeout: 30000, // 30 segundos para conexiones móviles lentas
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
 });
 
+// Configuración de reintentos
+const MAX_RETRIES = 2;
+const RETRY_DELAY = 1000; // 1 segundo entre reintentos
+
+// Helper para esperar entre reintentos
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper para determinar si un error es reintentable
+const isRetryableError = (error: AxiosError): boolean => {
+  // Reintentar en errores de red o timeouts
+  return (
+    error.code === 'ECONNABORTED' ||
+    error.code === 'ERR_NETWORK' ||
+    error.message === 'Network Error' ||
+    !error.response // Sin respuesta = problema de red
+  );
+};
+
 api.interceptors.request.use(
-  async (config) => {
+  async (config: InternalAxiosRequestConfig) => {
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      // Inicializar contador de reintentos si no existe
+      if (!config.headers['x-retry-count']) {
+        config.headers['x-retry-count'] = '0';
+      }
+
       return config;
     } catch (error) {
       return config;
@@ -26,15 +54,15 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
+  async (error: AxiosError) => {
+    const config = error.config as InternalAxiosRequestConfig & { headers: any };
+
     // Solo borrar token en errores 401 que NO sean de endpoints de auth
-    // (para no interferir con errores de login/registro)
     if (error.response?.status === 401) {
-      const isAuthEndpoint = error.config?.url?.includes('/auth/login') ||
-                             error.config?.url?.includes('/auth/register');
+      const isAuthEndpoint = config?.url?.includes('/auth/login') ||
+                             config?.url?.includes('/auth/register');
 
       if (!isAuthEndpoint) {
-        // Token expirado o inválido - borrarlo
         try {
           await AsyncStorage.removeItem(TOKEN_KEY);
         } catch (e) {
@@ -42,6 +70,27 @@ api.interceptors.response.use(
         }
       }
     }
+
+    // Lógica de reintentos para errores de red
+    if (config && isRetryableError(error)) {
+      const retryCount = parseInt(config.headers['x-retry-count'] || '0');
+
+      if (retryCount < MAX_RETRIES) {
+        // Incrementar contador de reintentos
+        config.headers['x-retry-count'] = String(retryCount + 1);
+
+        console.log(`[api] Reintentando petición (intento ${retryCount + 1}/${MAX_RETRIES}):`, config.url);
+
+        // Esperar antes de reintentar
+        await delay(RETRY_DELAY * (retryCount + 1)); // Backoff exponencial suave
+
+        // Reintentar la petición
+        return api.request(config);
+      }
+
+      console.log(`[api] Máximo de reintentos alcanzado para:`, config.url);
+    }
+
     return Promise.reject(error);
   }
 );

@@ -21,7 +21,7 @@ import { styles } from './OfflineSyncManager.styles';
 const BANNER_AUTOHIDE_MS = 4000;
 
 export default function OfflineSyncManager() {
-  const { isOnline } = useNetwork();
+  const { isOnline, isVerifying } = useNetwork();
   const wasOnline = useRef(isOnline);
 
   const [pending, setPending] = useState(0);
@@ -38,6 +38,11 @@ export default function OfflineSyncManager() {
   }, []);
 
   const maybePrompt = useCallback(async () => {
+    // No mostrar prompt si aún estamos verificando la conexión
+    if (isVerifying) {
+      console.log('[OfflineSyncManager] Aún verificando conexión, esperando...');
+      return;
+    }
     if (!isOnline) {
       console.log('[OfflineSyncManager] No online, no prompt');
       return;
@@ -48,7 +53,7 @@ export default function OfflineSyncManager() {
       console.log('[OfflineSyncManager] Mostrando prompt para subir', count, 'items');
       setPromptVisible(true);
     }
-  }, [isOnline, refreshPending]);
+  }, [isOnline, isVerifying, refreshPending]);
 
   // Mantenemos el contador al día con los cambios de la cola.
   useEffect(() => {
@@ -72,7 +77,12 @@ export default function OfflineSyncManager() {
 
   // Banner: mostrar al pasar a offline, auto-ocultar a los 4s para no tapar
   // el botón de guardar. Se puede dismissear manualmente con la X.
+  // NO mostrar el banner si aún estamos verificando la conexión.
   useEffect(() => {
+    if (isVerifying) {
+      // Mientras verificamos, no mostramos nada
+      return;
+    }
     console.log('[OfflineSyncManager] Estado conexión:', isOnline ? 'ONLINE' : 'OFFLINE');
     if (!isOnline) {
       console.log('[OfflineSyncManager] Mostrando banner offline');
@@ -85,7 +95,7 @@ export default function OfflineSyncManager() {
     } else {
       setBannerVisible(false);
     }
-  }, [isOnline]);
+  }, [isOnline, isVerifying]);
 
   const handleUpload = async () => {
     setSyncing(true);

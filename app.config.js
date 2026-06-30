@@ -26,7 +26,12 @@ export default {
         backgroundColor: "#FFFFFF"
       },
       edgeToEdgeEnabled: true,
-      predictiveBackGestureEnabled: false
+      predictiveBackGestureEnabled: false,
+      permissions: [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE"
+      ]
     },
     web: {
       favicon: "./assets/favicon.png"
@@ -57,7 +62,7 @@ export default {
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
       eas: {
-        projectId: process.env.EAS_PROJECT_ID
+        projectId: "451a2b86-7c43-4ffc-848b-115b864b531a"
       }
     }
   }

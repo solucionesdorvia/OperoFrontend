@@ -35,7 +35,7 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
   const incident = route?.params?.incident;
 
   const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
-  const { isOnline } = useNetwork();
+  const { isOnline, isVerifying } = useNetwork();
 
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
   const [loadingDepts, setLoadingDepts] = useState(true);
@@ -273,15 +273,21 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
         locationDescription: location.trim() || undefined,
       };
 
-      // Caso 1 — NetInfo ya nos confirmó que estamos offline: directo al queue.
+      // Caso 1 — NetInfo aún está verificando la conexión: esperamos un momento
+      // antes de decidir si ir al queue o intentar subir.
+      if (isVerifying) {
+        // Pequeña espera para que NetInfo termine de sincronizar
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Caso 2 — NetInfo confirmó que estamos offline: directo al queue.
       if (!isOnline) {
         await queueOfflineAndExit(baseData);
         return;
       }
 
-      // Caso 2 — NetInfo dice online (puede ser el estado por default antes de
-      // que sincronice). Intentamos el upload normal. Si falla por red,
-      // hacemos fallback transparente al queue sin mostrar el error.
+      // Caso 3 — NetInfo dice online. Intentamos el upload normal.
+      // Si falla por red, hacemos fallback transparente al queue sin mostrar el error.
       try {
         let photoUrl: string | undefined;
         if (attachedImages.length > 0) {
