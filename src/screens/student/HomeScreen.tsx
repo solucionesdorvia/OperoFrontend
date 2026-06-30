@@ -13,9 +13,11 @@ import type { StudentTabScreenProps } from '../../types/navigation';
 import { styles } from './HomeScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
+import { incidentCacheService } from '../../services/incidentCacheService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { getRelativeTime } from '../../utils/dateUtils';
+import { useNetwork } from '../../hooks/useNetwork';
 
 type HomeScreenProps = StudentTabScreenProps<'StudentHome'>;
 
@@ -33,6 +35,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const { user } = useAuth();
   const { dialogState, hideDialog, showError } = useErrorDialog();
+  const { isOnline } = useNetwork();
 
   const [incidents, setIncidents] = useState<IncidentResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,17 +46,35 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const data = await incidentService.getAll();
-      // Filtrar solo las del usuario actual y tomar las 4 más recientes
+      let data: IncidentResponse[] = [];
+
+      if (isOnline) {
+        try {
+          data = await incidentService.getAll();
+          // Guardar en caché
+          const userIncidents = data.filter(inc => inc.reporterId === user?.id);
+          await incidentCacheService.save(userIncidents);
+        } catch (error: any) {
+          console.log('[HomeScreen] Error al cargar del servidor, usando caché');
+          const cached = await incidentCacheService.load();
+          data = cached || [];
+        }
+      } else {
+        // Sin conexión: cargar del caché
+        console.log('[HomeScreen] Sin conexión, cargando desde caché');
+        const cached = await incidentCacheService.load();
+        data = cached || [];
+      }
+
+      // Tomar las 4 más recientes
       const userIncidents = data
-        .filter(inc => inc.reporterId === user?.id)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 4);
 
       setIncidents(userIncidents);
     } catch (error: any) {
       console.error('[HomeScreen] Error al cargar incidencias:', error);
-      showError('Error', error.message || 'No se pudieron cargar las incidencias');
+      // No mostrar error - el caché ya maneja offline
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -14,9 +14,11 @@ import Pagination from '../../components/Pagination';
 import type { ManagerTabScreenProps } from '../../types/navigation';
 import { styles } from './ManagerIncidentsListScreen.styles';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
+import { incidentCacheService } from '../../services/incidentCacheService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { getRelativeTime } from '../../utils/dateUtils';
+import { useNetwork } from '../../hooks/useNetwork';
 
 const ITEMS_PER_PAGE = 5;
 const filters = ['Todas', 'Abiertas', 'En proceso', 'Finalizadas'] as const;
@@ -44,20 +46,37 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
   const [active, setActive] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const { dialogState, hideDialog, showError } = useErrorDialog();
+  const { isOnline } = useNetwork();
 
   const loadIncidents = async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const data = await incidentService.getAll();
+      let data: IncidentResponse[] = [];
+
+      if (isOnline) {
+        try {
+          data = await incidentService.getAll();
+          await incidentCacheService.save(data);
+        } catch (error: any) {
+          console.log('[ManagerIncidentsList] Error al cargar del servidor, usando caché');
+          const cached = await incidentCacheService.load();
+          data = cached || [];
+        }
+      } else {
+        console.log('[ManagerIncidentsList] Sin conexión, cargando desde caché');
+        const cached = await incidentCacheService.load();
+        data = cached || [];
+      }
+
       const sorted = data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setAllIncidents(sorted);
       applyFilter(sorted, active);
     } catch (error: any) {
       console.error('[ManagerIncidentsListScreen] Error al cargar incidencias:', error);
-      showError('Error', error.message || 'No se pudieron cargar las incidencias');
+      // No mostrar error - el caché ya maneja offline
     } finally {
       setLoading(false);
       setRefreshing(false);
