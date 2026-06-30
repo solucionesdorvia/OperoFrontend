@@ -44,6 +44,13 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
   const [newDeptName, setNewDeptName] = useState('');
   const [creatingDept, setCreatingDept] = useState(false);
 
+  // Modal: confirmar eliminación de departamento
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    visible: boolean;
+    deptId: number | null;
+    deptName: string;
+  }>({ visible: false, deptId: null, deptName: '' });
+
   const loadData = async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
@@ -150,7 +157,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
     }
   };
 
-  const handleDeleteDepartment = async (deptId: number, deptName: string, workerCount: number) => {
+  const handleDeleteDepartment = (deptId: number, deptName: string, workerCount: number) => {
     if (workerCount > 0) {
       showError(
         'No se puede eliminar',
@@ -159,38 +166,22 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
       return;
     }
 
-    // En web, Alert.alert no funciona, usar window.confirm
-    // En móvil, usar Alert.alert nativo
-    const confirmarEliminacion = async () => {
-      try {
-        await departmentService.delete(deptId);
-        showSuccess('Eliminado', `Se eliminó "${deptName}"`);
-        await loadData(true);
-      } catch (error: any) {
-        console.error('[MyTeamScreen] Error al eliminar departamento:', error);
-        showError('Error', error.message || 'No se pudo eliminar el departamento');
-      }
-    };
+    // Mostrar modal de confirmación personalizado
+    setDeleteConfirmModal({ visible: true, deptId, deptName });
+  };
 
-    if (Platform.OS === 'web') {
-      // En web, usar window.confirm
-      if (window.confirm(`¿Estás seguro de eliminar "${deptName}"?`)) {
-        await confirmarEliminacion();
-      }
-    } else {
-      // En móvil, usar Alert.alert
-      Alert.alert(
-        'Eliminar departamento',
-        `¿Estás seguro de eliminar "${deptName}"?`,
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Eliminar',
-            style: 'destructive',
-            onPress: confirmarEliminacion,
-          },
-        ]
-      );
+  const confirmDeleteDepartment = async () => {
+    const { deptId, deptName } = deleteConfirmModal;
+    if (!deptId) return;
+
+    try {
+      setDeleteConfirmModal({ visible: false, deptId: null, deptName: '' });
+      await departmentService.delete(deptId);
+      showSuccess('Eliminado', `Se eliminó "${deptName}"`);
+      await loadData(true);
+    } catch (error: any) {
+      console.error('[MyTeamScreen] Error al eliminar departamento:', error);
+      showError('Error', error.message || 'No se pudo eliminar el departamento');
     }
   };
 
@@ -436,6 +427,39 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* Modal: confirmar eliminación */}
+      <Modal
+        visible={deleteConfirmModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteConfirmModal({ visible: false, deptId: null, deptName: '' })}
+      >
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.card}>
+            <MaterialIcons name="warning" size={48} color={COLORS.error} style={{ alignSelf: 'center', marginBottom: 16 }} />
+            <Text style={modalStyles.title}>Eliminar departamento</Text>
+            <Text style={modalStyles.message}>
+              ¿Estás seguro de eliminar "{deleteConfirmModal.deptName}"?{'\n\n'}
+              Esta acción no se puede deshacer.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
+              <TouchableOpacity
+                style={[modalStyles.button, { backgroundColor: COLORS.surfaceVariant, flex: 1 }]}
+                onPress={() => setDeleteConfirmModal({ visible: false, deptId: null, deptName: '' })}
+              >
+                <Text style={[modalStyles.buttonText, { color: COLORS.onSurfaceVariant }]}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[modalStyles.button, { backgroundColor: COLORS.error, flex: 1 }]}
+                onPress={confirmDeleteDepartment}
+              >
+                <Text style={[modalStyles.buttonText, { color: COLORS.onPrimary }]}>Eliminar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <ErrorDialog
         visible={dialogState.visible}
         type={dialogState.type}
@@ -661,6 +685,53 @@ const styles = StyleSheet.create({
     color: COLORS.onPrimary,
     fontFamily: FONTS.family.monoSemiBold,
     fontSize: 13,
+    textTransform: 'uppercase',
+    letterSpacing: FONTS.tracking.caps,
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  title: {
+    fontSize: 20,
+    fontFamily: FONTS.family.monoBold,
+    color: COLORS.onSurface,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: 14,
+    fontFamily: FONTS.family.mono,
+    color: COLORS.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  button: {
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 13,
+    fontFamily: FONTS.family.monoSemiBold,
     textTransform: 'uppercase',
     letterSpacing: FONTS.tracking.caps,
   },

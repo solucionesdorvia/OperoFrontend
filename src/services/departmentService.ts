@@ -1,5 +1,6 @@
-import { api, getErrorMessage } from './api';
+import { api, getErrorMessage, TOKEN_KEY } from './api';
 import { ENDPOINTS } from '../../constants/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Matchea DepartmentResponse del backend (no usa description).
 export interface DepartmentResponse {
@@ -54,7 +55,17 @@ export const departmentService = {
 
   async delete(id: number): Promise<void> {
     try {
-      await api.delete(`${ENDPOINTS.DEPARTMENTS}/${id}`);
+      // Obtener token explícitamente para asegurar que se envíe
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        throw new Error('No autenticado - token no encontrado');
+      }
+
+      await api.delete(`${ENDPOINTS.DEPARTMENTS}/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }
