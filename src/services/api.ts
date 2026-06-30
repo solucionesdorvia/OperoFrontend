@@ -34,9 +34,12 @@ const isRetryableError = (error: AxiosError): boolean => {
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
-      const token = await AsyncStorage.getItem(TOKEN_KEY);
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
+      // Solo agregar Authorization si NO existe ya (para no sobrescribir headers manuales)
+      if (!config.headers.Authorization) {
+        const token = await AsyncStorage.getItem(TOKEN_KEY);
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
 
       // Inicializar contador de reintentos si no existe
@@ -57,19 +60,9 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const config = error.config as InternalAxiosRequestConfig & { headers: any };
 
-    // Solo borrar token en errores 401 que NO sean de endpoints de auth
-    if (error.response?.status === 401) {
-      const isAuthEndpoint = config?.url?.includes('/auth/login') ||
-                             config?.url?.includes('/auth/register');
-
-      if (!isAuthEndpoint) {
-        try {
-          await AsyncStorage.removeItem(TOKEN_KEY);
-        } catch (e) {
-          console.error('[api] Error al borrar token:', e);
-        }
-      }
-    }
+    // NO borrar el token automáticamente en 401
+    // El logout debe ser manual (cuando el usuario hace logout o expira la sesión de manera controlada)
+    // Un 401 puede ser por falta de permisos, no necesariamente por token inválido
 
     // Lógica de reintentos para errores de red
     if (config && isRetryableError(error)) {
