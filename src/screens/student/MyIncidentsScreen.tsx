@@ -313,7 +313,14 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
                     <TouchableOpacity
                       key={inc.id}
                       style={styles.card}
-                      onPress={() => navigation.navigate('IncidentDetail', { incident: inc as any })}
+                      onPress={() => {
+                        if (inc.id < 0) {
+                          // Incidente offline - no abrir detalle
+                          showError('Incidente offline', 'Este incidente aún no se ha subido al servidor. Sincronizalo primero para ver los detalles.');
+                        } else {
+                          navigation.navigate('IncidentDetail', { incident: inc as any });
+                        }
+                      }}
                       activeOpacity={0.7}
                     >
                       <View style={styles.cardTop}>
