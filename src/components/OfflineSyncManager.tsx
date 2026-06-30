@@ -13,6 +13,7 @@ import { View, Text, Modal, TouchableOpacity, ActivityIndicator } from 'react-na
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
 import { useNetwork } from '../hooks/useNetwork';
+import { useAuth } from '../context/AuthContext';
 import { offlineQueueService } from '../services/offlineQueueService';
 import { styles } from './OfflineSyncManager.styles';
 
@@ -22,6 +23,7 @@ const BANNER_AUTOHIDE_MS = 4000;
 
 export default function OfflineSyncManager() {
   const { isOnline, isVerifying } = useNetwork();
+  const { isAuthenticated } = useAuth();
   const wasOnline = useRef(isOnline);
 
   const [pending, setPending] = useState(0);
@@ -43,6 +45,11 @@ export default function OfflineSyncManager() {
       console.log('[OfflineSyncManager] Aún verificando conexión, esperando...');
       return;
     }
+    // No mostrar prompt si el usuario no está logueado
+    if (!isAuthenticated) {
+      console.log('[OfflineSyncManager] Usuario no autenticado, no mostrar prompt');
+      return;
+    }
     if (!isOnline) {
       console.log('[OfflineSyncManager] No online, no prompt');
       return;
@@ -53,7 +60,7 @@ export default function OfflineSyncManager() {
       console.log('[OfflineSyncManager] Mostrando prompt para subir', count, 'items');
       setPromptVisible(true);
     }
-  }, [isOnline, isVerifying, refreshPending]);
+  }, [isOnline, isVerifying, isAuthenticated, refreshPending]);
 
   // Mantenemos el contador al día con los cambios de la cola.
   useEffect(() => {
@@ -113,7 +120,7 @@ export default function OfflineSyncManager() {
 
   return (
     <>
-      {!isOnline && bannerVisible ? (
+      {!isOnline && bannerVisible && isAuthenticated ? (
         <View style={styles.banner}>
           <MaterialIcons name="cloud-off" size={16} color={COLORS.onPrimary} />
           <Text style={styles.bannerText}>
