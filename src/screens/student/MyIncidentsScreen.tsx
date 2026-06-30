@@ -231,7 +231,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
       </ScrollView>
 
       <TouchableOpacity
-        style={[styles.fab, { bottom: tabBarHeight + 8 }]}
+        style={[styles.fab, { bottom: 24 }]}
         onPress={() => navigation.navigate('CreateIncident')}
         activeOpacity={0.85}
       >

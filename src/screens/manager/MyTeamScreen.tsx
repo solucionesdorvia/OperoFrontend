@@ -159,27 +159,39 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
       return;
     }
 
-    Alert.alert(
-      'Eliminar departamento',
-      `¿Estás seguro de eliminar "${deptName}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await departmentService.delete(deptId);
-              showSuccess('Eliminado', `Se eliminó "${deptName}"`);
-              await loadData(true);
-            } catch (error: any) {
-              console.error('[MyTeamScreen] Error al eliminar departamento:', error);
-              showError('Error', error.message || 'No se pudo eliminar el departamento');
-            }
+    // En web, Alert.alert no funciona, usar window.confirm
+    // En móvil, usar Alert.alert nativo
+    const confirmarEliminacion = async () => {
+      try {
+        await departmentService.delete(deptId);
+        showSuccess('Eliminado', `Se eliminó "${deptName}"`);
+        await loadData(true);
+      } catch (error: any) {
+        console.error('[MyTeamScreen] Error al eliminar departamento:', error);
+        showError('Error', error.message || 'No se pudo eliminar el departamento');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      // En web, usar window.confirm
+      if (window.confirm(`¿Estás seguro de eliminar "${deptName}"?`)) {
+        await confirmarEliminacion();
+      }
+    } else {
+      // En móvil, usar Alert.alert
+      Alert.alert(
+        'Eliminar departamento',
+        `¿Estás seguro de eliminar "${deptName}"?`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Eliminar',
+            style: 'destructive',
+            onPress: confirmarEliminacion,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile' as any)} />;
@@ -274,7 +286,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
 
       {/* FAB: crear departamento */}
       <TouchableOpacity
-        style={[styles.fab, { bottom: tabBarHeight + 8 }]}
+        style={[styles.fab, { bottom: 24 }]}
         activeOpacity={0.85}
         onPress={() => setDeptModalOpen(true)}
       >
