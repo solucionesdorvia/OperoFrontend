@@ -14,7 +14,19 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { incidentService } from './incidentService';
 import { fileService } from './fileService';
 
-const STORAGE_KEY = '@opero_pending_incidents';
+const STORAGE_KEY_PREFIX = '@opero_pending_incidents_user_';
+
+// ID de usuario actual para la cola. Se setea desde AuthContext.
+let currentUserId: number | null = null;
+
+function getStorageKey(): string {
+  if (!currentUserId) {
+    // Fallback: sin userId usamos key genérica (compatibilidad con versiones anteriores)
+    console.warn('[offlineQueue] No hay userId seteado, usando cola genérica');
+    return '@opero_pending_incidents';
+  }
+  return `${STORAGE_KEY_PREFIX}${currentUserId}`;
+}
 
 export interface PendingIncident {
   localId: string;
@@ -78,7 +90,7 @@ async function persistImages(uris: string[]): Promise<string[]> {
 
 async function readAll(): Promise<PendingIncident[]> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await AsyncStorage.getItem(getStorageKey());
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -118,7 +130,7 @@ async function readAll(): Promise<PendingIncident[]> {
 }
 
 async function writeAll(items: PendingIncident[]): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  await AsyncStorage.setItem(getStorageKey(), JSON.stringify(items));
   notify();
 }
 
@@ -158,11 +170,18 @@ export const offlineQueueService = {
     await writeAll(items.filter((i) => i.localId !== localId));
   },
 
-  /** Limpia TODA la cola (usar solo para debug/testing). */
+  /** Limpia la cola del usuario actual (usar solo para debug/testing). */
   async clear(): Promise<void> {
-    console.log('[offlineQueue] LIMPIANDO toda la cola');
-    await AsyncStorage.removeItem(STORAGE_KEY);
+    console.log('[offlineQueue] LIMPIANDO cola del usuario', currentUserId);
+    await AsyncStorage.removeItem(getStorageKey());
     notify();
+  },
+
+  /** Setea el userId para la cola (llamar desde AuthContext al login/logout). */
+  setUserId(userId: number | null): void {
+    console.log('[offlineQueue] Seteando userId:', userId);
+    currentUserId = userId;
+    notify(); // Re-renderizar para cargar la cola del nuevo usuario
   },
 
   /** Debug: muestra el contenido actual de la cola en consola. */

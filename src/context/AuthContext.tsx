@@ -11,6 +11,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { authService, UserResponse } from '../services/authService';
 import { useNetwork } from '../hooks/useNetwork';
+import { offlineQueueService } from '../services/offlineQueueService';
 
 // Decodificar JWT para extraer datos básicos del usuario sin llamar al backend
 function decodeJWT(token: string): { userId: number; email: string; roleId: number; roleName: string } | null {
@@ -99,6 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const userData = await authService.me();
             setUser(userData);
             await authService.saveUserData(userData); // Guardar para uso offline
+            offlineQueueService.setUserId(userData.id); // Setear userId para cola offline
             console.log('[AuthContext] Usuario autenticado:', userData.emailUade);
           } catch (error: any) {
             // Si es 401, el token es inválido → logout
@@ -112,6 +114,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               const savedUserData = await authService.getUserData();
               if (savedUserData) {
                 setUser(savedUserData);
+                offlineQueueService.setUserId(savedUserData.id);
               } else {
                 // Fallback: decodificar token si no hay datos guardados
                 const decoded = decodeJWT(token);
@@ -135,6 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const savedUserData = await authService.getUserData();
           if (savedUserData) {
             setUser(savedUserData);
+            offlineQueueService.setUserId(savedUserData.id);
           } else {
             // Fallback: decodificar token si no hay datos guardados
             const decoded = decodeJWT(token);
@@ -184,6 +188,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       setUser(response.user);
+      offlineQueueService.setUserId(response.user.id);
       console.log('[AuthContext] Login exitoso:', response.user.emailUade);
     } catch (error) {
       console.error('[AuthContext] Error en login:', error);
@@ -216,6 +221,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       setUser(response.user);
+      offlineQueueService.setUserId(response.user.id);
       console.log('[AuthContext] Registro exitoso:', response.user.emailUade);
     } catch (error) {
       console.error('[AuthContext] Error en registro:', error);
@@ -235,12 +241,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       await authService.logout();
       setUser(null);
+      offlineQueueService.setUserId(null); // Limpiar userId al logout
 
       console.log('[AuthContext] Sesión cerrada');
     } catch (error) {
       console.error('[AuthContext] Error en logout:', error);
       // Aunque falle, limpiar el estado local
       setUser(null);
+      offlineQueueService.setUserId(null);
       throw error;
     } finally {
       setIsLoading(false);
