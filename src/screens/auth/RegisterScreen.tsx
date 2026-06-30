@@ -160,6 +160,13 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
     try {
       setIsLoading(true);
 
+      console.log('[RegisterScreen] Iniciando registro con:', {
+        fullName: fullName.trim(),
+        email: email.trim(),
+        roleId: selectedRole,
+        departmentId: selectedDepartment,
+      });
+
       await register(
         fullName.trim(),
         email.trim(),
@@ -169,9 +176,11 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       );
 
       // Si llegó aquí, el registro fue exitoso
+      console.log('[RegisterScreen] Registro exitoso');
       setRegisterSuccess(true);
     } catch (error: any) {
       console.error('[RegisterScreen] Error en registro:', error);
+      console.error('[RegisterScreen] Error completo:', JSON.stringify(error));
 
       let errorMessage = error.message || 'No se pudo crear la cuenta. Intenta nuevamente.';
       let errorTitle = 'Error de registro';

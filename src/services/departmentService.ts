@@ -51,4 +51,12 @@ export const departmentService = {
       throw new Error(getErrorMessage(error));
     }
   },
+
+  async delete(id: number): Promise<void> {
+    try {
+      await api.delete(`${ENDPOINTS.DEPARTMENTS}/${id}`);
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
+  },
 };

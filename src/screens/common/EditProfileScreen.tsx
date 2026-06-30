@@ -65,17 +65,6 @@ export default function EditProfileScreen({ navigation }: EditProfileScreenProps
           <View key={user?.fullName || 'avatar'} style={styles.avatar}>
             <Text style={styles.avatarInitials}>{getInitials(user?.fullName)}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.changePhoto}
-            activeOpacity={0.7}
-            onPress={() => Alert.alert(
-              'Cambiar foto',
-              'La subida de foto de perfil está en desarrollo y estará disponible en una próxima versión.',
-            )}
-          >
-            <MaterialIcons name="photo-camera" size={15} color={COLORS.onSurface} />
-            <Text style={styles.changePhotoText}>Cambiar foto</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.field}>

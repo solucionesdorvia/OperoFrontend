@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl,
-  Modal, KeyboardAvoidingView, Platform, StyleSheet,
+  Modal, KeyboardAvoidingView, Platform, StyleSheet, Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -150,6 +150,38 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
     }
   };
 
+  const handleDeleteDepartment = async (deptId: number, deptName: string, workerCount: number) => {
+    if (workerCount > 0) {
+      showError(
+        'No se puede eliminar',
+        `El departamento "${deptName}" tiene ${workerCount} operador(es). Reasignalos primero.`
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Eliminar departamento',
+      `¿Estás seguro de eliminar "${deptName}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await departmentService.delete(deptId);
+              showSuccess('Eliminado', `Se eliminó "${deptName}"`);
+              await loadData(true);
+            } catch (error: any) {
+              console.error('[MyTeamScreen] Error al eliminar departamento:', error);
+              showError('Error', error.message || 'No se pudo eliminar el departamento');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile' as any)} />;
 
   return (
@@ -182,8 +214,17 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
                       <MaterialIcons name="domain" size={18} color={COLORS.primary} />
                       <Text style={styles.deptName}>{dept.name}</Text>
                     </View>
-                    <View style={styles.countBadge}>
-                      <Text style={styles.countBadgeText}>{deptWorkers.length}</Text>
+                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+                      <View style={styles.countBadge}>
+                        <Text style={styles.countBadgeText}>{deptWorkers.length}</Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteDepartment(dept.id, dept.name, deptWorkers.length)}
+                        activeOpacity={0.7}
+                        hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                      >
+                        <MaterialIcons name="delete-outline" size={20} color={COLORS.error} />
+                      </TouchableOpacity>
                     </View>
                   </View>
 
@@ -233,7 +274,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
 
       {/* FAB: crear departamento */}
       <TouchableOpacity
-        style={[styles.fab, { bottom: tabBarHeight + 16 }]}
+        style={[styles.fab, { bottom: tabBarHeight + 8 }]}
         activeOpacity={0.85}
         onPress={() => setDeptModalOpen(true)}
       >
