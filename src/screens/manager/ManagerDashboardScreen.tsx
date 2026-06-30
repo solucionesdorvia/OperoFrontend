@@ -11,9 +11,11 @@ import LoadingView from '../../components/LoadingView';
 import type { ManagerTabScreenProps } from '../../types/navigation';
 import { styles } from './ManagerDashboardScreen.styles';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
+import { incidentCacheService } from '../../services/incidentCacheService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { getRelativeTime } from '../../utils/dateUtils';
+import { useNetwork } from '../../hooks/useNetwork';
 
 const priorityColor = { HIGH: COLORS.error, MEDIUM: COLORS.primary, LOW: COLORS.outline };
 
@@ -25,13 +27,31 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { dialogState, hideDialog, showError } = useErrorDialog();
+  const { isOnline } = useNetwork();
 
   const loadData = async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const data = await incidentService.getAll();
+      let data: IncidentResponse[] = [];
+
+      if (isOnline) {
+        try {
+          data = await incidentService.getAll();
+          // Guardar en caché para uso offline
+          await incidentCacheService.save(data);
+        } catch (error: any) {
+          console.log('[ManagerDashboard] Error al cargar del servidor, usando caché');
+          const cached = await incidentCacheService.load();
+          data = cached || [];
+        }
+      } else {
+        // Sin conexión: cargar del caché
+        console.log('[ManagerDashboard] Sin conexión, cargando desde caché');
+        const cached = await incidentCacheService.load();
+        data = cached || [];
+      }
 
       // Pendientes de asignar: sin worker asignado
       const unassigned = data
@@ -48,7 +68,7 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
       });
     } catch (error: any) {
       console.error('[ManagerDashboardScreen] Error al cargar datos:', error);
-      showError('Error', error.message || 'No se pudieron cargar los datos');
+      // No mostrar error si es problema de conexión - el caché ya maneja offline
     } finally {
       setLoading(false);
       setRefreshing(false);

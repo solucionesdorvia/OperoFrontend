@@ -15,6 +15,7 @@ import { styles } from './MyIncidentsScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
 import { offlineQueueService, PendingIncident } from '../../services/offlineQueueService';
+import { incidentCacheService } from '../../services/incidentCacheService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { getRelativeTime } from '../../utils/dateUtils';
@@ -60,11 +61,24 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
 
       // Cargar incidentes del servidor (solo si hay conexión)
       let serverIncidents: IncidentResponse[] = [];
-      try {
-        const data = await incidentService.getAll();
-        serverIncidents = data.filter(inc => inc.reporterId === user?.id);
-      } catch (error: any) {
-        console.log('[MyIncidentsScreen] No se pudieron cargar incidentes del servidor (probablemente offline)');
+
+      if (isOnline) {
+        try {
+          const data = await incidentService.getAll();
+          serverIncidents = data.filter(inc => inc.reporterId === user?.id);
+          // Guardar en caché para uso offline
+          await incidentCacheService.save(serverIncidents);
+        } catch (error: any) {
+          console.log('[MyIncidentsScreen] Error al cargar del servidor, usando caché:', error);
+          // Si falla, cargar del caché
+          const cached = await incidentCacheService.load();
+          serverIncidents = cached || [];
+        }
+      } else {
+        // Sin conexión: cargar del caché
+        console.log('[MyIncidentsScreen] Sin conexión, cargando desde caché');
+        const cached = await incidentCacheService.load();
+        serverIncidents = cached || [];
       }
 
       // Cargar incidentes offline
@@ -98,7 +112,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
       applyFilters(allUserIncidents, active, dateIdx);
     } catch (error: any) {
       console.error('[MyIncidentsScreen] Error al cargar incidencias:', error);
-      showError('Error', error.message || 'No se pudieron cargar las incidencias');
+      // No mostrar error si es problema de conexión - el caché ya maneja offline
     } finally {
       setLoading(false);
       setRefreshing(false);

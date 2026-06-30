@@ -6,6 +6,7 @@ import { COLORS } from '../../constants/colors';
 import { FONTS } from '../../constants/fonts';
 import { styles } from './TopAppBar.styles';
 import { useAuth } from '../context/AuthContext';
+import { useNetwork } from '../hooks/useNetwork';
 
 const logo = require('../../assets/operologo.png');
 
@@ -87,6 +88,7 @@ export default function TopAppBar({
 }: TopAppBarProps) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { isOnline, isVerifying } = useNetwork();
 
   // Si vino rightActions, usamos esa lista. Si vino el rightIcon legacy, lo convertimos.
   let actions: TopAppBarAction[] = [];
@@ -113,6 +115,27 @@ export default function TopAppBar({
         {title ? <Text style={styles.title}>{title}</Text> : null}
       </View>
       <View style={styles.right}>
+        {!isOnline && !isVerifying && user ? (
+          <View style={{
+            backgroundColor: COLORS.surfaceContainerHigh,
+            borderRadius: 12,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            marginRight: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+          }}>
+            <MaterialIcons name="cloud-off" size={14} color={COLORS.onSurfaceVariant} />
+            <Text style={{
+              fontSize: 11,
+              fontFamily: FONTS.family.mono,
+              color: COLORS.onSurfaceVariant,
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            }}>Sin red</Text>
+          </View>
+        ) : null}
         {actions.map((action, i) => (
           <TouchableOpacity
             key={`${action.icon}-${i}`}
