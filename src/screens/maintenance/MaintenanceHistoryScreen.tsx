@@ -108,16 +108,12 @@ export default function MaintenanceHistoryScreen({ navigation }: MaintenanceHist
     }, [])
   );
 
-  useEffect(() => {
-    applyFilter(allHistory, period);
-  }, [period]);
-
-  // Reaplicar filtro cuando cambia allHistory (al volver del tab)
+  // Reaplicar filtro cuando cambian datos o periodo
   useEffect(() => {
     if (allHistory.length > 0) {
       applyFilter(allHistory, period);
     }
-  }, [allHistory]);
+  }, [allHistory, period]);
 
 
   if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('MaintenanceProfile')} />;

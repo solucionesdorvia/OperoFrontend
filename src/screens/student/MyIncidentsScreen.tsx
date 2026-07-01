@@ -189,12 +189,12 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
     }, [])
   );
 
-  // Reaplicar filtros cuando cambian allIncidents
+  // Reaplicar filtros cuando cambian allIncidents (con filtros actuales)
   useEffect(() => {
     if (allIncidents.length > 0) {
       applyFilters(allIncidents, active, dateIdx);
     }
-  }, [allIncidents]);
+  }, [allIncidents, active, dateIdx]);
 
   // Recargar cuando cambie la cola offline (se guarde o sincronice)
   useEffect(() => {
@@ -212,11 +212,6 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
     });
     return unsubscribe;
   }, []);
-
-  useEffect(() => {
-    applyFilters(allIncidents, active, dateIdx);
-  }, [active, dateIdx]);
-
 
   if (loading) {
     return (

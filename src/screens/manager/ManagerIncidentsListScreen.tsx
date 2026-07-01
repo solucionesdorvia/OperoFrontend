@@ -108,16 +108,12 @@ export default function ManagerIncidentsListScreen({ navigation }: ManagerIncide
     }, [])
   );
 
-  useEffect(() => {
-    applyFilter(allIncidents, active);
-  }, [active]);
-
-  // Reaplicar filtro cuando cambia allIncidents (al volver del tab)
+  // Reaplicar filtro cuando cambian datos o filtro activo
   useEffect(() => {
     if (allIncidents.length > 0) {
       applyFilter(allIncidents, active);
     }
-  }, [allIncidents]);
+  }, [allIncidents, active]);
 
 
   if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile' as any)} />;
