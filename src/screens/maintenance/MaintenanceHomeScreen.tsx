@@ -13,6 +13,7 @@ import { styles } from './MaintenanceHomeScreen.styles';
 import { useAuth } from '../../context/AuthContext';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
 import { incidentCacheService } from '../../services/incidentCacheService';
+import { workQueueService } from '../../services/workQueueService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { getRelativeTime } from '../../utils/dateUtils';
@@ -33,7 +34,9 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
   const [stats, setStats] = useState({ asignadas: 0, completadasHoy: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const { dialogState, hideDialog, showError } = useErrorDialog();
+  const [pendingCount, setPendingCount] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+  const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
 
   const loadData = async (isRefresh = false) => {
     try {
@@ -88,6 +91,12 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
 
   useEffect(() => {
     loadData();
+    updatePendingCount();
+
+    const unsubscribe = workQueueService.subscribe(() => {
+      updatePendingCount();
+    });
+    return unsubscribe;
   }, []);
 
   useFocusEffect(
@@ -95,6 +104,28 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
       loadData();
     }, [])
   );
+
+  const updatePendingCount = async () => {
+    const count = (await workQueueService.getAll()).length;
+    setPendingCount(count);
+  };
+
+  const handleSync = async () => {
+    try {
+      setSyncing(true);
+      const result = await workQueueService.flush();
+      if (result.failed === 0) {
+        showSuccess('Sincronizado', `${result.uploaded} operación(es) subida(s) correctamente.`);
+      } else {
+        showError('Sincronización parcial', `Subidos: ${result.uploaded}, Fallidos: ${result.failed}`);
+      }
+      await loadData(true);
+    } catch (error: any) {
+      showError('Error', error.message || 'No se pudo sincronizar');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const firstName = user?.fullName?.split(' ')[0] || 'Operario';
 
@@ -123,9 +154,38 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Tareas asignadas</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('MaintenanceHistory')}>
-              <Text style={styles.seeAll}>Ver historial</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              {isOnline && pendingCount > 0 && (
+                <TouchableOpacity
+                  onPress={handleSync}
+                  disabled={syncing}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    backgroundColor: COLORS.primary,
+                    borderRadius: 6,
+                  }}
+                  activeOpacity={0.7}
+                >
+                  {syncing ? (
+                    <ActivityIndicator size="small" color={COLORS.onPrimary} />
+                  ) : (
+                    <>
+                      <MaterialIcons name="cloud-upload" size={14} color={COLORS.onPrimary} />
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.onPrimary }}>
+                        Subir {pendingCount}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={() => navigation.navigate('MaintenanceHistory')}>
+                <Text style={styles.seeAll}>Ver historial</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {myTasks.length === 0 ? (

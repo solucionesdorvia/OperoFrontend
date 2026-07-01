@@ -14,6 +14,7 @@ import { departmentService, DepartmentResponse } from '../../services/department
 import { userService } from '../../services/userService';
 import { UserResponse } from '../../services/authService';
 import { assignmentQueueService } from '../../services/assignmentQueueService';
+import { teamCacheService } from '../../services/teamCacheService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { useNetwork } from '../../hooks/useNetwork';
@@ -49,20 +50,39 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
   const loadData = async () => {
     try {
       setLoading(true);
-      // Traemos TODOS los deptos y TODOS los users en paralelo.
-      // Antes solo se traian los workers del depto del manager: si el manager
-      // reasignaba el incidente a otro depto, la lista de operadores quedaba
-      // mostrando los del depto viejo. Ahora la filtramos por selectedDeptId
-      // en el picker.
-      const [deptsData, allUsers] = await Promise.all([
-        departmentService.getAll(),
-        userService.getAll(),
-      ]);
-      setDepartments(deptsData);
-      setWorkers(allUsers.filter((u) => u.roleName === 'WORKER'));
+
+      if (isOnline) {
+        // Online: cargar desde servidor y cachear
+        try {
+          const [deptsData, allUsers] = await Promise.all([
+            departmentService.getAll(),
+            userService.getAll(),
+          ]);
+          setDepartments(deptsData);
+          const workersData = allUsers.filter((u) => u.roleName === 'WORKER');
+          setWorkers(workersData);
+          // Cachear para offline
+          await teamCacheService.save({ departments: deptsData, users: workersData });
+        } catch (error: any) {
+          console.log('[ManagerIncidentDetail] Error online, intentando caché');
+          const cached = await teamCacheService.load();
+          if (cached) {
+            setDepartments(cached.departments);
+            setWorkers(cached.users);
+          }
+        }
+      } else {
+        // Offline: cargar desde caché
+        console.log('[ManagerIncidentDetail] Sin conexión, cargando caché');
+        const cached = await teamCacheService.load();
+        if (cached) {
+          setDepartments(cached.departments);
+          setWorkers(cached.users);
+        }
+      }
     } catch (error: any) {
-      console.error('[ManagerIncidentDetailScreen] Error al cargar datos:', error);
-      showError('Error', error.message || 'No se pudieron cargar los datos');
+      console.error('[ManagerIncidentDetailScreen] Error crítico al cargar datos:', error);
+      // No mostrar error si estamos offline - el caché maneja esto
     } finally {
       setLoading(false);
     }

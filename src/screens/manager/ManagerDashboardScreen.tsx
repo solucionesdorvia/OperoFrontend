@@ -13,6 +13,8 @@ import type { ManagerTabScreenProps } from '../../types/navigation';
 import { styles } from './ManagerDashboardScreen.styles';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
 import { incidentCacheService } from '../../services/incidentCacheService';
+import { departmentQueueService } from '../../services/departmentQueueService';
+import { assignmentQueueService } from '../../services/assignmentQueueService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { getRelativeTime } from '../../utils/dateUtils';
@@ -30,7 +32,9 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const { dialogState, hideDialog, showError } = useErrorDialog();
+  const [pendingCount, setPendingCount] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+  const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
   const { isOnline } = useNetwork();
 
   const loadData = async (isRefresh = false) => {
@@ -80,6 +84,14 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
 
   useEffect(() => {
     loadData();
+    updatePendingCount();
+
+    const unsubscribe1 = departmentQueueService.subscribe(() => updatePendingCount());
+    const unsubscribe2 = assignmentQueueService.subscribe(() => updatePendingCount());
+    return () => {
+      unsubscribe1();
+      unsubscribe2();
+    };
   }, []);
 
   useFocusEffect(
@@ -87,6 +99,33 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
       loadData();
     }, [])
   );
+
+  const updatePendingCount = async () => {
+    const deptCount = (await departmentQueueService.getAll()).length;
+    const assignCount = (await assignmentQueueService.getAll()).length;
+    setPendingCount(deptCount + assignCount);
+  };
+
+  const handleSync = async () => {
+    try {
+      setSyncing(true);
+      const deptRes = await departmentQueueService.flush();
+      const assignRes = await assignmentQueueService.flush();
+      const uploaded = deptRes.uploaded + assignRes.uploaded;
+      const failed = deptRes.failed + assignRes.failed;
+
+      if (failed === 0) {
+        showSuccess('Sincronizado', `${uploaded} operación(es) subida(s) correctamente.`);
+      } else {
+        showError('Sincronización parcial', `Subidos: ${uploaded}, Fallidos: ${failed}`);
+      }
+      await loadData(true);
+    } catch (error: any) {
+      showError('Error', error.message || 'No se pudo sincronizar');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
 
   if (loading) return <LoadingView showLogo showAvatar onAvatarPress={() => navigation.navigate('ManagerProfile')} />;
@@ -127,9 +166,38 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Pendientes de asignar</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('ManagerIncidents')}>
-              <Text style={styles.seeAll}>Ver todas</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              {isOnline && pendingCount > 0 && (
+                <TouchableOpacity
+                  onPress={handleSync}
+                  disabled={syncing}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    backgroundColor: COLORS.primary,
+                    borderRadius: 6,
+                  }}
+                  activeOpacity={0.7}
+                >
+                  {syncing ? (
+                    <ActivityIndicator size="small" color={COLORS.onPrimary} />
+                  ) : (
+                    <>
+                      <MaterialIcons name="cloud-upload" size={14} color={COLORS.onPrimary} />
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.onPrimary }}>
+                        Subir {pendingCount}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={() => navigation.navigate('ManagerIncidents')}>
+                <Text style={styles.seeAll}>Ver todas</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {incidents.length === 0 ? (

@@ -124,6 +124,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               if (savedUserData) {
                 setUser(savedUserData);
                 offlineQueueService.setUserId(savedUserData.id);
+                workQueueService.setUserId(savedUserData.id);
+                departmentQueueService.setUserId(savedUserData.id);
+                assignmentQueueService.setUserId(savedUserData.id);
                 incidentCacheService.setUserId(savedUserData.id); teamCacheService.setUserId(savedUserData.id);
               } else {
                 // Fallback: decodificar token si no hay datos guardados
@@ -138,6 +141,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     departmentId: null,
                     departmentName: null,
                   });
+                  offlineQueueService.setUserId(decoded.userId);
+                  workQueueService.setUserId(decoded.userId);
+                  departmentQueueService.setUserId(decoded.userId);
+                  assignmentQueueService.setUserId(decoded.userId);
+                  incidentCacheService.setUserId(decoded.userId); teamCacheService.setUserId(decoded.userId);
                 }
               }
             }
@@ -163,6 +171,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 departmentId: null,
                 departmentName: null,
               });
+              offlineQueueService.setUserId(decoded.userId);
+              workQueueService.setUserId(decoded.userId);
+              departmentQueueService.setUserId(decoded.userId);
+              assignmentQueueService.setUserId(decoded.userId);
+              incidentCacheService.setUserId(decoded.userId); teamCacheService.setUserId(decoded.userId);
             }
           }
         }
