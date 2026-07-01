@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator, Modal,
+  KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator, Modal, Pressable,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
@@ -37,6 +37,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
+  const [showDeptModal, setShowDeptModal] = useState(false);
 
   // Estado para modal de error
   const [errorModal, setErrorModal] = useState<{ visible: boolean; title: string; message: string }>({
@@ -317,30 +318,24 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
               {isDepartmentsLoading ? (
                 <ActivityIndicator color={COLORS.primary} />
               ) : (
-                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                  {departments.map((dept) => (
-                    <TouchableOpacity
-                      key={dept.id}
-                      onPress={() => setSelectedDepartment(dept.id)}
-                      disabled={isLoading}
-                      style={{
-                        paddingHorizontal: 16,
-                        paddingVertical: 10,
-                        borderRadius: 8,
-                        backgroundColor: selectedDepartment === dept.id ? COLORS.primary : COLORS.surfaceVariant,
-                        borderWidth: 1,
-                        borderColor: selectedDepartment === dept.id ? COLORS.primary : COLORS.outline,
-                      }}
-                    >
-                      <Text style={{
-                        color: selectedDepartment === dept.id ? COLORS.onPrimary : COLORS.onSurfaceVariant,
-                        fontWeight: '500',
-                      }}>
-                        {dept.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                <TouchableOpacity
+                  style={styles.input}
+                  onPress={() => setShowDeptModal(true)}
+                  disabled={isLoading}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{
+                      color: selectedDepartment ? COLORS.onSurface : COLORS.outline,
+                      fontSize: 15,
+                    }}>
+                      {selectedDepartment
+                        ? departments.find(d => d.id === selectedDepartment)?.name
+                        : 'Seleccionar departamento'}
+                    </Text>
+                    <MaterialIcons name="expand-more" size={20} color={COLORS.onSurfaceVariant} />
+                  </View>
+                </TouchableOpacity>
               )}
             </View>
           )}
@@ -367,6 +362,36 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         </View>
 
       </ScrollView>
+
+      {/* Modal de departamentos */}
+      <Modal transparent visible={showDeptModal} animationType="fade" onRequestClose={() => setShowDeptModal(false)}>
+        <Pressable style={modalStyles.overlay} onPress={() => setShowDeptModal(false)}>
+          <View style={modalStyles.dropdown}>
+            <Text style={modalStyles.dropdownTitle}>Seleccionar departamento</Text>
+            <ScrollView style={{ maxHeight: 400 }}>
+              {departments.map(dept => (
+                <TouchableOpacity
+                  key={dept.id}
+                  style={modalStyles.dropdownItem}
+                  onPress={() => {
+                    setSelectedDepartment(dept.id);
+                    setShowDeptModal(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{
+                    color: dept.id === selectedDepartment ? COLORS.primary : COLORS.onSurface,
+                    fontWeight: dept.id === selectedDepartment ? '600' : '400',
+                    fontSize: 15,
+                  }}>
+                    {dept.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* Modal de error */}
       <Modal
@@ -399,19 +424,37 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
 const modalStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  dropdown: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
+  },
+  dropdownTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: COLORS.onSurface,
+  },
+  dropdownItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.surfaceVariant,
   },
   container: {
     backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 24,
-    width: '100%',
+    width: '90%',
     maxWidth: 400,
     alignItems: 'center',
     gap: 16,
+    alignSelf: 'center',
+    marginTop: 'auto',
+    marginBottom: 'auto',
   },
   iconContainer: {
     marginBottom: 8,
