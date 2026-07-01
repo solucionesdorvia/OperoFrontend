@@ -17,14 +17,18 @@ import { userService } from '../../services/userService';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
 import { departmentService, DepartmentResponse } from '../../services/departmentService';
 import { UserResponse } from '../../services/authService';
+import { teamCacheService } from '../../services/teamCacheService';
+import { incidentCacheService } from '../../services/incidentCacheService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
+import { useNetwork } from '../../hooks/useNetwork';
 
 type MyTeamScreenProps = ManagerTabScreenProps<'ManagerMyTeam'>;
 
 export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenProps) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = 60 + insets.bottom;
+  const { isOnline } = useNetwork();
 
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
   const [workers, setWorkers] = useState<UserResponse[]>([]);
@@ -50,18 +54,47 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const [deptsData, allUsers, incidentsData] = await Promise.all([
-        departmentService.getAll(),
-        userService.getAll(),
-        incidentService.getAll(),
-      ]);
+      let deptsData: DepartmentResponse[] = [];
+      let allUsers: UserResponse[] = [];
+      let incidentsData: IncidentResponse[] = [];
+
+      if (isOnline) {
+        try {
+          const results = await Promise.all([
+            departmentService.getAll(),
+            userService.getAll(),
+            incidentService.getAll(),
+          ]);
+          deptsData = results[0];
+          allUsers = results[1];
+          incidentsData = results[2];
+
+          // Guardar en caché
+          await teamCacheService.save(deptsData, allUsers);
+          await incidentCacheService.save(incidentsData);
+        } catch (error: any) {
+          console.log('[MyTeamScreen] Error, usando caché');
+          const teamCached = await teamCacheService.load();
+          const incidentsCached = await incidentCacheService.load();
+          deptsData = teamCached?.departments || [];
+          allUsers = teamCached?.users || [];
+          incidentsData = incidentsCached || [];
+        }
+      } else {
+        console.log('[MyTeamScreen] Offline, cargando caché');
+        const teamCached = await teamCacheService.load();
+        const incidentsCached = await incidentCacheService.load();
+        deptsData = teamCached?.departments || [];
+        allUsers = teamCached?.users || [];
+        incidentsData = incidentsCached || [];
+      }
 
       setDepartments(deptsData);
       setWorkers(allUsers.filter((u) => u.roleName === 'WORKER'));
       setIncidents(incidentsData);
     } catch (error: any) {
       console.error('[MyTeamScreen] Error al cargar datos:', error);
-      showError('Error', error.message || 'No se pudieron cargar los datos');
+      // No mostrar error - el caché ya maneja offline
     } finally {
       setLoading(false);
       setRefreshing(false);
