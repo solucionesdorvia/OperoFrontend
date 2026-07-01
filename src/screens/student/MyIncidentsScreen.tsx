@@ -235,8 +235,9 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
         }
       >
 
+        {/* Header con contador y botón sync */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Text style={styles.summary}>{allIncidents.length} reportes en total</Text>
+          <Text style={styles.summary}>{allIncidents.length} reportes totales</Text>
 
           {pendingCount > 0 && (
             <TouchableOpacity
@@ -357,7 +358,8 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
                   );
                 })}
             </View>
-            <View style={{ paddingBottom: 80 }}>
+            {/* Wrapper con padding para el FAB - AUMENTADO PARA TEST */}
+            <View style={{ paddingBottom: 90 }}>
               <Pagination
                 currentPage={currentPage}
                 totalPages={Math.ceil(filteredIncidents.length / ITEMS_PER_PAGE)}
