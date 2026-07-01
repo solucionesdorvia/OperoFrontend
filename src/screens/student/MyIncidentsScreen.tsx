@@ -357,11 +357,13 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
                   );
                 })}
             </View>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredIncidents.length / ITEMS_PER_PAGE)}
-              onPageChange={setCurrentPage}
-            />
+            <View style={{ paddingBottom: 80 }}>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(filteredIncidents.length / ITEMS_PER_PAGE)}
+                onPageChange={setCurrentPage}
+              />
+            </View>
           </>
         )}
       </ScrollView>

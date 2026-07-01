@@ -111,8 +111,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
-    marginBottom: 16, // Espacio mínimo
-    paddingBottom: 64, // Padding para que el FAB no tape
     gap: 8,
   },
   arrowBtn: {
