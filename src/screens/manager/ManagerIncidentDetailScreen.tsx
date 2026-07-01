@@ -13,8 +13,10 @@ import { incidentService } from '../../services/incidentService';
 import { departmentService, DepartmentResponse } from '../../services/departmentService';
 import { userService } from '../../services/userService';
 import { UserResponse } from '../../services/authService';
+import { assignmentQueueService } from '../../services/assignmentQueueService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
+import { useNetwork } from '../../hooks/useNetwork';
 
 const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PENDIENTE'> = {
   'PENDING': 'PENDIENTE',
@@ -38,6 +40,7 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
   const [showDeptModal, setShowDeptModal] = useState(false);
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
+  const { isOnline } = useNetwork();
 
   useEffect(() => {
     loadData();
@@ -82,10 +85,15 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
 
       // Asignar worker si cambió
       if (selectedWorkerId && selectedWorkerId !== incident?.workerId) {
-        await incidentService.assignWorker(incident.id, selectedWorkerId);
+        if (isOnline) {
+          await incidentService.assignWorker(incident.id, selectedWorkerId);
+        } else {
+          await assignmentQueueService.add(incident.id, selectedWorkerId);
+        }
       }
 
-      showSuccess('Éxito', 'Cambios guardados correctamente');
+      showSuccess(isOnline ? 'Éxito' : 'Sin conexión',
+        isOnline ? 'Cambios guardados correctamente' : 'Asignación guardada. Se sincronizará cuando te conectes.');
       setTimeout(() => {
         navigation.goBack();
       }, 1500);

@@ -1,63 +1,59 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { incidentService } from './incidentService';
 
-type WorkAction = 'START' | 'FINISH';
-
-interface PendingWork {
+interface PendingAssignment {
   incidentId: number;
-  action: WorkAction;
-  targetStatus: string;
+  workerId: number;
   timestamp: string;
 }
 
-const STORAGE_KEY_PREFIX = 'work_queue_';
+const STORAGE_KEY_PREFIX = 'assignment_queue_';
 let currentUserId: number | null = null;
 
 const getStorageKey = () => {
   if (!currentUserId) {
-    throw new Error('userId no configurado en workQueueService');
+    throw new Error('userId no configurado en assignmentQueueService');
   }
   return `${STORAGE_KEY_PREFIX}${currentUserId}`;
 };
 
 const listeners: Array<() => void> = [];
 
-const workQueueService = {
+const assignmentQueueService = {
   setUserId(userId: number | null) {
     currentUserId = userId;
   },
 
-  async add(incidentId: number, action: WorkAction, targetStatus: string): Promise<void> {
+  async add(incidentId: number, workerId: number): Promise<void> {
     if (!currentUserId) {
-      throw new Error('No se puede agregar a la cola de trabajo sin usuario autenticado');
+      throw new Error('No se puede agregar a la cola de asignaciones sin usuario autenticado');
     }
     const queue = await this.getAll();
 
-    // Si ya existe una operación para esta incidencia, reemplazarla
+    // Si ya existe una asignación para esta incidencia, reemplazarla
     const filtered = queue.filter(item => item.incidentId !== incidentId);
 
-    const newWork: PendingWork = {
+    const newAssignment: PendingAssignment = {
       incidentId,
-      action,
-      targetStatus,
+      workerId,
       timestamp: new Date().toISOString(),
     };
 
-    filtered.push(newWork);
+    filtered.push(newAssignment);
     await AsyncStorage.setItem(getStorageKey(), JSON.stringify(filtered));
     this.notifyListeners();
   },
 
-  async getAll(): Promise<PendingWork[]> {
+  async getAll(): Promise<PendingAssignment[]> {
     if (!currentUserId) {
-      console.warn('[workQueueService] getAll llamado sin userId, retornando array vacío');
+      console.warn('[assignmentQueueService] getAll llamado sin userId, retornando array vacío');
       return [];
     }
     try {
       const data = await AsyncStorage.getItem(getStorageKey());
       return data ? JSON.parse(data) : [];
     } catch (error) {
-      console.error('[workQueueService] Error al leer cola:', error);
+      console.error('[assignmentQueueService] Error al leer cola:', error);
       return [];
     }
   },
@@ -70,6 +66,7 @@ const workQueueService = {
   },
 
   async clear(): Promise<void> {
+    if (!currentUserId) return;
     await AsyncStorage.removeItem(getStorageKey());
     this.notifyListeners();
   },
@@ -82,16 +79,16 @@ const workQueueService = {
 
     let uploaded = 0;
     let failed = 0;
-    const remaining: PendingWork[] = [];
+    const remaining: PendingAssignment[] = [];
 
-    for (const work of queue) {
+    for (const assignment of queue) {
       try {
-        await incidentService.updateStatus(work.incidentId, work.targetStatus);
+        await incidentService.assignWorker(assignment.incidentId, assignment.workerId);
         uploaded++;
       } catch (error) {
-        console.error(`[workQueueService] Error al subir ${work.action} para incidente ${work.incidentId}:`, error);
+        console.error(`[assignmentQueueService] Error al asignar incidente ${assignment.incidentId}:`, error);
         failed++;
-        remaining.push(work);
+        remaining.push(assignment);
       }
     }
 
@@ -116,4 +113,4 @@ const workQueueService = {
   },
 };
 
-export { workQueueService, type PendingWork, type WorkAction };
+export { assignmentQueueService, type PendingAssignment };

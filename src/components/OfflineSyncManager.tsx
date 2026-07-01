@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { offlineQueueService } from '../services/offlineQueueService';
 import { workQueueService } from '../services/workQueueService';
 import { departmentQueueService } from '../services/departmentQueueService';
+import { assignmentQueueService } from '../services/assignmentQueueService';
 import { styles } from './OfflineSyncManager.styles';
 
 // Cuánto tiempo dejamos visible el cartel de "sin conexión" antes de auto-ocultarlo
@@ -31,6 +32,7 @@ export default function OfflineSyncManager() {
   const [pending, setPending] = useState(0);
   const [workPending, setWorkPending] = useState(0);
   const [deptPending, setDeptPending] = useState(0);
+  const [assignPending, setAssignPending] = useState(0);
   const [promptVisible, setPromptVisible] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [result, setResult] = useState<{ uploaded: number; failed: number; lastError?: string } | null>(null);
@@ -40,11 +42,13 @@ export default function OfflineSyncManager() {
     const incidentCount = await offlineQueueService.count();
     const workCount = (await workQueueService.getAll()).length;
     const deptCount = (await departmentQueueService.getAll()).length;
-    console.log('[OfflineSyncManager] Cola offline: ', incidentCount, 'incidentes,', workCount, 'trabajos,', deptCount, 'departamentos');
+    const assignCount = (await assignmentQueueService.getAll()).length;
+    console.log('[OfflineSyncManager] Cola offline: ', incidentCount, 'incidentes,', workCount, 'trabajos,', deptCount, 'departamentos,', assignCount, 'asignaciones');
     setPending(incidentCount);
     setWorkPending(workCount);
     setDeptPending(deptCount);
-    return incidentCount + workCount + deptCount;
+    setAssignPending(assignCount);
+    return incidentCount + workCount + deptCount + assignCount;
   }, []);
 
   const maybePrompt = useCallback(async () => {
@@ -70,16 +74,18 @@ export default function OfflineSyncManager() {
     }
   }, [isOnline, isVerifying, isAuthenticated, refreshPending]);
 
-  // Mantenemos el contador al día con los cambios de las 3 colas.
+  // Mantenemos el contador al día con los cambios de las 4 colas.
   useEffect(() => {
     refreshPending();
     const unsubscribe1 = offlineQueueService.subscribe(refreshPending);
     const unsubscribe2 = workQueueService.subscribe(refreshPending);
     const unsubscribe3 = departmentQueueService.subscribe(refreshPending);
+    const unsubscribe4 = assignmentQueueService.subscribe(refreshPending);
     return () => {
       unsubscribe1();
       unsubscribe2();
       unsubscribe3();
+      unsubscribe4();
     };
   }, [refreshPending]);
 
@@ -132,14 +138,15 @@ export default function OfflineSyncManager() {
   const handleUpload = async () => {
     setSyncing(true);
     try {
-      // Sincronizar las 3 colas: incidentes + trabajos + departamentos
+      // Sincronizar las 4 colas: incidentes + trabajos + departamentos + asignaciones
       const incidentRes = await offlineQueueService.flush();
       const workRes = await workQueueService.flush();
       const deptRes = await departmentQueueService.flush();
+      const assignRes = await assignmentQueueService.flush();
 
       // Combinar resultados
-      const totalUploaded = incidentRes.uploaded + workRes.uploaded + deptRes.uploaded;
-      const totalFailed = incidentRes.failed + workRes.failed + deptRes.failed;
+      const totalUploaded = incidentRes.uploaded + workRes.uploaded + deptRes.uploaded + assignRes.uploaded;
+      const totalFailed = incidentRes.failed + workRes.failed + deptRes.failed + assignRes.failed;
 
       setResult({ uploaded: totalUploaded, failed: totalFailed });
     } finally {
@@ -158,8 +165,8 @@ export default function OfflineSyncManager() {
           <MaterialIcons name="cloud-off" size={16} color={COLORS.onPrimary} />
           <Text style={styles.bannerText}>
             Sin conexión
-            {(pending + workPending + deptPending) > 0
-              ? ` · ${pending} reporte(s) + ${workPending} trabajo(s) + ${deptPending} depto(s) en cola`
+            {(pending + workPending + deptPending + assignPending) > 0
+              ? ` · ${pending + workPending + deptPending + assignPending} operación(es) en cola`
               : ' · las operaciones se guardan acá'}
           </Text>
           <TouchableOpacity onPress={() => setBannerVisible(false)} hitSlop={12} style={{ marginLeft: 6 }}>
@@ -177,12 +184,15 @@ export default function OfflineSyncManager() {
             <Text style={styles.title}>¿Sincronizar operaciones?</Text>
             <Text style={styles.subtitle}>
               {(() => {
-                const total = pending + workPending + deptPending;
+                const total = pending + workPending + deptPending + assignPending;
                 const parts = [];
                 if (pending > 0) parts.push(`${pending} reporte(s)`);
                 if (workPending > 0) parts.push(`${workPending} trabajo(s)`);
                 if (deptPending > 0) parts.push(`${deptPending} depto(s)`);
-                return `Tenés ${parts.join(' + ')} pendiente(s). ¿Querés subirlos ahora?`;
+                if (assignPending > 0) parts.push(`${assignPending} asignación(es)`);
+                return parts.length > 0
+                  ? `Tenés ${parts.join(' + ')} pendiente(s). ¿Querés subirlos ahora?`
+                  : `Tenés ${total} operación(es) pendiente(s). ¿Querés subirlas ahora?`;
               })()}
             </Text>
 
