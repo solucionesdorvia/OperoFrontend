@@ -196,13 +196,13 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
     }
   }, [allIncidents, active, dateIdx]);
 
+  const updatePendingCount = async () => {
+    const count = await offlineQueueService.count();
+    setPendingCount(count);
+  };
+
   // Recargar cuando cambie la cola offline (se guarde o sincronice)
   useEffect(() => {
-    const updatePendingCount = async () => {
-      const count = await offlineQueueService.count();
-      setPendingCount(count);
-    };
-
     updatePendingCount();
 
     const unsubscribe = offlineQueueService.subscribe(() => {

@@ -8,6 +8,7 @@ import { COLORS } from '../../../constants/colors';
 import TopAppBar from '../../components/TopAppBar';
 import EmptyState from '../../components/EmptyState';
 import LoadingView from '../../components/LoadingView';
+import Pagination from '../../components/Pagination';
 import type { MaintenanceTabScreenProps } from '../../types/navigation';
 import { styles } from './MaintenanceHomeScreen.styles';
 import { useAuth } from '../../context/AuthContext';
@@ -25,6 +26,8 @@ const priorityConfig = {
   LOW: { color: COLORS.outline, label: 'Baja' },
 };
 
+const ITEMS_PER_PAGE = 5;
+
 type MaintenanceHomeScreenProps = MaintenanceTabScreenProps<'MaintenanceHomeTab'>;
 
 export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScreenProps) {
@@ -36,6 +39,7 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
   const [refreshing, setRefreshing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
 
   const loadData = async (isRefresh = false) => {
@@ -60,19 +64,11 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
         incidents = cached || [];
       }
 
-      console.log('[MaintenanceHome] DEBUG - Total incidents:', incidents.length);
-      console.log('[MaintenanceHome] DEBUG - User ID:', user?.id, typeof user?.id);
-      if (incidents.length > 0) {
-        console.log('[MaintenanceHome] DEBUG - First incident workerId:', incidents[0].workerId, typeof incidents[0].workerId);
-        console.log('[MaintenanceHome] DEBUG - First incident:', JSON.stringify(incidents[0]));
-      }
       const assigned = incidents.filter(inc => inc.workerId === user?.id);
-      console.log('[MaintenanceHome] DEBUG - Assigned to me:', assigned.length);
 
       const sorted = assigned
         .filter(inc => inc.status !== 'FINISHED')
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 2);
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setMyTasks(sorted);
 
@@ -199,44 +195,51 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
           {myTasks.length === 0 ? (
             <EmptyState icon="check-circle" message="No tenés tareas pendientes" />
           ) : (
-            <View style={styles.list}>
-              {myTasks.map((task) => {
-                const priority = (task.priority || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW';
-                const cfg = priorityConfig[priority];
-                // Barra verde si está EN_PROCESS (comenzada), sino color de prioridad
-                const barColor = task.status === 'IN_PROCESS' ? COLORS.success : cfg.color;
-                return (
-                  <TouchableOpacity
-                    key={task.id}
-                    style={styles.taskCard}
-                    onPress={() => navigation.navigate('MaintenanceDetail', { task: task as any })}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.priorityBar, { backgroundColor: barColor }]} />
-                    <View style={styles.taskBody}>
-                      <View style={styles.taskTop}>
-                        <View style={styles.priorityTag}>
-                          <View style={[styles.dot, { backgroundColor: cfg.color }]} />
-                          <Text style={[styles.priorityLabel, { color: cfg.color }]}>{cfg.label}</Text>
+            <>
+              <View style={styles.list}>
+                {myTasks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((task) => {
+                  const priority = (task.priority || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW';
+                  const cfg = priorityConfig[priority];
+                  // Barra verde si está EN_PROCESS (comenzada), sino color de prioridad
+                  const barColor = task.status === 'IN_PROCESS' ? COLORS.success : cfg.color;
+                  return (
+                    <TouchableOpacity
+                      key={task.id}
+                      style={styles.taskCard}
+                      onPress={() => navigation.navigate('MaintenanceDetail', { task: task as any })}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.priorityBar, { backgroundColor: barColor }]} />
+                      <View style={styles.taskBody}>
+                        <View style={styles.taskTop}>
+                          <View style={styles.priorityTag}>
+                            <View style={[styles.dot, { backgroundColor: cfg.color }]} />
+                            <Text style={[styles.priorityLabel, { color: cfg.color }]}>{cfg.label}</Text>
+                          </View>
+                          <Text style={styles.taskCode}>#INC-{task.id}</Text>
                         </View>
-                        <Text style={styles.taskCode}>#INC-{task.id}</Text>
+                        <Text style={styles.taskTitle} numberOfLines={2}>{task.title}</Text>
+                        <View style={styles.taskMeta}>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons name="location-on" size={13} color={COLORS.onSurfaceVariant} />
+                            <Text style={styles.metaText}>{task.departmentName}</Text>
+                          </View>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons name="schedule" size={13} color={COLORS.onSurfaceVariant} />
+                            <Text style={styles.metaText}>{getRelativeTime(task.createdAt)}</Text>
+                          </View>
+                        </View>
                       </View>
-                      <Text style={styles.taskTitle} numberOfLines={2}>{task.title}</Text>
-                      <View style={styles.taskMeta}>
-                        <View style={styles.metaItem}>
-                          <MaterialIcons name="location-on" size={13} color={COLORS.onSurfaceVariant} />
-                          <Text style={styles.metaText}>{task.departmentName}</Text>
-                        </View>
-                        <View style={styles.metaItem}>
-                          <MaterialIcons name="schedule" size={13} color={COLORS.onSurfaceVariant} />
-                          <Text style={styles.metaText}>{getRelativeTime(task.createdAt)}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(myTasks.length / ITEMS_PER_PAGE)}
+                onPageChange={setCurrentPage}
+              />
+            </>
           )}
         </View>
 
