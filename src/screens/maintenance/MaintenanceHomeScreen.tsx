@@ -135,6 +135,8 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
               {myTasks.map((task) => {
                 const priority = (task.priority || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW';
                 const cfg = priorityConfig[priority];
+                // Barra verde si está EN_PROCESS (comenzada), sino color de prioridad
+                const barColor = task.status === 'IN_PROCESS' ? COLORS.success : cfg.color;
                 return (
                   <TouchableOpacity
                     key={task.id}
@@ -142,7 +144,7 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
                     onPress={() => navigation.navigate('MaintenanceDetail', { task: task as any })}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.priorityBar, { backgroundColor: cfg.color }]} />
+                    <View style={[styles.priorityBar, { backgroundColor: barColor }]} />
                     <View style={styles.taskBody}>
                       <View style={styles.taskTop}>
                         <View style={styles.priorityTag}>

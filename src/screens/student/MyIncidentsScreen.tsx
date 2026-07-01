@@ -184,8 +184,17 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
   useFocusEffect(
     React.useCallback(() => {
       loadIncidents();
+      // Reaplicar filtros después de cargar
+      return () => {};
     }, [])
   );
+
+  // Reaplicar filtros cuando cambian allIncidents
+  useEffect(() => {
+    if (allIncidents.length > 0) {
+      applyFilters(allIncidents, active, dateIdx);
+    }
+  }, [allIncidents]);
 
   // Recargar cuando cambie la cola offline (se guarde o sincronice)
   useEffect(() => {
