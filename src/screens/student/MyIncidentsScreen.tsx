@@ -358,14 +358,11 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
                   );
                 })}
             </View>
-            {/* Wrapper con padding para el FAB - AUMENTADO PARA TEST */}
-            <View style={{ paddingBottom: 90 }}>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(filteredIncidents.length / ITEMS_PER_PAGE)}
-                onPageChange={setCurrentPage}
-              />
-            </View>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(filteredIncidents.length / ITEMS_PER_PAGE)}
+              onPageChange={setCurrentPage}
+            />
           </>
         )}
       </ScrollView>
