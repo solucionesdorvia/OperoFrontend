@@ -53,6 +53,9 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 const notify = () => listeners.forEach((l) => l());
 
+// Protección contra flush() concurrente
+let flushInProgress = false;
+
 // Genera un ID local único para incidencias pendientes offline.
 // No usamos crypto.getRandomValues porque Hermes en React Native no expone el
 // objeto crypto globalmente y rompe el bundle con "property crypto doesn't exist".
@@ -202,53 +205,67 @@ export const offlineQueueService = {
    * Intenta subir todos los pendientes al backend.
    * Para cada uno: sube la primera imagen (si hay) y crea el incidente.
    * No lanza: deja en la cola los que fallen y devuelve el resumen.
+   *
+   * PROTEGIDO contra llamadas concurrentes: si ya hay un flush() en curso,
+   * retorna inmediatamente sin duplicar operaciones.
    */
   async flush(): Promise<FlushResult> {
-    const items = await readAll();
-    if (items.length === 0) return { uploaded: 0, failed: 0 };
-
-    const remaining: PendingIncident[] = [];
-    let uploaded = 0;
-    let failed = 0;
-    let lastError: string | undefined;
-
-    for (const pending of items) {
-      try {
-        // La imagen es "best-effort": si falla subirla (uri perdida, etc.),
-        // igual creamos la incidencia sin foto en vez de perder todo el reporte.
-        let photoUrl: string | undefined;
-        if (pending.imageUris.length > 0) {
-          try {
-            photoUrl = await fileService.uploadImage(pending.imageUris[0]);
-          } catch (imgErr) {
-            console.warn('[offlineQueue] no se pudo subir la imagen, creo sin foto:', imgErr);
-          }
-        }
-
-        await incidentService.create({
-          title: pending.title,
-          description: pending.description,
-          departmentId: pending.departmentId,
-          locationDescription: pending.locationDescription,
-          priority: pending.priority,
-          photoUrl,
-        });
-        uploaded += 1;
-
-        // Limpiamos las imágenes persistidas ya subidas.
-        for (const uri of pending.imageUris) {
-          FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
-        }
-      } catch (err) {
-        console.warn('[offlineQueue] falló crear la incidencia, queda en cola:', err);
-        lastError = (err as Error)?.message || String(err);
-        failed += 1;
-        remaining.push(pending);
-      }
+    // PROTECCIÓN: evitar flush() concurrente
+    if (flushInProgress) {
+      console.warn('[offlineQueue] flush() ya en progreso, ignorando llamada duplicada');
+      return { uploaded: 0, failed: 0, lastError: 'Ya hay una sincronización en curso' };
     }
 
-    await writeAll(remaining);
-    return { uploaded, failed, lastError };
+    flushInProgress = true;
+    try {
+      const items = await readAll();
+      if (items.length === 0) return { uploaded: 0, failed: 0 };
+
+      const remaining: PendingIncident[] = [];
+      let uploaded = 0;
+      let failed = 0;
+      let lastError: string | undefined;
+
+      for (const pending of items) {
+        try {
+          // La imagen es "best-effort": si falla subirla (uri perdida, etc.),
+          // igual creamos la incidencia sin foto en vez de perder todo el reporte.
+          let photoUrl: string | undefined;
+          if (pending.imageUris.length > 0) {
+            try {
+              photoUrl = await fileService.uploadImage(pending.imageUris[0]);
+            } catch (imgErr) {
+              console.warn('[offlineQueue] no se pudo subir la imagen, creo sin foto:', imgErr);
+            }
+          }
+
+          await incidentService.create({
+            title: pending.title,
+            description: pending.description,
+            departmentId: pending.departmentId,
+            locationDescription: pending.locationDescription,
+            priority: pending.priority,
+            photoUrl,
+          });
+          uploaded += 1;
+
+          // Limpiamos las imágenes persistidas ya subidas.
+          for (const uri of pending.imageUris) {
+            FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+          }
+        } catch (err) {
+          console.warn('[offlineQueue] falló crear la incidencia, queda en cola:', err);
+          lastError = (err as Error)?.message || String(err);
+          failed += 1;
+          remaining.push(pending);
+        }
+      }
+
+      await writeAll(remaining);
+      return { uploaded, failed, lastError };
+    } finally {
+      flushInProgress = false;
+    }
   },
 };
 

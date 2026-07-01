@@ -21,6 +21,7 @@ const getStorageKey = () => {
 };
 
 const listeners: Array<() => void> = [];
+let flushInProgress = false; // Protección contra flush() concurrente
 
 const workQueueService = {
   setUserId(userId: number | null) {
@@ -85,30 +86,41 @@ const workQueueService = {
   },
 
   async flush(): Promise<{ uploaded: number; failed: number }> {
-    const queue = await this.getAll();
-    if (queue.length === 0) {
+    // PROTECCIÓN: evitar flush() concurrente
+    if (flushInProgress) {
+      console.warn('[workQueueService] flush() ya en progreso, ignorando llamada duplicada');
       return { uploaded: 0, failed: 0 };
     }
 
-    let uploaded = 0;
-    let failed = 0;
-    const remaining: PendingWork[] = [];
-
-    for (const work of queue) {
-      try {
-        await incidentService.updateStatus(work.incidentId, work.targetStatus);
-        uploaded++;
-      } catch (error) {
-        console.error(`[workQueueService] Error al subir ${work.action} para incidente ${work.incidentId}:`, error);
-        failed++;
-        remaining.push(work);
+    flushInProgress = true;
+    try {
+      const queue = await this.getAll();
+      if (queue.length === 0) {
+        return { uploaded: 0, failed: 0 };
       }
+
+      let uploaded = 0;
+      let failed = 0;
+      const remaining: PendingWork[] = [];
+
+      for (const work of queue) {
+        try {
+          await incidentService.updateStatus(work.incidentId, work.targetStatus);
+          uploaded++;
+        } catch (error) {
+          console.error(`[workQueueService] Error al subir ${work.action} para incidente ${work.incidentId}:`, error);
+          failed++;
+          remaining.push(work);
+        }
+      }
+
+      await AsyncStorage.setItem(getStorageKey(), JSON.stringify(remaining));
+      this.notifyListeners();
+
+      return { uploaded, failed };
+    } finally {
+      flushInProgress = false;
     }
-
-    await AsyncStorage.setItem(getStorageKey(), JSON.stringify(remaining));
-    this.notifyListeners();
-
-    return { uploaded, failed };
   },
 
   subscribe(callback: () => void): () => void {

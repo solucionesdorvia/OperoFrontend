@@ -18,12 +18,56 @@ import {
   IBMPlexMono_600SemiBold,
   IBMPlexMono_700Bold,
 } from '@expo-google-fonts/ibm-plex-mono';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppNavigator from './src/navigation/AppNavigator';
 import { COLORS } from './constants/colors';
 import { AuthProvider } from './src/context/AuthContext';
 import OfflineSyncManager from './src/components/OfflineSyncManager';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Versión de datos de AsyncStorage - incrementar cuando hay breaking changes
+const STORAGE_VERSION = '2';
+const STORAGE_VERSION_KEY = '@opero_storage_version';
+
+/**
+ * Migración de AsyncStorage entre versiones.
+ * Limpia datos corruptos de builds anteriores SIN borrar el token de auth.
+ */
+async function migrateStorageIfNeeded() {
+  try {
+    const currentVersion = await AsyncStorage.getItem(STORAGE_VERSION_KEY);
+
+    if (currentVersion !== STORAGE_VERSION) {
+      console.log(`[App] Migrando storage de v${currentVersion || '1'} a v${STORAGE_VERSION}`);
+
+      // Guardar token de auth antes de limpiar
+      const authToken = await AsyncStorage.getItem('@opero_auth_token');
+
+      // Limpiar TODAS las keys de Opero (colas offline, cache, etc.)
+      const allKeys = await AsyncStorage.getAllKeys();
+      const operoKeys = allKeys.filter(key =>
+        key.startsWith('@opero_') && key !== '@opero_auth_token'
+      );
+
+      if (operoKeys.length > 0) {
+        console.log(`[App] Limpiando ${operoKeys.length} keys de storage antiguo`);
+        await AsyncStorage.multiRemove(operoKeys);
+      }
+
+      // Restaurar token de auth si existía
+      if (authToken) {
+        await AsyncStorage.setItem('@opero_auth_token', authToken);
+      }
+
+      // Marcar migración completada
+      await AsyncStorage.setItem(STORAGE_VERSION_KEY, STORAGE_VERSION);
+      console.log('[App] Migración de storage completada');
+    }
+  } catch (error) {
+    console.error('[App] Error en migración de storage:', error);
+  }
+}
 
 const MIN_SPLASH_DURATION = 2500; // 2.5 segundos
 
@@ -48,8 +92,11 @@ export default function App() {
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    const hideSplash = async () => {
+    const initApp = async () => {
       if (!fontsLoaded) return;
+
+      // Migrar storage ANTES de cargar la app
+      await migrateStorageIfNeeded();
 
       const elapsedTime = Date.now() - startTimeRef.current;
       const remainingTime = MIN_SPLASH_DURATION - elapsedTime;
@@ -78,7 +125,7 @@ export default function App() {
       });
     };
 
-    hideSplash().catch(console.error);
+    initApp().catch(console.error);
   }, [fontsLoaded]);
 
   // Mostrar splash mientras carga

@@ -2,17 +2,17 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 const getBaseURL = () => {
-  // Primero intentar obtener la URL de las variables de entorno
-  const apiUrl = Constants.expoConfig?.extra?.apiUrl ||
-                 process.env.EXPO_PUBLIC_API_URL;
+  // En builds de producción/preview (APK/IPA), process.env es undefined
+  // SIEMPRE usar Constants.expoConfig.extra.apiUrl que viene de eas.json
+  const apiUrl = Constants.expoConfig?.extra?.apiUrl;
 
   if (apiUrl) {
-    console.log('[API] Usando URL de entorno:', apiUrl);
+    console.log('[API] Usando URL de producción:', apiUrl);
     return apiUrl;
   }
 
-  // Fallback a desarrollo local
-  console.log('[API] Usando URL de desarrollo local');
+  // Fallback SOLO para desarrollo con Expo Go
+  console.warn('[API] ⚠️ No se encontró EXPO_PUBLIC_API_URL, usando localhost (solo para dev)');
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:8080';
   }

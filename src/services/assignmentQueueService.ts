@@ -19,6 +19,7 @@ const getStorageKey = () => {
 };
 
 const listeners: Array<() => void> = [];
+let flushInProgress = false; // Protección contra flush() concurrente
 
 const assignmentQueueService = {
   setUserId(userId: number | null) {
@@ -84,35 +85,46 @@ const assignmentQueueService = {
   },
 
   async flush(): Promise<{ uploaded: number; failed: number }> {
-    const queue = await this.getAll();
-    if (queue.length === 0) {
+    // PROTECCIÓN: evitar flush() concurrente
+    if (flushInProgress) {
+      console.warn('[assignmentQueueService] flush() ya en progreso, ignorando llamada duplicada');
       return { uploaded: 0, failed: 0 };
     }
 
-    let uploaded = 0;
-    let failed = 0;
-    const remaining: PendingAssignment[] = [];
-
-    for (const assignment of queue) {
-      try {
-        // Si hay cambio de departamento, hacerlo primero
-        if (assignment.departmentId) {
-          await incidentService.updateDepartment(assignment.incidentId, assignment.departmentId);
-        }
-        // Luego asignar el trabajador
-        await incidentService.assignWorker(assignment.incidentId, assignment.workerId);
-        uploaded++;
-      } catch (error) {
-        console.error(`[assignmentQueueService] Error al asignar incidente ${assignment.incidentId}:`, error);
-        failed++;
-        remaining.push(assignment);
+    flushInProgress = true;
+    try {
+      const queue = await this.getAll();
+      if (queue.length === 0) {
+        return { uploaded: 0, failed: 0 };
       }
+
+      let uploaded = 0;
+      let failed = 0;
+      const remaining: PendingAssignment[] = [];
+
+      for (const assignment of queue) {
+        try {
+          // Si hay cambio de departamento, hacerlo primero
+          if (assignment.departmentId) {
+            await incidentService.updateDepartment(assignment.incidentId, assignment.departmentId);
+          }
+          // Luego asignar el trabajador
+          await incidentService.assignWorker(assignment.incidentId, assignment.workerId);
+          uploaded++;
+        } catch (error) {
+          console.error(`[assignmentQueueService] Error al asignar incidente ${assignment.incidentId}:`, error);
+          failed++;
+          remaining.push(assignment);
+        }
+      }
+
+      await AsyncStorage.setItem(getStorageKey(), JSON.stringify(remaining));
+      this.notifyListeners();
+
+      return { uploaded, failed };
+    } finally {
+      flushInProgress = false;
     }
-
-    await AsyncStorage.setItem(getStorageKey(), JSON.stringify(remaining));
-    this.notifyListeners();
-
-    return { uploaded, failed };
   },
 
   subscribe(callback: () => void): () => void {

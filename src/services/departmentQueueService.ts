@@ -18,6 +18,7 @@ const getStorageKey = () => {
 };
 
 const listeners: Array<() => void> = [];
+let flushInProgress = false; // Protección contra flush() concurrente
 
 const departmentQueueService = {
   setUserId(userId: number | null) {
@@ -80,30 +81,41 @@ const departmentQueueService = {
   },
 
   async flush(): Promise<{ uploaded: number; failed: number }> {
-    const queue = await this.getAll();
-    if (queue.length === 0) {
+    // PROTECCIÓN: evitar flush() concurrente
+    if (flushInProgress) {
+      console.warn('[departmentQueueService] flush() ya en progreso, ignorando llamada duplicada');
       return { uploaded: 0, failed: 0 };
     }
 
-    let uploaded = 0;
-    let failed = 0;
-    const remaining: PendingDepartment[] = [];
-
-    for (const dept of queue) {
-      try {
-        await departmentService.create({ name: dept.name });
-        uploaded++;
-      } catch (error) {
-        console.error(`[departmentQueueService] Error al crear departamento "${dept.name}":`, error);
-        failed++;
-        remaining.push(dept);
+    flushInProgress = true;
+    try {
+      const queue = await this.getAll();
+      if (queue.length === 0) {
+        return { uploaded: 0, failed: 0 };
       }
+
+      let uploaded = 0;
+      let failed = 0;
+      const remaining: PendingDepartment[] = [];
+
+      for (const dept of queue) {
+        try {
+          await departmentService.create({ name: dept.name });
+          uploaded++;
+        } catch (error) {
+          console.error(`[departmentQueueService] Error al crear departamento "${dept.name}":`, error);
+          failed++;
+          remaining.push(dept);
+        }
+      }
+
+      await AsyncStorage.setItem(getStorageKey(), JSON.stringify(remaining));
+      this.notifyListeners();
+
+      return { uploaded, failed };
+    } finally {
+      flushInProgress = false;
     }
-
-    await AsyncStorage.setItem(getStorageKey(), JSON.stringify(remaining));
-    this.notifyListeners();
-
-    return { uploaded, failed };
   },
 
   subscribe(callback: () => void): () => void {
