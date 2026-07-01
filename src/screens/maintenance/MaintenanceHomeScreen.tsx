@@ -60,7 +60,14 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
         incidents = cached || [];
       }
 
+      console.log('[MaintenanceHome] DEBUG - Total incidents:', incidents.length);
+      console.log('[MaintenanceHome] DEBUG - User ID:', user?.id, typeof user?.id);
+      if (incidents.length > 0) {
+        console.log('[MaintenanceHome] DEBUG - First incident workerId:', incidents[0].workerId, typeof incidents[0].workerId);
+        console.log('[MaintenanceHome] DEBUG - First incident:', JSON.stringify(incidents[0]));
+      }
       const assigned = incidents.filter(inc => inc.workerId === user?.id);
+      console.log('[MaintenanceHome] DEBUG - Assigned to me:', assigned.length);
 
       const sorted = assigned
         .filter(inc => inc.status !== 'FINISHED')
