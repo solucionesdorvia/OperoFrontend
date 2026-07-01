@@ -138,12 +138,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           </View>
 
           <View style={styles.field}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Contraseña</Text>
-              <TouchableOpacity>
-                <Text style={styles.forgot}>¿Olvidaste?</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.label}>Contraseña</Text>
             <View style={styles.inputRow}>
               <TextInput
                 style={[styles.input, { flex: 1, borderWidth: 0 }]}
