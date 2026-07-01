@@ -64,7 +64,7 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
           const workersData = allUsers.filter((u) => u.roleName === 'WORKER');
           setWorkers(workersData);
           // Cachear para offline
-          await teamCacheService.save({ departments: deptsData, users: workersData });
+          await teamCacheService.save(deptsData, workersData);
         } catch (error: any) {
           console.log('[ManagerIncidentDetail] Error online, intentando caché');
           const cached = await teamCacheService.load();

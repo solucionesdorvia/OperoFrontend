@@ -108,7 +108,7 @@ export const incidentService = {
 
   async updateDepartment(id: number, departmentId: number): Promise<IncidentResponse> {
     try {
-      const response = await api.put<IncidentResponse>(
+      const response = await api.patch<IncidentResponse>(
         `${ENDPOINTS.INCIDENTS}/${id}/department`,
         { departmentId }
       );
