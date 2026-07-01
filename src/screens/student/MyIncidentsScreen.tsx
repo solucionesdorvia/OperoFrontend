@@ -34,6 +34,14 @@ const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PEND
   'FINISHED': 'FINALIZADO',
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  'PENDING': COLORS.outline,           // Gris para pendiente
+  'PENDING_ASSIGNMENT': COLORS.outline, // Gris para pendiente
+  'ASSIGNED': COLORS.primary,          // Azul para abierto
+  'IN_PROCESS': COLORS.warning,        // Naranja para en proceso
+  'FINISHED': COLORS.success,          // Verde para finalizado
+};
+
 type MyIncidentsScreenProps = StudentTabScreenProps<'StudentIncidents'>;
 
 export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps) {
@@ -342,21 +350,24 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
                       }}
                       activeOpacity={0.7}
                     >
-                      <View style={styles.cardTop}>
-                        <View style={styles.cardInfo}>
-                          <Text style={styles.cardTitle} numberOfLines={2}>{inc.title}</Text>
-                          <Text style={styles.cardLocation}>{inc.departmentName}</Text>
-                        </View>
-                        <StatusBadge status={STATUS_MAP[inc.status] || 'ABIERTO'} />
-                      </View>
-                      <View style={styles.cardMeta}>
-                        {inc.priority === 'HIGH' && (
-                          <View style={styles.priorityTag}>
-                            <Text style={styles.priorityText}>Prioridad alta</Text>
+                      <View style={[styles.statusBar, { backgroundColor: STATUS_COLORS[inc.status] || COLORS.outline }]} />
+                      <View style={styles.cardContent}>
+                        <View style={styles.cardTop}>
+                          <View style={styles.cardInfo}>
+                            <Text style={styles.cardTitle} numberOfLines={2}>{inc.title}</Text>
+                            <Text style={styles.cardLocation}>{inc.departmentName}</Text>
                           </View>
-                        )}
-                        <Text style={styles.metaText}>{getRelativeTime(inc.createdAt)}</Text>
-                        {statusSubtext && <Text style={styles.metaSub}>{statusSubtext}</Text>}
+                          <StatusBadge status={STATUS_MAP[inc.status] || 'ABIERTO'} />
+                        </View>
+                        <View style={styles.cardMeta}>
+                          {inc.priority === 'HIGH' && (
+                            <View style={styles.priorityTag}>
+                              <Text style={styles.priorityText}>Prioridad alta</Text>
+                            </View>
+                          )}
+                          <Text style={styles.metaText}>{getRelativeTime(inc.createdAt)}</Text>
+                          {statusSubtext && <Text style={styles.metaSub}>{statusSubtext}</Text>}
+                        </View>
                       </View>
                     </TouchableOpacity>
                   );

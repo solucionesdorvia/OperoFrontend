@@ -26,6 +26,17 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceContainerLow,
     borderRadius: 8, padding: 14, gap: 10,
     borderWidth: 1, borderColor: COLORS.outlineVariant,
+    flexDirection: 'row',
+  },
+  statusBar: {
+    width: 4,
+    borderRadius: 2,
+    marginRight: 12,
+    alignSelf: 'stretch',
+  },
+  cardContent: {
+    flex: 1,
+    gap: 10,
   },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
   cardInfo: { flex: 1, gap: 4 },

@@ -16,10 +16,10 @@ type IncidentCardProps = {
 };
 
 const accentColor: Record<string, string> = {
-  ABIERTO:      COLORS.statusOpen,
-  'EN PROCESO': COLORS.statusInProgress,
-  FINALIZADO:   COLORS.statusResolved,
-  PENDIENTE:    COLORS.statusClosed,
+  PENDIENTE:    COLORS.outline,      // Gris para pendiente
+  ABIERTO:      COLORS.primary,      // Azul para abierto
+  'EN PROCESO': COLORS.warning,      // Naranja para en proceso
+  FINALIZADO:   COLORS.success,      // Verde para finalizado
 };
 
 export default function IncidentCard({ title, location, status, time, onPress, dimmed }: IncidentCardProps) {
