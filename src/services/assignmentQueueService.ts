@@ -4,6 +4,7 @@ import { incidentService } from './incidentService';
 interface PendingAssignment {
   incidentId: number;
   workerId: number;
+  departmentId?: number; // Opcional: si cambió el departamento también
   timestamp: string;
 }
 
@@ -29,7 +30,7 @@ const assignmentQueueService = {
     }
   },
 
-  async add(incidentId: number, workerId: number, userId?: number): Promise<void> {
+  async add(incidentId: number, workerId: number, userId?: number, departmentId?: number): Promise<void> {
     const effectiveUserId = userId || currentUserId;
     if (!effectiveUserId) {
       throw new Error('No se puede agregar a la cola de asignaciones sin usuario autenticado');
@@ -46,6 +47,7 @@ const assignmentQueueService = {
     const newAssignment: PendingAssignment = {
       incidentId,
       workerId,
+      departmentId,
       timestamp: new Date().toISOString(),
     };
 
@@ -93,6 +95,11 @@ const assignmentQueueService = {
 
     for (const assignment of queue) {
       try {
+        // Si hay cambio de departamento, hacerlo primero
+        if (assignment.departmentId) {
+          await incidentService.updateDepartment(assignment.incidentId, assignment.departmentId);
+        }
+        // Luego asignar el trabajador
         await incidentService.assignWorker(assignment.incidentId, assignment.workerId);
         uploaded++;
       } catch (error) {

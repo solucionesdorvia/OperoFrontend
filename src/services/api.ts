@@ -21,7 +21,13 @@ const RETRY_DELAY = 1000; // 1 segundo entre reintentos
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Helper para determinar si un error es reintentable
-const isRetryableError = (error: AxiosError): boolean => {
+const isRetryableError = (error: AxiosError, config: InternalAxiosRequestConfig): boolean => {
+  // NO reintentar operaciones no idempotentes (POST, PUT, PATCH, DELETE)
+  // Solo reintentar GET requests de forma segura
+  if (config.method && config.method.toUpperCase() !== 'GET') {
+    return false;
+  }
+
   // Reintentar en errores de red o timeouts
   return (
     error.code === 'ECONNABORTED' ||
@@ -65,7 +71,7 @@ api.interceptors.response.use(
     // Un 401 puede ser por falta de permisos, no necesariamente por token inválido
 
     // Lógica de reintentos para errores de red
-    if (config && isRetryableError(error)) {
+    if (config && isRetryableError(error, config)) {
       const retryCount = parseInt(config.headers['x-retry-count'] || '0');
 
       if (retryCount < MAX_RETRIES) {

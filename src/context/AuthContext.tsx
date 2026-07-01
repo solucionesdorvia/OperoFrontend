@@ -108,7 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             offlineQueueService.setUserId(userData.id); // Setear userId para cola offline
             workQueueService.setUserId(userData.id); // Setear userId para cola de trabajo operario
             departmentQueueService.setUserId(userData.id); // Setear userId para cola de departamentos
-            assignmentQueueService.setUserId(userData.id); // Setear userId para cola de asignaciones
+            assignmentQueueService.setUserId(userData.id);
             incidentCacheService.setUserId(userData.id); teamCacheService.setUserId(userData.id); // Setear userId para caché
             console.log('[AuthContext] Usuario autenticado:', userData.emailUade);
           } catch (error: any) {
@@ -276,7 +276,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       offlineQueueService.setUserId(null); // Limpiar userId al logout
       workQueueService.setUserId(null); // Limpiar userId de cola de trabajo
       departmentQueueService.setUserId(null); // Limpiar userId de cola de departamentos
-      assignmentQueueService.setUserId(null); // Limpiar userId de cola de asignaciones
+      assignmentQueueService.setUserId(null);
       incidentCacheService.setUserId(null); teamCacheService.setUserId(null);
 
       console.log('[AuthContext] Sesión cerrada');

@@ -6,6 +6,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInitialRoute } from '../hooks/useInitialRoute';
+import { useManagerDataPreload } from '../hooks/useManagerDataPreload';
 import { AuthProvider } from '../context/AuthContext';
 import OfflineSyncManager from '../components/OfflineSyncManager';
 
@@ -177,6 +178,9 @@ function StudentTabs() {
 }
 
 function ManagerTabs() {
+  // Precargar datos para modo offline
+  useManagerDataPreload();
+
   return (
     <ManagerTab.Navigator
       tabBar={ManagerTabBarComponent}

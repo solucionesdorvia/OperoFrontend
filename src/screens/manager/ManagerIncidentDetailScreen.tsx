@@ -100,22 +100,31 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
     try {
       setSaving(true);
 
-      // Actualizar departamento si cambió
-      if (selectedDeptId && selectedDeptId !== incident?.departmentId) {
-        await incidentService.updateDepartment(incident.id, selectedDeptId);
-      }
+      const deptChanged = selectedDeptId && selectedDeptId !== incident?.departmentId;
+      const workerChanged = selectedWorkerId && selectedWorkerId !== incident?.workerId;
 
-      // Asignar worker si cambió
-      if (selectedWorkerId && selectedWorkerId !== incident?.workerId) {
-        if (isOnline) {
-          await incidentService.assignWorker(incident.id, selectedWorkerId);
-        } else {
-          await assignmentQueueService.add(incident.id, selectedWorkerId, user?.id);
+      if (isOnline) {
+        // ONLINE: hacer los cambios directamente
+        if (deptChanged) {
+          await incidentService.updateDepartment(incident.id, selectedDeptId!);
+        }
+        if (workerChanged) {
+          await incidentService.assignWorker(incident.id, selectedWorkerId!);
+        }
+      } else {
+        // OFFLINE: guardar en cola unificada (departamento + operario)
+        if (workerChanged || deptChanged) {
+          await assignmentQueueService.add(
+            incident.id,
+            selectedWorkerId || incident?.workerId || 0,
+            user?.id,
+            deptChanged ? selectedDeptId : undefined
+          );
         }
       }
 
       showSuccess(isOnline ? 'Éxito' : 'Sin conexión',
-        isOnline ? 'Cambios guardados correctamente' : 'Asignación guardada. Se sincronizará cuando te conectes.');
+        isOnline ? 'Cambios guardados correctamente' : 'Cambios guardados. Se sincronizarán cuando te conectes.');
       setTimeout(() => {
         navigation.goBack();
       }, 1500);
