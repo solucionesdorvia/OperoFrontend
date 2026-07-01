@@ -31,7 +31,13 @@ export default {
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "ACCESS_WIFI_STATE"
-      ]
+      ],
+      // Permitir HTTPS a Railway (Android 9+ requiere Network Security Config)
+      usesCleartextTraffic: false, // Solo HTTPS permitido
+      // Config adicional para permitir conexiones HTTPS a dominios custom
+      config: {
+        googleMobileAdsAppId: false // Deshabilitar AdMob warnings si no usamos ads
+      }
     },
     web: {
       favicon: "./assets/favicon.png"

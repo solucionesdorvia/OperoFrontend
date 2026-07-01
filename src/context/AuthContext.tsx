@@ -206,18 +206,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       console.log('[AuthContext] Iniciando sesión...');
 
-      const response = await authService.login({
-        emailUade: email,
-        password: password,
-      });
+      // Primer intento de login
+      try {
+        const response = await authService.login({
+          emailUade: email,
+          password: password,
+        });
 
-      setUser(response.user);
-      offlineQueueService.setUserId(response.user.id);
-      workQueueService.setUserId(response.user.id);
-      departmentQueueService.setUserId(response.user.id);
-      assignmentQueueService.setUserId(response.user.id);
-      incidentCacheService.setUserId(response.user.id); teamCacheService.setUserId(response.user.id);
-      console.log('[AuthContext] Login exitoso:', response.user.emailUade);
+        setUser(response.user);
+        offlineQueueService.setUserId(response.user.id);
+        workQueueService.setUserId(response.user.id);
+        departmentQueueService.setUserId(response.user.id);
+        assignmentQueueService.setUserId(response.user.id);
+        incidentCacheService.setUserId(response.user.id); teamCacheService.setUserId(response.user.id);
+        console.log('[AuthContext] Login exitoso:', response.user.emailUade);
+      } catch (firstError: any) {
+        // Si falla inmediatamente (< 1s) con "Network Error", puede ser que DNS/red no esté lista
+        // Esperamos 500ms y reintentamos UNA vez
+        const msg = firstError?.message?.toLowerCase() || '';
+        if (msg.includes('no se pudo conectar') || msg.includes('network')) {
+          console.log('[AuthContext] Primer intento falló rápido, reintentando después de 500ms...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // Segundo intento (este ya debería funcionar si era problema de DNS)
+          const response = await authService.login({
+            emailUade: email,
+            password: password,
+          });
+
+          setUser(response.user);
+          offlineQueueService.setUserId(response.user.id);
+          workQueueService.setUserId(response.user.id);
+          departmentQueueService.setUserId(response.user.id);
+          assignmentQueueService.setUserId(response.user.id);
+          incidentCacheService.setUserId(response.user.id); teamCacheService.setUserId(response.user.id);
+          console.log('[AuthContext] Login exitoso (segundo intento):', response.user.emailUade);
+        } else {
+          // Otro error (401, validación, etc.) → propagar inmediatamente
+          throw firstError;
+        }
+      }
     } catch (error) {
       console.error('[AuthContext] Error en login:', error);
       throw error;

@@ -234,18 +234,22 @@ export default function CreateIncidentScreen({ navigation, route }: CreateIncide
     // Esto simplifica el form para el alumno y centraliza la decisión en el manager.
     const defaultDepartment = departments[0] ?? { id: 1, name: 'Mantenimiento' };
 
-    // Helper: detecta si un error es por falta de red. Lo usamos para fallback
-    // al modo offline cuando isOnline da true (default inicial mientras NetInfo
-    // sincroniza) pero el fetch real falla con Network Error.
+    // Helper: detecta si un error es GENUINAMENTE de red (sin respuesta del servidor).
+    // IMPORTANTE: NO considerar timeout (ECONNABORTED) como network error porque
+    // el incidente puede haberse creado en el servidor antes del timeout.
     const isNetworkError = (err: any) => {
+      // Solo es error de red si NO hubo respuesta HTTP (err.response === undefined)
+      if (err?.response) {
+        return false; // Hubo respuesta HTTP → el servidor está alcanzable
+      }
+
       const msg = (err?.message || '').toLowerCase();
       return (
         msg.includes('no se pudo conectar') ||
         msg.includes('network error') ||
-        msg.includes('tardó demasiado') ||
-        err?.code === 'ECONNABORTED' ||
         err?.code === 'ERR_NETWORK'
       );
+      // NO incluir ECONNABORTED ni "tardó demasiado" → pueden haber creado el incidente
     };
 
     const queueOfflineAndExit = async (baseData: any) => {
