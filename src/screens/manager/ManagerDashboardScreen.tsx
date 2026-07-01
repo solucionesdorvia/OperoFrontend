@@ -93,6 +93,7 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
   useFocusEffect(
     React.useCallback(() => {
       loadData();
+      updatePendingCount();
     }, [])
   );
 

@@ -102,6 +102,7 @@ export default function MaintenanceHomeScreen({ navigation }: MaintenanceHomeScr
   useFocusEffect(
     React.useCallback(() => {
       loadData();
+      updatePendingCount();
     }, [])
   );
 

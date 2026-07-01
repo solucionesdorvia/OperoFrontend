@@ -184,7 +184,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
   useFocusEffect(
     React.useCallback(() => {
       loadIncidents();
-      // Reaplicar filtros después de cargar
+      updatePendingCount();
       return () => {};
     }, [])
   );

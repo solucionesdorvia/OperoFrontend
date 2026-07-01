@@ -109,6 +109,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
   useFocusEffect(
     React.useCallback(() => {
       loadData();
+      // IMPORTANTE: updatePendingCount en focus para detectar pendientes después de login
       updatePendingCount();
     }, [])
   );
