@@ -18,6 +18,7 @@ import { teamCacheService } from '../../services/teamCacheService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { useNetwork } from '../../hooks/useNetwork';
+import { useAuth } from '../../context/AuthContext';
 
 const STATUS_MAP: Record<string, 'ABIERTO' | 'EN PROCESO' | 'FINALIZADO' | 'PENDIENTE'> = {
   'PENDING': 'PENDIENTE',
@@ -42,6 +43,7 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
   const { isOnline } = useNetwork();
+  const { user } = useAuth();
 
   useEffect(() => {
     loadData();
@@ -108,7 +110,7 @@ export default function ManagerIncidentDetailScreen({ navigation, route }: Manag
         if (isOnline) {
           await incidentService.assignWorker(incident.id, selectedWorkerId);
         } else {
-          await assignmentQueueService.add(incident.id, selectedWorkerId);
+          await assignmentQueueService.add(incident.id, selectedWorkerId, user?.id);
         }
       }
 

@@ -24,11 +24,16 @@ const departmentQueueService = {
     currentUserId = userId;
   },
 
-  async add(name: string): Promise<string> {
-    if (!currentUserId) {
+  async add(name: string, userId?: number): Promise<string> {
+    const effectiveUserId = userId || currentUserId;
+    if (!effectiveUserId) {
       throw new Error('No se puede agregar a la cola de departamentos sin usuario autenticado');
     }
-    const queue = await this.getAll();
+
+    // Usar el userId pasado para esta operación
+    const storageKey = `${STORAGE_KEY_PREFIX}${effectiveUserId}`;
+    const data = await AsyncStorage.getItem(storageKey);
+    const queue: PendingDepartment[] = data ? JSON.parse(data) : [];
     const tempId = `temp_${Date.now()}`;
 
     const newDept: PendingDepartment = {
@@ -38,7 +43,7 @@ const departmentQueueService = {
     };
 
     queue.push(newDept);
-    await AsyncStorage.setItem(getStorageKey(), JSON.stringify(queue));
+    await AsyncStorage.setItem(storageKey, JSON.stringify(queue));
     this.notifyListeners();
     return tempId;
   },

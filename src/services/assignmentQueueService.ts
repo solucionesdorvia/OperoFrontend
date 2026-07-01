@@ -24,11 +24,16 @@ const assignmentQueueService = {
     currentUserId = userId;
   },
 
-  async add(incidentId: number, workerId: number): Promise<void> {
-    if (!currentUserId) {
+  async add(incidentId: number, workerId: number, userId?: number): Promise<void> {
+    const effectiveUserId = userId || currentUserId;
+    if (!effectiveUserId) {
       throw new Error('No se puede agregar a la cola de asignaciones sin usuario autenticado');
     }
-    const queue = await this.getAll();
+
+    // Usar el userId pasado para esta operación
+    const storageKey = `${STORAGE_KEY_PREFIX}${effectiveUserId}`;
+    const data = await AsyncStorage.getItem(storageKey);
+    const queue: PendingAssignment[] = data ? JSON.parse(data) : [];
 
     // Si ya existe una asignación para esta incidencia, reemplazarla
     const filtered = queue.filter(item => item.incidentId !== incidentId);
@@ -40,7 +45,7 @@ const assignmentQueueService = {
     };
 
     filtered.push(newAssignment);
-    await AsyncStorage.setItem(getStorageKey(), JSON.stringify(filtered));
+    await AsyncStorage.setItem(storageKey, JSON.stringify(filtered));
     this.notifyListeners();
   },
 

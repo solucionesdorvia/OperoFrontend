@@ -23,6 +23,7 @@ import { departmentQueueService } from '../../services/departmentQueueService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { useNetwork } from '../../hooks/useNetwork';
+import { useAuth } from '../../context/AuthContext';
 
 type MyTeamScreenProps = ManagerTabScreenProps<'ManagerMyTeam'>;
 
@@ -30,6 +31,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
   const insets = useSafeAreaInsets();
   const tabBarHeight = 60 + insets.bottom;
   const { isOnline } = useNetwork();
+  const { user } = useAuth();
 
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
   const [workers, setWorkers] = useState<UserResponse[]>([]);
@@ -179,7 +181,7 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
         showSuccess('Departamento creado', `Se agregó ${newDeptName.trim()}`);
       } else {
         // Offline: agregar a la cola
-        await departmentQueueService.add(newDeptName.trim());
+        await departmentQueueService.add(newDeptName.trim(), user?.id);
         showSuccess('Sin conexión', 'Departamento guardado. Se creará cuando te conectes.');
       }
 
