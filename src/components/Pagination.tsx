@@ -110,7 +110,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
+    marginTop: -40, // Negativo para acercar a las incidencias
+    marginBottom: 80, // Espacio para el FAB
     gap: 8,
   },
   arrowBtn: {

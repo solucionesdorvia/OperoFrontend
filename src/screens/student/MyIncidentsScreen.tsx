@@ -273,7 +273,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
           )}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.filtersScroll, { marginBottom: 16 }]}>
           <View style={styles.filters}>
             {filters.map((f, i) => (
               <TouchableOpacity
@@ -287,7 +287,7 @@ export default function MyIncidentsScreen({ navigation }: MyIncidentsScreenProps
           </View>
         </ScrollView>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.filtersScroll, { marginBottom: 16 }]}>
           <View style={styles.filters}>
             {dateRanges.map((d, i) => (
               <TouchableOpacity
