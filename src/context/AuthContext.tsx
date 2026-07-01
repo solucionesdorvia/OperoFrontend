@@ -213,6 +213,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       setUser(response.user);
       offlineQueueService.setUserId(response.user.id);
+      workQueueService.setUserId(response.user.id);
+      departmentQueueService.setUserId(response.user.id);
+      assignmentQueueService.setUserId(response.user.id);
       incidentCacheService.setUserId(response.user.id); teamCacheService.setUserId(response.user.id);
       console.log('[AuthContext] Login exitoso:', response.user.emailUade);
     } catch (error) {
@@ -247,6 +250,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       setUser(response.user);
       offlineQueueService.setUserId(response.user.id);
+      workQueueService.setUserId(response.user.id);
+      departmentQueueService.setUserId(response.user.id);
+      assignmentQueueService.setUserId(response.user.id);
       incidentCacheService.setUserId(response.user.id); teamCacheService.setUserId(response.user.id);
       console.log('[AuthContext] Registro exitoso:', response.user.emailUade);
     } catch (error) {
