@@ -30,6 +30,7 @@ export default function ManagerProfileScreen({ navigation }: ManagerProfileScree
       menuItems={menuItems}
       statsFilter={statsFilter}
       statsLabels={{ reported: 'Nuevas', resolved: 'Resueltas', active: 'En proceso' }}
+      statsOrder={['reported', 'active', 'resolved']}
     />
   );
 }

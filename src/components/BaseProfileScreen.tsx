@@ -23,6 +23,7 @@ interface BaseProfileScreenProps {
   menuItems: MenuItem[];
   statsFilter: (incidents: any[], userId?: number) => { reported: number; resolved: number; active: number };
   statsLabels?: { reported: string; resolved: string; active: string };
+  statsOrder?: ('reported' | 'active' | 'resolved')[];
 }
 
 export default function BaseProfileScreen({
@@ -31,6 +32,7 @@ export default function BaseProfileScreen({
   menuItems,
   statsFilter,
   statsLabels = { reported: 'Reportadas', resolved: 'Resueltas', active: 'Activas' },
+  statsOrder = ['reported', 'resolved', 'active'],
 }: BaseProfileScreenProps) {
   const { logout, user } = useAuth();
   const { isOnline } = useNetwork();
@@ -117,20 +119,15 @@ export default function BaseProfileScreen({
           </View>
         ) : (
           <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statNum}>{stats.reported}</Text>
-              <Text style={styles.statLabel}>{statsLabels.reported}</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statNum}>{stats.resolved}</Text>
-              <Text style={styles.statLabel}>{statsLabels.resolved}</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statNum}>{stats.active}</Text>
-              <Text style={styles.statLabel}>{statsLabels.active}</Text>
-            </View>
+            {statsOrder.map((key, idx) => (
+              <React.Fragment key={key}>
+                {idx > 0 && <View style={styles.statDivider} />}
+                <View style={styles.stat}>
+                  <Text style={styles.statNum}>{stats[key]}</Text>
+                  <Text style={styles.statLabel}>{statsLabels[key]}</Text>
+                </View>
+              </React.Fragment>
+            ))}
           </View>
         )}
 

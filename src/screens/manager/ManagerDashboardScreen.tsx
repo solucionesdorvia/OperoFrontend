@@ -8,6 +8,7 @@ import { COLORS } from '../../../constants/colors';
 import TopAppBar from '../../components/TopAppBar';
 import EmptyState from '../../components/EmptyState';
 import LoadingView from '../../components/LoadingView';
+import Pagination from '../../components/Pagination';
 import type { ManagerTabScreenProps } from '../../types/navigation';
 import { styles } from './ManagerDashboardScreen.styles';
 import { incidentService, IncidentResponse } from '../../services/incidentService';
@@ -21,11 +22,14 @@ const priorityColor = { HIGH: COLORS.error, MEDIUM: COLORS.primary, LOW: COLORS.
 
 type ManagerDashboardScreenProps = ManagerTabScreenProps<'ManagerHome'>;
 
+const ITEMS_PER_PAGE = 5;
+
 export default function ManagerDashboardScreen({ navigation }: ManagerDashboardScreenProps) {
   const [incidents, setIncidents] = useState<IncidentResponse[]>([]);
   const [stats, setStats] = useState({ nuevas: 0, enProceso: 0, resueltas: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { dialogState, hideDialog, showError } = useErrorDialog();
   const { isOnline } = useNetwork();
 
@@ -53,11 +57,10 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
         data = cached || [];
       }
 
-      // Pendientes de asignar: sin worker asignado
+      // Pendientes de asignar: sin worker asignado (TODAS, no solo 3)
       const unassigned = data
         .filter(inc => !inc.workerId)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 3);
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setIncidents(unassigned);
 
@@ -132,8 +135,9 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
           {incidents.length === 0 ? (
             <EmptyState icon="check-circle" message="No hay incidencias pendientes de asignar" />
           ) : (
-            <View style={styles.list}>
-              {incidents.map((inc) => {
+            <>
+              <View style={styles.list}>
+                {incidents.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((inc) => {
                 const priority = (inc.priority || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW';
                 return (
                   <TouchableOpacity
@@ -162,7 +166,13 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
                   </TouchableOpacity>
                 );
               })}
-            </View>
+              </View>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(incidents.length / ITEMS_PER_PAGE)}
+                onPageChange={setCurrentPage}
+              />
+            </>
           )}
         </View>
 
