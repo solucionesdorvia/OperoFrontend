@@ -42,12 +42,13 @@ export default function BaseProfileScreen({
       let incidents: any[] = [];
 
       if (isOnline) {
+        // SIEMPRE fetch fresco cuando online (no caché) para stats actualizadas
         try {
           incidents = await incidentService.getAll();
-          // El caché ya se guarda en las otras pantallas, pero por si acaso:
           await incidentCacheService.save(incidents);
         } catch (error: any) {
-          console.log('[ProfileScreen] Error al cargar del servidor, usando caché');
+          // Si falla estando online, usar caché como fallback
+          console.log('[ProfileScreen] Error online, fallback a caché');
           const cached = await incidentCacheService.load();
           incidents = cached || [];
         }
@@ -59,7 +60,7 @@ export default function BaseProfileScreen({
 
       setStats(statsFilter(incidents, user?.id));
     } catch (error) {
-      console.error('[ProfileScreen] Error al cargar stats:', error);
+      console.error('[ProfileScreen] Error crítico al cargar stats:', error);
     } finally {
       setLoading(false);
     }

@@ -27,7 +27,7 @@ export const styles = StyleSheet.create({
   },
   stat: { flex: 1, alignItems: 'center', paddingVertical: 14, gap: 3 },
   statNum: { fontSize: 18, fontFamily: FONTS.family.monoSemiBold, color: COLORS.primary, letterSpacing: -0.5 },
-  statLabel: { fontSize: 11, fontFamily: FONTS.family.mono, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: FONTS.tracking.caps },
+  statLabel: { fontSize: 10, fontFamily: FONTS.family.mono, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.3 },
   statDivider: { width: 1, backgroundColor: COLORS.outlineVariant, marginVertical: 10 },
 
   list: { gap: 8 },

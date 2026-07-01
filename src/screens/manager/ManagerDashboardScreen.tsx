@@ -62,7 +62,7 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
       setIncidents(unassigned);
 
       setStats({
-        nuevas: data.filter(inc => inc.status === 'PENDING' || inc.status === 'PENDING_ASSIGNMENT' || inc.status === 'ASSIGNED').length,
+        nuevas: data.filter(inc => inc.status === 'PENDING_ASSIGNMENT' || !inc.workerId).length, // Solo sin asignar
         enProceso: data.filter(inc => inc.status === 'IN_PROCESS').length,
         resueltas: data.filter(inc => inc.status === 'FINISHED').length,
       });
