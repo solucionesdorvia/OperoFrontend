@@ -16,11 +16,10 @@ export default function ManagerProfileScreen({ navigation }: ManagerProfileScree
   ];
 
   const statsFilter = (incidents: any[], userId?: number) => {
-    const deptIncidents = incidents; // Manager ve todos los de su departamento
     return {
-      reported: deptIncidents.length,
-      resolved: deptIncidents.filter(inc => inc.status === 'FINISHED').length,
-      active: deptIncidents.filter(inc => inc.status !== 'FINISHED').length,
+      reported: incidents.filter(inc => !inc.workerId).length, // Nuevas (sin asignar)
+      resolved: incidents.filter(inc => inc.status === 'FINISHED').length,
+      active: incidents.filter(inc => inc.status === 'IN_PROCESS').length, // En proceso
     };
   };
 
@@ -30,6 +29,7 @@ export default function ManagerProfileScreen({ navigation }: ManagerProfileScree
       styles={styles}
       menuItems={menuItems}
       statsFilter={statsFilter}
+      statsLabels={{ reported: 'Nuevas', resolved: 'Resueltas', active: 'En proceso' }}
     />
   );
 }

@@ -19,7 +19,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     return {
       reported: userIncidents.length,
       resolved: userIncidents.filter(inc => inc.status === 'FINISHED').length,
-      active: userIncidents.filter(inc => inc.status !== 'FINISHED').length,
+      active: userIncidents.filter(inc => inc.status === 'IN_PROCESS').length, // En curso (operario trabajando)
     };
   };
 
@@ -29,6 +29,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       styles={styles}
       menuItems={menuItems}
       statsFilter={statsFilter}
+      statsLabels={{ reported: 'Reportadas', resolved: 'Resueltas', active: 'En curso' }}
     />
   );
 }

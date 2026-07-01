@@ -17,17 +17,11 @@ export default function MaintenanceProfileScreen({ navigation }: MaintenanceProf
 
   const statsFilter = (incidents: any[], userId?: number) => {
     const mine = incidents.filter(inc => inc.workerId === userId);
-    const today = new Date();
-    const completedToday = mine.filter(inc => {
-      if (inc.status !== 'FINISHED') return false;
-      const updated = new Date(inc.updatedAt);
-      return updated.toDateString() === today.toDateString();
-    });
 
     return {
-      reported: mine.length,
-      resolved: completedToday.length,
-      active: mine.filter(inc => inc.status === 'FINISHED').length,
+      reported: mine.length, // Asignadas (todas las tareas asignadas al operario)
+      resolved: mine.filter(inc => inc.status === 'FINISHED').length, // Resueltas (total)
+      active: mine.filter(inc => inc.status === 'IN_PROCESS').length, // En proceso (comenzadas pero no terminadas)
     };
   };
 
@@ -37,6 +31,7 @@ export default function MaintenanceProfileScreen({ navigation }: MaintenanceProf
       styles={styles}
       menuItems={menuItems}
       statsFilter={statsFilter}
+      statsLabels={{ reported: 'Asignadas', resolved: 'Resueltas', active: 'En proceso' }}
     />
   );
 }

@@ -22,6 +22,7 @@ interface BaseProfileScreenProps {
   styles: any;
   menuItems: MenuItem[];
   statsFilter: (incidents: any[], userId?: number) => { reported: number; resolved: number; active: number };
+  statsLabels?: { reported: string; resolved: string; active: string };
 }
 
 export default function BaseProfileScreen({
@@ -29,6 +30,7 @@ export default function BaseProfileScreen({
   styles,
   menuItems,
   statsFilter,
+  statsLabels = { reported: 'Reportadas', resolved: 'Resueltas', active: 'Activas' },
 }: BaseProfileScreenProps) {
   const { logout, user } = useAuth();
   const { isOnline } = useNetwork();
@@ -117,17 +119,17 @@ export default function BaseProfileScreen({
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statNum}>{stats.reported}</Text>
-              <Text style={styles.statLabel}>Reportadas</Text>
+              <Text style={styles.statLabel}>{statsLabels.reported}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={styles.statNum}>{stats.resolved}</Text>
-              <Text style={styles.statLabel}>Resueltas</Text>
+              <Text style={styles.statLabel}>{statsLabels.resolved}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={styles.statNum}>{stats.active}</Text>
-              <Text style={styles.statLabel}>Activas</Text>
+              <Text style={styles.statLabel}>{statsLabels.active}</Text>
             </View>
           </View>
         )}
