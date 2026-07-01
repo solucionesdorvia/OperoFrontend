@@ -28,6 +28,7 @@ export default function OfflineSyncManager() {
   const { isOnline, isVerifying } = useNetwork();
   const { isAuthenticated } = useAuth();
   const wasOnline = useRef(isOnline);
+  const wasAuthenticated = useRef(isAuthenticated);
 
   const [pending, setPending] = useState(0);
   const [workPending, setWorkPending] = useState(0);
@@ -112,6 +113,23 @@ export default function OfflineSyncManager() {
       maybePrompt();
     }
   }, [pending, isOnline, isVerifying, isAuthenticated, maybePrompt]);
+
+  // Detectar cuando el usuario se autentica (login después de logout)
+  useEffect(() => {
+    const justAuthenticated = !wasAuthenticated.current && isAuthenticated;
+    wasAuthenticated.current = isAuthenticated;
+    if (justAuthenticated && isOnline && !isVerifying) {
+      console.log('[OfflineSyncManager] Usuario recién autenticado, verificando pendientes');
+      // Esperar un momento para que los servicios se inicialicen
+      setTimeout(() => {
+        refreshPending().then((count) => {
+          if (count > 0) {
+            maybePrompt();
+          }
+        });
+      }, 500);
+    }
+  }, [isAuthenticated, isOnline, isVerifying, maybePrompt, refreshPending]);
 
   // Banner: mostrar al pasar a offline, auto-ocultar a los 4s para no tapar
   // el botón de guardar. Se puede dismissear manualmente con la X.

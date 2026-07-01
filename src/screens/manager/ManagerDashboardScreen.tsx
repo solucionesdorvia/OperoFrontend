@@ -86,12 +86,8 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
     loadData();
     updatePendingCount();
 
-    const unsubscribe1 = departmentQueueService.subscribe(() => updatePendingCount());
-    const unsubscribe2 = assignmentQueueService.subscribe(() => updatePendingCount());
-    return () => {
-      unsubscribe1();
-      unsubscribe2();
-    };
+    const unsubscribe = assignmentQueueService.subscribe(() => updatePendingCount());
+    return unsubscribe;
   }, []);
 
   useFocusEffect(
@@ -101,23 +97,19 @@ export default function ManagerDashboardScreen({ navigation }: ManagerDashboardS
   );
 
   const updatePendingCount = async () => {
-    const deptCount = (await departmentQueueService.getAll()).length;
     const assignCount = (await assignmentQueueService.getAll()).length;
-    setPendingCount(deptCount + assignCount);
+    setPendingCount(assignCount);
   };
 
   const handleSync = async () => {
     try {
       setSyncing(true);
-      const deptRes = await departmentQueueService.flush();
       const assignRes = await assignmentQueueService.flush();
-      const uploaded = deptRes.uploaded + assignRes.uploaded;
-      const failed = deptRes.failed + assignRes.failed;
 
-      if (failed === 0) {
-        showSuccess('Sincronizado', `${uploaded} operación(es) subida(s) correctamente.`);
+      if (assignRes.failed === 0) {
+        showSuccess('Sincronizado', `${assignRes.uploaded} asignación(es) subida(s) correctamente.`);
       } else {
-        showError('Sincronización parcial', `Subidos: ${uploaded}, Fallidos: ${failed}`);
+        showError('Sincronización parcial', `Subidos: ${assignRes.uploaded}, Fallidos: ${assignRes.failed}`);
       }
       await loadData(true);
     } catch (error: any) {

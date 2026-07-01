@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl,
   Modal, KeyboardAvoidingView, Platform, StyleSheet, Alert,
@@ -38,6 +38,8 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
   const [incidents, setIncidents] = useState<IncidentResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [syncing, setSyncing] = useState(false);
   const { dialogState, hideDialog, showError, showSuccess } = useErrorDialog();
 
   // Modal: crear operador
@@ -107,8 +109,37 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
   useFocusEffect(
     React.useCallback(() => {
       loadData();
+      updatePendingCount();
     }, [])
   );
+
+  useEffect(() => {
+    updatePendingCount();
+    const unsubscribe = departmentQueueService.subscribe(() => updatePendingCount());
+    return unsubscribe;
+  }, []);
+
+  const updatePendingCount = async () => {
+    const count = (await departmentQueueService.getAll()).length;
+    setPendingCount(count);
+  };
+
+  const handleSync = async () => {
+    try {
+      setSyncing(true);
+      const result = await departmentQueueService.flush();
+      if (result.failed === 0) {
+        showSuccess('Sincronizado', `${result.uploaded} departamento(s) creado(s) correctamente.`);
+      } else {
+        showError('Sincronización parcial', `Creados: ${result.uploaded}, Fallidos: ${result.failed}`);
+      }
+      await loadData(true);
+    } catch (error: any) {
+      showError('Error', error.message || 'No se pudo sincronizar');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const getInitials = (name: string) => {
     const parts = name.split(' ');
@@ -210,10 +241,39 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
         }
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Departamentos</Text>
-          <Text style={styles.sub}>
-            {departments.length} departamentos · {workers.length} operadores
-          </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Departamentos</Text>
+            <Text style={styles.sub}>
+              {departments.length} departamentos · {workers.length} operadores
+            </Text>
+          </View>
+          {isOnline && pendingCount > 0 && (
+            <TouchableOpacity
+              onPress={handleSync}
+              disabled={syncing}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                backgroundColor: COLORS.primary,
+                borderRadius: 6,
+              }}
+              activeOpacity={0.7}
+            >
+              {syncing ? (
+                <ActivityIndicator size="small" color={COLORS.onPrimary} />
+              ) : (
+                <>
+                  <MaterialIcons name="cloud-upload" size={14} color={COLORS.onPrimary} />
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.onPrimary }}>
+                    Subir {pendingCount}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
 
         {departments.length === 0 ? (
