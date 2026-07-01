@@ -9,8 +9,18 @@ export const getRelativeTime = (dateString: string): string => {
     return 'Fecha desconocida';
   }
 
-  // Parsear la fecha correctamente (el backend envía en formato ISO con zona horaria)
-  const pastDate = new Date(dateString);
+  // El backend envía fechas en hora local de Argentina (UTC-3) sin zona horaria explícita.
+  // Por ejemplo: "2026-07-01T02:30:11.15332"
+  // Debemos parsearlas como UTC-3, no como UTC.
+
+  // Si la fecha NO tiene 'Z' al final ni offset (+/-), agregar el offset de Argentina
+  let dateToProcess = dateString;
+  if (!dateString.endsWith('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
+    // Agregar offset de Argentina (UTC-3): "-03:00"
+    dateToProcess = dateString + '-03:00';
+  }
+
+  const pastDate = new Date(dateToProcess);
 
   // Verificar que la fecha es válida
   if (isNaN(pastDate.getTime())) {
@@ -23,12 +33,9 @@ export const getRelativeTime = (dateString: string): string => {
   // Calcular diferencia en milisegundos
   const diffMs = now.getTime() - pastDate.getTime();
 
-  // Debug: loguear para ver qué está pasando
-  console.log('[dateUtils] Input:', dateString, '| Parsed:', pastDate.toISOString(), '| Diff (ms):', diffMs);
-
-  // Si la diferencia es negativa, la fecha es futura (error)
+  // Si la diferencia es negativa, la fecha es futura (error del servidor o reloj)
   if (diffMs < 0) {
-    console.warn('[dateUtils] Fecha futura detectada:', dateString);
+    console.warn('[dateUtils] Fecha futura detectada:', dateString, '| Diff:', diffMs);
     return 'Hace menos de 1 min';
   }
 
@@ -47,9 +54,22 @@ export const getRelativeTime = (dateString: string): string => {
 };
 
 export const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
+  // Aplicar el mismo fix de timezone que en getRelativeTime
+  let dateToProcess = dateString;
+  if (!dateString.endsWith('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
+    dateToProcess = dateString + '-03:00';
+  }
+
+  const date = new Date(dateToProcess);
   return `${date.getDate()} ${MONTHS[date.getMonth()]}, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 };
 
-export const isToday = (dateString: string): boolean =>
-  new Date(dateString).toDateString() === new Date().toDateString();
+export const isToday = (dateString: string): boolean => {
+  // Aplicar el mismo fix de timezone que en getRelativeTime
+  let dateToProcess = dateString;
+  if (!dateString.endsWith('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
+    dateToProcess = dateString + '-03:00';
+  }
+
+  return new Date(dateToProcess).toDateString() === new Date().toDateString();
+};
