@@ -28,7 +28,6 @@ export default function OfflineSyncManager() {
   const { isOnline, isVerifying } = useNetwork();
   const { isAuthenticated } = useAuth();
   const wasOnline = useRef(isOnline);
-  const wasAuthenticated = useRef(isAuthenticated);
 
   const [pending, setPending] = useState(0);
   const [workPending, setWorkPending] = useState(0);
@@ -104,32 +103,17 @@ export default function OfflineSyncManager() {
   }, [isOnline, maybePrompt]);
 
   // Si hay pendientes nuevos y estamos online (ej: creaste offline y luego conectaste antes del modal)
-  const prevPending = useRef(pending);
+  // También se dispara cuando userId se setea después de login (los servicios notifican listeners)
+  const prevPending = useRef(pending + workPending + deptPending + assignPending);
   useEffect(() => {
-    const wentFromZeroToSome = prevPending.current === 0 && pending > 0;
-    prevPending.current = pending;
+    const total = pending + workPending + deptPending + assignPending;
+    const wentFromZeroToSome = prevPending.current === 0 && total > 0;
+    prevPending.current = total;
     if (wentFromZeroToSome && isOnline && !isVerifying && isAuthenticated) {
       console.log('[OfflineSyncManager] Detectado pending > 0, mostrando prompt');
       maybePrompt();
     }
-  }, [pending, isOnline, isVerifying, isAuthenticated, maybePrompt]);
-
-  // Detectar cuando el usuario se autentica (login después de logout)
-  useEffect(() => {
-    const justAuthenticated = !wasAuthenticated.current && isAuthenticated;
-    wasAuthenticated.current = isAuthenticated;
-    if (justAuthenticated && isOnline && !isVerifying) {
-      console.log('[OfflineSyncManager] Usuario recién autenticado, verificando pendientes');
-      // Esperar un momento para que los servicios se inicialicen
-      setTimeout(() => {
-        refreshPending().then((count) => {
-          if (count > 0) {
-            maybePrompt();
-          }
-        });
-      }, 500);
-    }
-  }, [isAuthenticated, isOnline, isVerifying, maybePrompt, refreshPending]);
+  }, [pending, workPending, deptPending, assignPending, isOnline, isVerifying, isAuthenticated, maybePrompt]);
 
   // Banner: mostrar al pasar a offline, auto-ocultar a los 4s para no tapar
   // el botón de guardar. Se puede dismissear manualmente con la X.

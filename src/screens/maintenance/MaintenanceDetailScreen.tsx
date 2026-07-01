@@ -15,6 +15,7 @@ import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { formatDate } from '../../utils/dateUtils';
 import { useNetwork } from '../../hooks/useNetwork';
 import { workQueueService } from '../../services/workQueueService';
+import { useAuth } from '../../context/AuthContext';
 
 type MaintenanceDetailScreenProps = RootStackScreenProps<'MaintenanceDetail'>;
 
@@ -23,6 +24,7 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
   const [processing, setProcessing] = useState(false);
   const { dialogState, hideDialog, showError, showSuccess, showConfirmation } = useErrorDialog();
   const { isOnline } = useNetwork();
+  const { user } = useAuth();
 
 
   const handleStartWork = async () => {
@@ -39,7 +41,7 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
             showSuccess('Éxito', 'Trabajo iniciado correctamente');
           } else {
             // Offline: agregar a la cola
-            await workQueueService.add(task.id, 'START', 'IN_PROCESS');
+            await workQueueService.add(task.id, 'START', 'IN_PROCESS', user?.id);
             showSuccess('Sin conexión', 'Trabajo guardado. Se sincronizará cuando te conectes.');
           }
 
@@ -70,7 +72,7 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
             showSuccess('Éxito', 'Incidencia finalizada correctamente');
           } else {
             // Offline: agregar a la cola
-            await workQueueService.add(task.id, 'FINISH', 'FINISHED');
+            await workQueueService.add(task.id, 'FINISH', 'FINISHED', user?.id);
             showSuccess('Sin conexión', 'Finalización guardada. Se sincronizará cuando te conectes.');
           }
 

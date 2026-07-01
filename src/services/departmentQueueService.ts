@@ -21,7 +21,12 @@ const listeners: Array<() => void> = [];
 
 const departmentQueueService = {
   setUserId(userId: number | null) {
+    const changed = currentUserId !== userId;
     currentUserId = userId;
+    // Notificar listeners cuando cambia userId (para que OfflineSyncManager recargue)
+    if (changed && userId !== null) {
+      this.notifyListeners();
+    }
   },
 
   async add(name: string, userId?: number): Promise<string> {
