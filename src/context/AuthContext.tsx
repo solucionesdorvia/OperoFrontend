@@ -14,6 +14,8 @@ import { useNetwork } from '../hooks/useNetwork';
 import { offlineQueueService } from '../services/offlineQueueService';
 import { incidentCacheService } from '../services/incidentCacheService';
 import { teamCacheService } from '../services/teamCacheService';
+import { workQueueService } from '../services/workQueueService';
+import { departmentQueueService } from '../services/departmentQueueService';
 
 // Decodificar JWT para extraer datos básicos del usuario sin llamar al backend
 function decodeJWT(token: string): { userId: number; email: string; roleId: number; roleName: string } | null {
@@ -103,6 +105,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(userData);
             await authService.saveUserData(userData); // Guardar para uso offline
             offlineQueueService.setUserId(userData.id); // Setear userId para cola offline
+            workQueueService.setUserId(userData.id); // Setear userId para cola de trabajo operario
+            departmentQueueService.setUserId(userData.id); // Setear userId para cola de departamentos
             incidentCacheService.setUserId(userData.id); teamCacheService.setUserId(userData.id); // Setear userId para caché
             console.log('[AuthContext] Usuario autenticado:', userData.emailUade);
           } catch (error: any) {
@@ -249,6 +253,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await authService.logout();
       setUser(null);
       offlineQueueService.setUserId(null); // Limpiar userId al logout
+      workQueueService.setUserId(null); // Limpiar userId de cola de trabajo
+      departmentQueueService.setUserId(null); // Limpiar userId de cola de departamentos
       incidentCacheService.setUserId(null); teamCacheService.setUserId(null);
 
       console.log('[AuthContext] Sesión cerrada');

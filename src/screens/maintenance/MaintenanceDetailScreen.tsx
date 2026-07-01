@@ -13,6 +13,8 @@ import { incidentService } from '../../services/incidentService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { formatDate } from '../../utils/dateUtils';
+import { useNetwork } from '../../hooks/useNetwork';
+import { workQueueService } from '../../services/workQueueService';
 
 type MaintenanceDetailScreenProps = RootStackScreenProps<'MaintenanceDetail'>;
 
@@ -20,6 +22,7 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
   const task = route?.params?.task;
   const [processing, setProcessing] = useState(false);
   const { dialogState, hideDialog, showError, showSuccess, showConfirmation } = useErrorDialog();
+  const { isOnline } = useNetwork();
 
 
   const handleStartWork = async () => {
@@ -29,8 +32,17 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
       async () => {
         try {
           setProcessing(true);
-          await incidentService.updateStatus(task.id, 'IN_PROCESS');
-          showSuccess('Éxito', 'Trabajo iniciado correctamente');
+
+          if (isOnline) {
+            // Online: actualizar directamente
+            await incidentService.updateStatus(task.id, 'IN_PROCESS');
+            showSuccess('Éxito', 'Trabajo iniciado correctamente');
+          } else {
+            // Offline: agregar a la cola
+            await workQueueService.add(task.id, 'START', 'IN_PROCESS');
+            showSuccess('Sin conexión', 'Trabajo guardado. Se sincronizará cuando te conectes.');
+          }
+
           setTimeout(() => {
             navigation.goBack();
           }, 1500);
@@ -51,8 +63,17 @@ export default function MaintenanceDetailScreen({ navigation, route }: Maintenan
       async () => {
         try {
           setProcessing(true);
-          await incidentService.updateStatus(task.id, 'FINISHED');
-          showSuccess('Éxito', 'Incidencia finalizada correctamente');
+
+          if (isOnline) {
+            // Online: actualizar directamente
+            await incidentService.updateStatus(task.id, 'FINISHED');
+            showSuccess('Éxito', 'Incidencia finalizada correctamente');
+          } else {
+            // Offline: agregar a la cola
+            await workQueueService.add(task.id, 'FINISH', 'FINISHED');
+            showSuccess('Sin conexión', 'Finalización guardada. Se sincronizará cuando te conectes.');
+          }
+
           setTimeout(() => {
             navigation.goBack();
           }, 1500);

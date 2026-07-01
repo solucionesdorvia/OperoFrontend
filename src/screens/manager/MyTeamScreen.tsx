@@ -19,6 +19,7 @@ import { departmentService, DepartmentResponse } from '../../services/department
 import { UserResponse } from '../../services/authService';
 import { teamCacheService } from '../../services/teamCacheService';
 import { incidentCacheService } from '../../services/incidentCacheService';
+import { departmentQueueService } from '../../services/departmentQueueService';
 import ErrorDialog from '../../components/ErrorDialog';
 import { useErrorDialog } from '../../hooks/useErrorDialog';
 import { useNetwork } from '../../hooks/useNetwork';
@@ -171,10 +172,19 @@ export default function MyTeamScreen({ navigation: _navigation }: MyTeamScreenPr
     }
     try {
       setCreatingDept(true);
-      await departmentService.create({ name: newDeptName.trim() });
+
+      if (isOnline) {
+        // Online: crear directamente
+        await departmentService.create({ name: newDeptName.trim() });
+        showSuccess('Departamento creado', `Se agregó ${newDeptName.trim()}`);
+      } else {
+        // Offline: agregar a la cola
+        await departmentQueueService.add(newDeptName.trim());
+        showSuccess('Sin conexión', 'Departamento guardado. Se creará cuando te conectes.');
+      }
+
       setDeptModalOpen(false);
       setNewDeptName('');
-      showSuccess('Departamento creado', `Se agregó ${newDeptName.trim()}`);
       await loadData(true);
     } catch (error: any) {
       console.error('[MyTeamScreen] Error al crear departamento:', error);
